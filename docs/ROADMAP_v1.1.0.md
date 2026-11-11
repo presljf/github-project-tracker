@@ -103,7 +103,7 @@ Extend `audit.mjs` so manual normalization cannot silently pass again:
 
 | Task | Issue | Priority | Dependency/notes |
 |---|---|---|---|
-| T01 cross-repo reusable/composite access + public-template decision | #39 | P2 | temporary downstream repo; archive after |
+| T01 cross-repo reusable/composite access + public-template decision | #39 | P1 | **must be proven before T09/adoption**; determines reusable-vs-public path |
 | T02 live release-profile validation + actionlint + CI queue | #40 | P2 | release workflow disabled; re-enable only here, dry-run first |
 | T03 audit-in-CI token + branch protection | #41 | P2 | needs public/Pro for protection; token scoped |
 | T04 downstream feedback/security/publication | #42 | P2 | private reporting requires public/org setting |
@@ -111,7 +111,7 @@ Extend `audit.mjs` so manual normalization cannot silently pass again:
 | T09 transport-only + teammate scope guards | to create | P0 | depends T07; template/profile + CI guard |
 | T10 cleanup archived scratch/test artifacts | to create | P3 | owner decision/delete; low risk |
 
-T01/T04/T05 are docs/repo-scoped and can run in parallel worktrees; T02/T03 share CI workflow files and must be serialized. T06/T07/T08 stay with the Lead/integrator.
+T01/T04/T05 are docs/repo-scoped and can run in parallel worktrees; T02/T03 share CI workflow files and must be serialized. T06/T07/T08/T09 stay with the Lead/integrator. T01 must land before the no-copy guard distribution is finalized.
 
 ## 7. Actions / CI queue recovery
 
@@ -129,7 +129,7 @@ Sequence:
 1. Pin CastDeck tracker config to the validated template version (v1.0.1 now; update if T05 lands).
 2. Adopt tracker audit/token + project operations; run baseline audit.
 3. Adopt issue/PR templates and tracker docs.
-4. Validate adoption (dry-run/read-only where possible); close gate #77.
+4. Install the pinned tracker-guard caller/config/hook distribution (no copied implementation); run guard:gh/docs:check/audit; validate adoption; close gate #77.
 5. Start CastDeck v0.4.6 implementation-only sprint (tracker policies/profiles), then features.
 
 Do not start CastDeck quality/product work before gate #77 closes.
@@ -165,7 +165,15 @@ Layered mechanism:
 
 **Tracker OS level:** `scripts/github/lib/github.mjs` is the only module allowed to invoke `gh`/GitHub HTTP. Add `scripts/github/guard-gh-transport.mjs` that scans `scripts/**` (and workflow YAML) for raw `gh`/`child_process`/`curl` usage and fails unless the path is on a small allowlist. Add `npm run guard:gh` to tests/CI/pre-commit. This is static enforcement over repo automation.
 
-**Adopting-project level:** the template adopts the transport, guard command and CI job. The guard prevents **repository automation code** from bypassing the transport; it cannot prevent a human or external agent from typing `gh` in a terminal. For an absolute boundary, the project needs a sandbox/container with only the wrapper exposed; DSH’s shared tool environment does not provide that by default.
+**No-copy distribution to adopting projects:** the guard/transport implementation lives in the tracker repo/package. Adopters get pinned references, not vendored code:
+- a thin `.github/workflows/tracker-guard.yml` caller that `uses:` the tracker's reusable guard workflow at an exact template tag;
+- a `tracker.config.json` allowlist/config;
+- a `.pre-commit-config.yaml` remote hook pinned to the same tag (optional local parity);
+- optionally the tracker package as a versioned devDependency/`npx` for local CLI use.
+
+No implementation copies are required. The unavoidable files are **thin callers/config/hooks**, not duplicated logic. T09 builds this distribution; T01 proves private reusable access, with public-template/package fallback if private access is blocked. If the repository must have **zero** project-side workflow files, the only alternatives are an organization-level required-workflow ruleset or a central GitHub App that posts required Checks — neither is available/implemented on this private personal plan today. The guard cannot prevent a human or external process from typing `gh`; it enforces repository automation/workflows.
+
+**Adopting-project level:** adoption installs the pinned thin guard caller/config/hooks; the guard prevents **repository automation code** from bypassing the transport. It cannot prevent a human or external agent from typing `gh` in a terminal. For an absolute boundary, the project needs a sandbox/container with only the wrapper exposed; DSH’s shared tool environment does not provide that by default.
 
 **DSH level:** a custom preset can instruct agents to use the transport and dedicated worktrees, but it cannot make direct `bash -> gh` calls impossible unless a hard tool/sandbox policy is available. Treat DSH preset as defense-in-depth guidance; treat the guard script + CI/Lead diff gate as the enforceable control.
 
@@ -177,7 +185,7 @@ Add a **Priority** project field (P0/P1/P2/P3) before creating these, and link e
 |---|---|---|
 | P0 | T07 rate-limit transport | this plan |
 | P0 | T08 cache/batching | this plan |
-| P0 | T09 transport-only + teammate guards | this plan |
+| P0 | T09 transport-only + teammate guards + no-copy adoption distribution | this plan; depends T01/T07 |
 | P0 | T06 audit section/hierarchy enforcement | #47 |
 | P1 | T05 pin/docs:check/actionlint CI | #43 |
 | P1 | T03 audit-in-CI/token/branch protection | #41 |
