@@ -1,0 +1,29 @@
+name: Tracker audit (advisory)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 15 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run advisory tracker audit
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "TRACKER_TOKEN is not configured; skipping advisory audit."
+            exit 0
+          fi
+          node scripts/github/audit.mjs --config tracker.config.json --advisory

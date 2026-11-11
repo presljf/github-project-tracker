@@ -192,6 +192,28 @@ export class GitHubCli {
     return this.run(['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'], { json: true });
   }
 
+
+  listIssues(owner, repo, state = 'all') {
+    const result = this.run([
+      'issue', 'list', '--repo', `${owner}/${repo}`, '--state', state,
+      '--json', 'number,title,state,assignees,labels,milestone,issueType,url',
+      '--limit', '100',
+    ], { json: true });
+    return result || [];
+  }
+
+  issueComments(owner, repo, number) {
+    const result = this.run([
+      'issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'comments',
+    ], { json: true });
+    return result?.comments || [];
+  }
+
+  issueDependencies(owner, repo, number) {
+    const result = this.run(['api', `repos/${owner}/${repo}/issues/${number}`], { json: true });
+    return result?.issue_dependencies_summary || { blocked_by: 0, blocking: 0 };
+  }
+
   setProjectItemField(projectId, itemId, fieldId, optionId) {
     this.run([
       'project', 'item-edit', '--id', itemId, '--project-id', projectId,
