@@ -192,11 +192,36 @@ Add a **Priority** project field (P0/P1/P2/P3) before creating these, and link e
 | P2 | T02 live release profiles/actionlint/CI queue | #40 |
 | P2 | T01 cross-repo reusable access/public decision | #39 |
 | P2 | T04 downstream/security/publication | #42 |
+| P0 | T12 shared budget state + targeted queries + cost instrumentation | this plan; extension of T08 |
 | P3 | T10 scratch-artifact cleanup | archived smoke repo |
 
 Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; Pro does not raise API limits; release workflow disabled until T02; branch protection unavailable until public/Pro. Actionable work from those decisions maps to T02/T03/T07/T09.
 
-**Native dependencies:** T08, T09, T06 blocked by T07; CastDeck adoption #78–#81 blocked by tracker T05/T06/T07/T08/T09 (add cross-repo blocked-by when those issues exist); T02/T03 use the hardened transport.
+**Native dependencies:** T12 depends on T07/T08; CastDeck adoption #78–#81 blocked by tracker T05/T06/T07/T08/T09/T12 (add cross-repo blocked-by when those issues exist); T02/T03 use the hardened transport.
+
+
+
+## 12.5 T12 — shared rate-limit state + targeted project queries + cost instrumentation (P0)
+
+**Why:** T07/T08 reduced calls per process but not across commands/teammates. Project item-list queries and repeated task transitions can still consume the 5,000-point GraphQL budget in minutes.
+
+**Scope**
+- Persistent, atomic budget/cache state outside git (e.g. `~/.cache/tracker-os/rate-limit.json`) shared by bootstrap/audit/task and separate processes: resource, remaining, used, reset, last mutation, command cost history.
+- Targeted project queries: resolve project/field/option IDs once; query only the target issue/item rather than `project item-list --limit 100` on every command. Cache IDs with explicit invalidation.
+- Batch field mutations via GraphQL aliases where safe; batch audit dependency reads (not just comments/sub-issues).
+- Cost instrumentation: log estimated/observed points per command; `rate-limit report` shows top costs and remaining.
+- Serialize same-owner work in the tool; document GitHub App installation-token option for separate/scaling budget; no Pro dependency.
+- Adopter no-copy path: shared guard/reusable workflow must not reintroduce full-project reads.
+
+**Acceptance**
+- [ ] Budget state shared across CLI processes/teammates; reset-aware wait/fail.
+- [ ] Task start/review/done does not fetch all 34 items; only target item/fields.
+- [ ] Audit dependencies batched; no N+1.
+- [ ] Cost report identifies command-level consumption; tests with fake state/clock.
+- [ ] Parallel same-owner runs serialize; adoption docs updated.
+- [ ] Strict audit/docs/guard tests pass; measured calls reduced.
+
+**Dependencies:** T07/T08 (done). **Blocks:** adoption readiness gate.
 
 ## 13. Definition of done for this plan
 
@@ -231,4 +256,5 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
 - [ ] T04 downstream/security/publication
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
+- [ ] T12 shared rate-limit state/targeted queries/cost instrumentation
 - [ ] T10 scratch cleanup
