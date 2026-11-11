@@ -29,6 +29,7 @@ function normalizeIssue(issue) {
     labels: (issue.labels || []).map((entry) => entry.name || entry),
     milestone: issue.milestone?.title || issue.milestone || null,
     url: issue.url || null,
+    body: issue.body || '',
   };
 }
 
@@ -74,6 +75,16 @@ function normalizeDependencies(dependencies) {
   return map;
 }
 
+const REQUIRED_TASK_SECTIONS = [
+  'why / context', 'current behavior', 'goal', 'non-goals', 'acceptance criteria',
+  'test plan', 'verification evidence', 'dependencies / blockers', 'risks / rollback',
+];
+
+function missingTaskSections(body) {
+  const headings = [...String(body || '').matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].trim().toLowerCase());
+  return REQUIRED_TASK_SECTIONS.filter((section) => !headings.some((heading) => heading === section || heading.startsWith(section)));
+}
+
 export function auditTracker({ config, data, strict = false }) {
   const violations = [];
   const warnings = [];
@@ -84,6 +95,8 @@ export function auditTracker({ config, data, strict = false }) {
   const comments = normalizeComments(data.comments);
   const subIssues = normalizeSubIssues(data.subIssues);
   const dependencies = normalizeDependencies(data.dependencies);
+  const parentOf = new Map();
+  for (const [parent, children] of subIssues) for (const child of children) parentOf.set(child, parent);
 
   const hasCheckIn = (number) => (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
   const hasBlockerNote = (number) => (comments.get(number) || []).some((body) => /###\s*Blocker/i.test(body));
@@ -102,6 +115,26 @@ export function auditTracker({ config, data, strict = false }) {
     }
     if (!issue.type) add('TYPE_MISSING', issue, 'open issue has no native type');
     if (kind !== 'roadmap' && !issue.milestone) add('MILESTONE_MISSING', issue, 'open release/sprint/task has no milestone');
+    if (kind === 'task') {
+      for (const section of missingTaskSections(issue.body)) {
+        add('TASK_SECTION_MISSING', issue, `task body is missing required section: ## ${section}`);
+      }
+      let current = issue.number;
+      const seen = new Set();
+      let hasRelease = false;
+      let hasSprint = false;
+      while (parentOf.has(current) && !seen.has(current)) {
+        seen.add(current);
+        current = parentOf.get(current);
+        const parent = issueByNumber.get(current);
+        if (!parent) continue;
+        const parentKind = issueKind(parent.title);
+        if (parentKind === 'release') hasRelease = true;
+        if (parentKind === 'sprint') hasSprint = true;
+      }
+      if (!hasRelease) add('TASK_HIERARCHY_MISSING_RELEASE', issue, 'open task has no release tracker ancestor');
+      if (!hasSprint) add('TASK_HIERARCHY_MISSING_SPRINT', issue, 'open task has no sprint tracker ancestor');
+    }
     if (issue.labels.some((name) => /^(area|release|sprint|type):/i.test(name))) {
       add('DUPLICATE_DIMENSION_LABEL', issue, 'dimension is represented by a field/type/milestone and a label');
     }

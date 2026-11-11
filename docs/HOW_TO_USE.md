@@ -380,7 +380,8 @@ Checklist:
 - [ ] No duplicate/retired labels.
 - [ ] Sprint/release Done has exit evidence.
 - [ ] Template version pinned; downstream issues have origin/version/context.
-- [ ] No secrets in issues/comments/artifacts.
+- [ ] No secrets in config/artifacts (manual review; audit does not scan comments).
+- [ ] Open tasks have required DoR sections and release/sprint tracker ancestry (strict audit).
 
 Enforcement: advisory in CI first; required at release gates once stable. Audit token is project-scoped and stored as a secret.
 
