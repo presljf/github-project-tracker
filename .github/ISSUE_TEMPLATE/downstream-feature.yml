@@ -1,0 +1,69 @@
+name: Downstream feature request
+description: Request a feature/improvement in the Project Tracker OS from an adopting/downstream project
+title: "[Downstream feature] "
+labels: ["source:downstream", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem/use case first. This is best-effort with no SLA; check the pinned version's docs before filing. Do not include secrets or vulnerability details.
+  - type: input
+    id: origin
+    attributes:
+      label: Originating project/program
+      description: Project and repository that adopted the tracker.
+      placeholder: "project-name (https://github.com/owner/repo)"
+    validations:
+      required: true
+  - type: input
+    id: tracker_version
+    attributes:
+      label: Pinned tracker version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do, and what is missing or painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should the tracker do? Keep it implementation-agnostic where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Current workaround or other approaches.
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact / urgency
+      description: Who benefits, how much, and whether it blocks adoption/release. Best-effort, no SLA.
+    validations:
+      required: true
+  - type: input
+    id: downstream_link
+    attributes:
+      label: Downstream issue/PR link
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and the pinned version's docs.
+          required: true
+        - label: This is not a security vulnerability; I will use the private channel for those.
+          required: true
+        - label: No secrets or personal data are included.
+          required: true

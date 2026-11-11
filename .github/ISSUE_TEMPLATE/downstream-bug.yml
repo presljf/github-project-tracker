@@ -1,0 +1,92 @@
+name: Downstream bug report
+description: Report a bug in the Project Tracker OS from an adopting/downstream project
+title: "[Downstream bug] "
+labels: ["source:downstream", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting upstream. Do **not** include secrets, tokens, or vulnerability details here. For a security issue, follow SECURITY.md and use the private channel.
+  - type: input
+    id: origin
+    attributes:
+      label: Originating project/program
+      description: Project and repository that adopted the tracker.
+      placeholder: "project-name (https://github.com/owner/repo)"
+    validations:
+      required: true
+  - type: input
+    id: tracker_version
+    attributes:
+      label: Pinned tracker version
+      description: Exact `trackerTemplateVersion` in use.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node, gh CLI, shell, runner, and any relevant versions.
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Concise description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps / minimal example
+      description: Commands, config, or a minimal repo/example.
+      placeholder: "1. ...\n2. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include logs/traces with secrets redacted.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Who is affected, severity, and whether it blocks adoption/release.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: Any temporary local workaround (link the upstream issue from your project).
+    validations:
+      required: false
+  - type: input
+    id: downstream_link
+    attributes:
+      label: Downstream issue/PR link
+      description: Link to your project's tracking issue, if any.
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and the pinned version's docs.
+          required: true
+        - label: This is not a security vulnerability; I will use the private channel for those.
+          required: true
+        - label: No secrets, tokens, personal data, or exploit details are included.
+          required: true
