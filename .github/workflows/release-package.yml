@@ -1,22 +1,35 @@
-# TEMPORARY probe (T02 validation): exercise workflow_dispatch -> local reusable workflow calling
-# mechanics with the known-good reusable-ci contract. Restored before the final commit.
+# Thin package release caller example (T10 release profile, template repository).
+#
+# Reusable workflow: ./.github/workflows/reusable-release.yml (contract in
+# docs/ACTIONS_CATALOG.md §7.5; profile details in docs/RELEASE_PROFILES.md).
+#
+# Profile: package — build npm and/or PyPI distributions, checksum them, and publish with
+# provenance/OIDC trusted publishing (preferred) in the protected `release` environment.
+# Static-token fallbacks (`NPM_TOKEN`, `PYPI_API_TOKEN`) exist only for registries where trusted
+# publishing is unavailable; they are optional secrets and are documented/rotated by the project.
+#
+# This template caller is dispatch-only and dry-run by default. The template repo is a private
+# npm-style package with no registry target, so a dispatch only builds/checksums the tarball. To
+# publish: replace the build-command as needed, add a `push: tags: v*` trigger, pass the optional
+# token secrets only if OIDC is unavailable, and configure the `release` environment with required
+# reviewers plus the registry-side trusted-publishing configuration.
 name: Release (package example)
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'probe'
+        description: 'Version to validate (for example v1.0.0). Empty uses 0.0.0-dryrun on a dry-run dispatch.'
         required: false
         type: string
         default: ''
       dry-run:
-        description: 'probe'
+        description: 'Build and validate only; never publish to a registry (default).'
         required: false
         type: boolean
         default: true
       publish:
-        description: 'probe'
+        description: 'Request publishing. Honored only when dispatching on a release tag ref with dry-run disabled.'
         required: false
         type: boolean
         default: false
@@ -24,13 +37,37 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-package-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  probe:
-    name: probe
+  release-package:
+    name: release-package
+    # GitHub requires the caller job to grant at least the union of permissions declared by
+    # the called reusable workflow's jobs (contents: write for the release job, packages: write
+    # for the container job, id-token: write for OIDC package publishing). Jobs that do not
+    # apply to this profile are skipped and never use the extra grant; each called job also
+    # declares its own reduced permissions.
     permissions:
-      contents: read
+      contents: write
+      packages: write
+      id-token: write
     uses: ./.github/workflows/reusable-release.yml
     with:
-      profile: generic
-      dry-run: true
-      publish: false
+      profile: package
+      version: ${{ inputs.version }}
+      dry-run: ${{ inputs.dry-run }}
+      publish: ${{ inputs.publish }}
+      # Template placeholder: `npm pack` produces the package tarball for the dry-run path.
+      # For PyPI projects, build wheels/sdists into dist/ (for example `python -m build`).
+      build-command: |
+        set -euo pipefail
+        mkdir -p dist
+        npm pack --pack-destination dist
+      artifact-globs: |
+        dist/*.tgz
+      node-version: '22'
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
