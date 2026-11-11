@@ -4,12 +4,12 @@
 **Reviewer:** independent uninvolved agent session (`app-layer`; no tracker implementation context)
 **Mode:** read-only; no repository/GitHub mutations; temp validation files removed
 **Snapshot:** HEAD `35a0800` + T12 working-tree fixes
-**Verdict:** qualified yes — the manual UI/`gh` → task CLI → audit path is usable from docs after the fixes below; live scratch apply/lifecycle evidence remains T08.
+**Verdict:** after the fixes below, the manual UI/`gh` and learned bootstrap → task CLI → audit paths are documented and tested with the in-memory adapter; live scratch apply/lifecycle evidence remains T08.
 
 ## Checks run
 
 - config validation (`validate-config.mjs`) OK
-- `npm test` 35/35
+- `npm test` 36/36
 - cards `--check` 7/7 current; A4+Letter one-page
 - independent Markdown scan: 0 broken links/anchors, balanced fences
 - bootstrap dry-run: 11 actions / 0 mutations
@@ -24,6 +24,8 @@
    **Resolved:** all docs/forms/card references changed to `automation.templateVersion`; cards regenerated.
 2. **Shipped automation described as “planned”.** Quickstart, HOW TO USE, ADOPTION, TROUBLESHOOTING, playbook, and bootstrap dry-run output contradicted README/REFERENCE.
    **Resolved:** availability/status text updated for bootstrap/audit/task/workflows/release profiles; bootstrap runtime note updated.
+
+3. **Bootstrap → first-task blocker.** Bootstrap-created task items had Status/Release/Sprint/Source but not Area/Kind/Estimate; `task.mjs start` failed DoR (`Area is empty`) and audit reported 12 missing-field violations. **Resolved:** bootstrap now seeds valid defaults for Area/Kind/Estimate; an integration test runs `bootstrap --apply` → task start → audit and passes. README/QUICKSTART/ADOPTION now state the required fields and defaults.
 
 ## Should-fix found and resolved
 

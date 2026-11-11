@@ -197,6 +197,11 @@ export async function runBootstrap({ config, github, apply = false, logger = con
   // Fields. Status comes from config.statuses; the rest from config.fields.
   let fields = project?.number ? await github.listFields(owner, project.number) : [];
   const fieldMap = () => new Map(fields.map((f) => [f.name, f]));
+  const defaultOption = (fieldName, preferred) => {
+    const field = fieldMap().get(fieldName);
+    if (!field?.options?.length) return null;
+    return field.options.find((option) => option.name === preferred)?.name || field.options[0].name;
+  };
   const configuredFields = {
     Status: { options: config.statuses || [] },
     ...(config.fields || {}),
@@ -222,6 +227,13 @@ export async function runBootstrap({ config, github, apply = false, logger = con
       }
     }
   }
+
+  // Skeleton issues must satisfy DoR/audit: seed valid defaults for required fields.
+  const issueDefaults = {
+    Area: defaultOption('Area'),
+    Kind: defaultOption('Kind'),
+    Estimate: defaultOption('Estimate', 'M'),
+  };
 
   // Milestones.
   const milestones = (await github.listMilestones(repoOwner, repoName)) || [];
@@ -281,6 +293,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
           Release: spec.release,
           Sprint: spec.sprint,
           Source: 'Internal',
+          ...issueDefaults,
         };
         let item = itemsByIssue.get(issue.number);
         if (!item) {

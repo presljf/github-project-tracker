@@ -18,6 +18,7 @@ A portable, auditable GitHub project-tracker operating system: playbook, exhaust
    node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
    node scripts/github/bootstrap.mjs --config tracker.config.json --apply
    ```
+   Bootstrap seeds valid default Area/Kind/Estimate (and Status/Release/Sprint/Source) so generated tasks pass DoR/audit; adjust any defaults for your project before check-in.
 5. **Run one task through the lifecycle** with the task CLI or manual docs:
    ```bash
    node scripts/github/task.mjs start --issue 123 --owner YOUR_LOGIN

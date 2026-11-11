@@ -87,19 +87,19 @@ Pin the template version exactly and record the feedback channel:
 2. Release tracker per milestone — objective, sprints, gates, artifacts, rollback.
 3. Sprint tracker(s) — goal, task list, exit criteria.
 4. Task issues — DoR/acceptance/test/evidence; link sub-issues.
-5. Set Project fields on every item; add to board (auto-add should do it).
+5. Set Project fields on every item: Status=Todo, Release, Sprint, Area, Kind, Estimate, Source; add to board (auto-add should do it). `bootstrap.mjs` seeds valid defaults for Area/Kind/Estimate; manually created issues need explicit values or `task.mjs start` fails DoR and audit flags empty fields.
 
 Pilot example (clearly marked): `examples/castdeck.config.json` shows a real project config; do not copy its release content.
 
 ## 5. Audit, CI, protection
 
 - Configure the tracker audit token as a secret (project-scoped).
-- Add CI/audit caller workflows when delivered (1.0.0.2+); keep audit **advisory** first.
+- Add CI/audit caller workflows (shipped CI/security/audit; release profiles shipped); keep audit **advisory** first.
 - Configure branch protection/rulesets:
   - required: deterministic Linux CI checks.
   - advisory first: desktop smoke/audit.
   - protect release tags/environments.
-- Run manual audit checklist from [HOW TO USE](./HOW_TO_USE.md#13-audit) until `audit.mjs` exists.
+- Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
 
 ## 6. Adoption gate (for programs)

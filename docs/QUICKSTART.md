@@ -97,13 +97,14 @@ gh issue create --repo OWNER/REPO --title "[Task] Create tracker config" \
 # https://github.com/OWNER/REPO/issues/2
 ```
 
-Set project fields (UI: open item → fields; CLI below discovers IDs first):
+Set project fields on the task. The task CLI/audit require Area/Kind/Estimate plus Release/Sprint; use `docs`/`feature`/`S` for this sample (UI: open item → fields; CLI below discovers IDs first):
 ```bash
 gh project field-list PROJECT_NUMBER --owner @me --format json > /tmp/fields.json
 # inspect IDs/options, then:
 gh project item-list PROJECT_NUMBER --owner @me --format json > /tmp/items.json
 gh project item-edit --id ITEM_ID --project-id PROJECT_ID \
   --field-id STATUS_FIELD_ID --single-select-option-id TODO_OPTION_ID
+# repeat for Release=v0.1.0, Sprint=0.1.0.1, Area=docs, Kind=feature, Estimate=S, Source=Internal
 ```
 
 Link the task as a sub-issue of the sprint (UI: task → **Sub-issues** → add parent; or API):

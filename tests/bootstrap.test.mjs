@@ -109,3 +109,26 @@ test('invalid config fails before any mutation', async () => {
   );
   assert.equal(github.mutations.length, 0);
 });
+
+test('bootstrap-created task passes DoR, task start, and audit', async () => {
+  const { FakeTaskGitHub } = await import('./helpers/fake-task-github.mjs');
+  const { startTask } = await import('../scripts/github/task.mjs');
+  const { collectAuditData, auditTracker } = await import('../scripts/github/audit.mjs');
+  const github = new FakeTaskGitHub();
+  const cfg = config();
+  await runBootstrap({ config: cfg, github, apply: true, logger: silent });
+  const task = github.issues.find((issue) => issue.title === '[Task] First task');
+  assert.ok(task, 'bootstrap should create the task skeleton');
+  const item = github.items.find((entry) => entry.content.number === task.number);
+  assert.equal(item.area, 'docs');
+  assert.equal(item.kind, 'feature');
+  assert.equal(item.estimate, 'M');
+  const start = await startTask({
+    config: cfg, github, issueNumber: task.number, owner: 'owner',
+    executor: 'agent:test', dryRun: true, repoRoot: process.cwd(), gitExec: () => 'abc123',
+  });
+  assert.equal(start.ok, true);
+  const data = await collectAuditData(github, cfg);
+  const audit = auditTracker({ config: cfg, data });
+  assert.equal(audit.ok, true, JSON.stringify(audit.violations));
+});

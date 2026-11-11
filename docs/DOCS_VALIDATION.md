@@ -9,7 +9,7 @@
 | Check | Command | Result |
 |---|---|---|
 | Config contract/examples | `node scripts/github/validate-config.mjs` | OK (generic + pilot examples) |
-| Full test suite | `npm test` | 35/35 pass |
+| Full test suite | `npm test` | 36/36 pass |
 | Bootstrap (read-only) | `node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run` | plan printed; **0 mutations** |
 | Tracker audit | `node scripts/github/audit.mjs --config tracker.config.json --strict` | 0 violations, 21 issues / 21 project items |
 | Task CLI status | `node scripts/github/task.mjs status --issue 17 --config tracker.config.json` | reads title/state/assignee/status/fields |
