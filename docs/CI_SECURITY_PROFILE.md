@@ -193,7 +193,7 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
 The repository is now **public**. Classic branch protection is enabled on `main` with required checks:
 
 - `ci / ci-gate`
-- `docs-guard`
+- `docs-guard` (docs links/fences, transport guard, docs coverage)
 
 Force pushes/deletions are disabled; `strict` requires branches to be current. `Release (generic)` remains disabled until T02. Audit-in-CI still needs an owner-provided project-scoped `TRACKER_TOKEN` secret; no token is committed.
 

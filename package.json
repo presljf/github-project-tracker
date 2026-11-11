@@ -14,6 +14,7 @@
     "docs:check": "node scripts/docs/check-docs.mjs",
     "rate-limit": "node scripts/github/rate-limit.mjs",
     "guard:gh": "node scripts/github/guard-gh-transport.mjs",
-    "guard:scope": "node scripts/github/guard-scope.mjs"
+    "guard:scope": "node scripts/github/guard-scope.mjs",
+    "guard:docs": "node scripts/docs/guard-docs.mjs"
   }
 }

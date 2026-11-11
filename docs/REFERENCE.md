@@ -357,6 +357,10 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 
 Never store tokens/cookies/private keys in repo, config, issue, comment, artifact, or log. No `pull_request_target` with untrusted code + secrets.
 
+### Docs coverage guard
+
+`npm run guard:docs -- --base origin/main` fails when a changed source area mapped in `docs/DOCS_COVERAGE.json` has no mapped docs change. `docs-guard` CI includes it; branch protection requires the check. See [DOCS COVERAGE](./DOCS_COVERAGE.md).
+
 ### Rate-limit behavior
 
 `scripts/github/lib/github.mjs` is the transport for tracker automation. It:
