@@ -369,6 +369,8 @@ npm run rate-limit
 # GitHub graphql budget: N/5000 remaining, M used; resets <ISO>
 ```
 
+Per-process caches hold project/field/item/milestone/label lists; they are invalidated after relevant writes and are never persisted across runs. Audit activity (comments/sub-issues) is batched in chunks to avoid per-issue calls.
+
 GraphQL is 5,000 points/hour per user; REST is 5,000 requests/hour. **GitHub Pro does not raise either.** Secondary limits include 2,000 GraphQL points/minute, 900 REST points/minute per endpoint, and content-generation limits. The `/rate_limit` endpoint can misreport the burst position; prefer response headers.
 
 ## 15. Runner / cost guidance

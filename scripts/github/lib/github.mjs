@@ -59,6 +59,18 @@ export class GitHubCli {
     this.rate = null;
     this.lastMutationAt = 0;
     this.mutations = 0;
+    this.cache = new Map();
+  }
+
+  _cached(key, loader) {
+    if (!this.cache.has(key)) this.cache.set(key, loader());
+    return this.cache.get(key);
+  }
+
+  clearCache(prefix = '') {
+    for (const key of [...this.cache.keys()]) {
+      if (!prefix || key.startsWith(prefix)) this.cache.delete(key);
+    }
   }
 
   refreshRateLimit() {
@@ -133,12 +145,15 @@ export class GitHubCli {
   }
 
   listProjects(owner) {
-    const result = this.run(['project', 'list', '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
-    return result?.projects || [];
+    return this._cached(`projects:${owner}`, () => {
+      const result = this.run(['project', 'list', '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
+      return result?.projects || [];
+    });
   }
 
   createProject(owner, title) {
     this._beforeMutation();
+    this.clearCache('projects:');
     return this.run(['project', 'create', '--owner', owner, '--title', title, '--format', 'json'], { json: true });
   }
 
@@ -154,8 +169,10 @@ export class GitHubCli {
   }
 
   listFields(owner, number) {
-    const result = this.run(['project', 'field-list', String(number), '--owner', owner, '--format', 'json'], { json: true });
-    return result?.fields || [];
+    return this._cached(`fields:${owner}:${number}`, () => {
+      const result = this.run(['project', 'field-list', String(number), '--owner', owner, '--format', 'json'], { json: true });
+      return result?.fields || [];
+    });
   }
 
   createField(owner, number, name, options) {
@@ -165,11 +182,13 @@ export class GitHubCli {
       '--name', name, '--data-type', 'SINGLE_SELECT',
       '--single-select-options', options.join(','), '--format', 'json',
     ];
+    this.clearCache('fields:');
     return this.run(args, { json: true });
   }
 
   updateFieldOptions(fieldId, options) {
     this._beforeMutation();
+    this.clearCache('fields:');
     const query = 'query($id: ID!) { node(id: $id) { ... on ProjectV2SingleSelectField { id options { id name color description } } } }';
     fs.writeFileSync(path.join(os.tmpdir(), 'tracker-field-query.json'), JSON.stringify({ query, variables: { id: fieldId } }));
     const node = this.run(['api', 'graphql', '--input', path.join(os.tmpdir(), 'tracker-field-query.json')], { json: true });
@@ -188,29 +207,37 @@ export class GitHubCli {
   }
 
   listMilestones(owner, repo) {
-    const result = this.run(['api', `repos/${owner}/${repo}/milestones?state=all&per_page=100`], { json: true });
-    return result || [];
+    return this._cached(`milestones:${owner}:${repo}`, () => {
+      const result = this.run(['api', `repos/${owner}/${repo}/milestones?state=all&per_page=100`], { json: true });
+      return result || [];
+    });
   }
 
   createMilestone(owner, repo, title, description) {
     this._beforeMutation();
-    return this.run([
+    const result = this.run([
       'api', '--method', 'POST', `repos/${owner}/${repo}/milestones`,
       '-f', `title=${title}`, '-f', `description=${description || ''}`,
     ], { json: true });
+    this.clearCache('milestones:');
+    return result;
   }
 
   listLabels(owner, repo) {
-    const result = this.run(['label', 'list', '--repo', `${owner}/${repo}`, '--limit', '100', '--json', 'name,color,description'], { json: true });
-    return result || [];
+    return this._cached(`labels:${owner}:${repo}`, () => {
+      const result = this.run(['label', 'list', '--repo', `${owner}/${repo}`, '--limit', '100', '--json', 'name,color,description'], { json: true });
+      return result || [];
+    });
   }
 
   createLabel(owner, repo, name, color, description) {
     this._beforeMutation();
-    return this.run([
+    const result = this.run([
       'label', 'create', name, '--repo', `${owner}/${repo}`,
       '--color', color, '--description', description || '',
     ]);
+    this.clearCache('labels:');
+    return result;
   }
 
   findIssue(owner, repo, title) {
@@ -299,13 +326,17 @@ export class GitHubCli {
   }
 
   listProjectItems(owner, number) {
-    const result = this.run(['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
-    return result?.items || [];
+    return this._cached(`items:${owner}:${number}`, () => {
+      const result = this.run(['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
+      return result?.items || [];
+    });
   }
 
   addProjectItem(owner, number, url) {
     this._beforeMutation();
-    return this.run(['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'], { json: true });
+    const result = this.run(['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'], { json: true });
+    this.clearCache('items:');
+    return result;
   }
 
 
@@ -332,9 +363,37 @@ export class GitHubCli {
 
   setProjectItemField(projectId, itemId, fieldId, optionId) {
     this._beforeMutation();
-    this.run([
+    const result = this.run([
       'project', 'item-edit', '--id', itemId, '--project-id', projectId,
       '--field-id', fieldId, '--single-select-option-id', optionId,
     ]);
+    this.clearCache('items:');
+    return result;
+  }
+
+  batchIssueActivity(owner, repo, numbers, { chunkSize = 10 } = {}) {
+    const comments = {};
+    const subIssues = {};
+    for (let start = 0; start < numbers.length; start += chunkSize) {
+      const chunk = numbers.slice(start, start + chunkSize);
+      const aliases = chunk.map((n, i) => `i${i}: issue(number: $n${i}) { comments(first: 100) { nodes { body } } subIssues(first: 100) { nodes { number state } } }`).join('\n');
+      const variables = { owner, name: repo };
+      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) { repository(owner: $owner, name: $name) { ${aliases} } }`;
+      const inputPath = path.join(os.tmpdir(), `tracker-activity-${process.pid}-${start}.json`);
+      fs.writeFileSync(inputPath, JSON.stringify({ query, variables }));
+      try {
+        const result = this.run(['api', 'graphql', '--input', inputPath], { json: true });
+        const repoData = result?.data?.repository || {};
+        chunk.forEach((n, i) => {
+          const node = repoData[`i${i}`];
+          comments[n] = (node?.comments?.nodes || []).map((c) => c.body || '');
+          subIssues[n] = (node?.subIssues?.nodes || []).map((s) => s.number).filter(Boolean);
+        });
+      } finally {
+        fs.rmSync(inputPath, { force: true });
+      }
+    }
+    return { comments, subIssues };
   }
 }
