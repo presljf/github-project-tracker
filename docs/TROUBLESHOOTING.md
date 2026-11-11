@@ -175,8 +175,8 @@ Fix the `$path`; re-run until `OK`.
 ## Network / limits / platform
 
 ### Rate limit / secondary rate limit
-**Cause:** too many API calls (bootstrap/migration).
-**Fix:** wait for reset (`gh api rate_limit`), reduce concurrency, add backoff/retry; avoid re-running destructive loops.
+**Cause:** too many API calls (bootstrap/migration), especially GraphQL project mutations.
+**Fix:** run `npm run rate-limit` and use response headers, not just `/rate_limit`; wait for reset, reduce concurrency/batches, keep ≥1s between mutations. The transport handles primary/secondary failures without blind mutation retries; see [REFERENCE](./REFERENCE.md#rate-limit-behavior).
 
 ### `connection refused` / TLS / 502/503
 **Cause:** transient network/API.

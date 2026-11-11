@@ -29,11 +29,77 @@ function sleepSync(ms) {
   }
 }
 
+export function parseIncludeOutput(text) {
+  const normalized = String(text || '').replace(/\r\n/g, '\n');
+  const chunks = normalized.split(/\n\n/);
+  let headerChunk = '';
+  let body = '';
+  for (const chunk of chunks) {
+    if (/^HTTP\//.test(chunk) || /x-ratelimit-/i.test(chunk)) headerChunk = chunk;
+    if (chunk.trim().startsWith('{')) body = chunk;
+  }
+  const headers = {};
+  for (const line of headerChunk.split('\n')) {
+    const m = /^([^:]+):\s*(.*)$/.exec(line);
+    if (m) headers[m[1].toLowerCase()] = m[2];
+  }
+  let json = null;
+  try { json = body ? JSON.parse(body) : null; } catch { /* keep null */ }
+  return { headers, body, json };
+}
+
 export class GitHubCli {
-  constructor({ exec = defaultExec, retries = 3, sleep = sleepSync } = {}) {
+  constructor({ exec = defaultExec, retries = 3, sleep = sleepSync, minMutationSpacingMs = 1100, budgetFloor = 25, maxWaitMs = 60000 } = {}) {
     this.exec = exec;
     this.retries = retries;
     this.sleep = sleep;
+    this.minMutationSpacingMs = minMutationSpacingMs;
+    this.budgetFloor = budgetFloor;
+    this.maxWaitMs = maxWaitMs;
+    this.rate = null;
+    this.lastMutationAt = 0;
+    this.mutations = 0;
+  }
+
+  refreshRateLimit() {
+    const query = 'query { rateLimit { limit remaining used resetAt cost } }';
+    const output = this.exec(['api', '--include', 'graphql', '-f', `query=${query}`]);
+    const { headers, json } = parseIncludeOutput(output);
+    const data = json?.data?.rateLimit;
+    this.rate = {
+      resource: headers['x-ratelimit-resource'] || 'graphql',
+      limit: Number(data?.limit ?? headers['x-ratelimit-limit'] ?? 0),
+      remaining: Number(data?.remaining ?? headers['x-ratelimit-remaining'] ?? 0),
+      used: Number(data?.used ?? headers['x-ratelimit-used'] ?? 0),
+      resetEpoch: Number(headers['x-ratelimit-reset'] || 0),
+      resetAt: data?.resetAt || (headers['x-ratelimit-reset'] ? new Date(Number(headers['x-ratelimit-reset']) * 1000).toISOString() : null),
+      cost: Number(data?.cost ?? 1),
+    };
+    return this.rate;
+  }
+
+  rateLimitStatus() {
+    return this.refreshRateLimit();
+  }
+
+  _waitMsUntilReset() {
+    if (!this.rate?.resetEpoch) return 0;
+    return Math.max(0, this.rate.resetEpoch * 1000 - Date.now());
+  }
+
+  _beforeMutation() {
+    if (!this.rate) this.refreshRateLimit();
+    if (this.rate.remaining <= this.budgetFloor) this.refreshRateLimit();
+    if (this.rate.remaining <= 0) {
+      const waitMs = this._waitMsUntilReset();
+      if (waitMs > 0 && waitMs <= this.maxWaitMs) this.sleep(waitMs + 250);
+      else throw new Error(`GitHub rate limit exhausted; reset at ${this.rate.resetAt || 'unknown'}; refusing mutation rather than guessing`);
+    }
+    const since = Date.now() - this.lastMutationAt;
+    if (since < this.minMutationSpacingMs) this.sleep(this.minMutationSpacingMs - since);
+    this.lastMutationAt = Date.now();
+    this.mutations += 1;
+    this.rate.remaining = Math.max(0, this.rate.remaining - 5);
   }
 
   run(args, { json = false, allowFailure = false } = {}) {
@@ -48,6 +114,12 @@ export class GitHubCli {
       } catch (err) {
         last = err;
         const message = `${err?.stderr || ''}\n${err?.message || ''}`;
+        if (/API rate limit exceeded|secondary rate limit/i.test(message)) {
+          let status = null;
+          try { status = this.refreshRateLimit(); } catch { /* best effort */ }
+          const reset = status?.resetAt || 'unknown';
+          throw new Error(`GitHub rate limit hit (${status ? `${status.remaining}/${status.limit} remaining` : 'budget unknown'}; resets ${reset}). Not retrying blindly; wait for reset or reduce request bursts.`);
+        }
         if (attempt >= this.retries || !TRANSIENT.test(message)) break;
         this.sleep(500 * (attempt + 1));
       }
@@ -66,10 +138,12 @@ export class GitHubCli {
   }
 
   createProject(owner, title) {
+    this._beforeMutation();
     return this.run(['project', 'create', '--owner', owner, '--title', title, '--format', 'json'], { json: true });
   }
 
   linkProject(owner, number, repo) {
+    this._beforeMutation();
     const result = this.run(['project', 'link', String(number), '--owner', owner, '--repo', repo], { allowFailure: true });
     if (result && result.error) {
       const text = `${result.error?.stderr || ''}\n${result.error?.message || ''}`;
@@ -85,6 +159,7 @@ export class GitHubCli {
   }
 
   createField(owner, number, name, options) {
+    this._beforeMutation();
     const args = [
       'project', 'field-create', String(number), '--owner', owner,
       '--name', name, '--data-type', 'SINGLE_SELECT',
@@ -94,6 +169,7 @@ export class GitHubCli {
   }
 
   updateFieldOptions(fieldId, options) {
+    this._beforeMutation();
     const query = 'query($id: ID!) { node(id: $id) { ... on ProjectV2SingleSelectField { id options { id name color description } } } }';
     fs.writeFileSync(path.join(os.tmpdir(), 'tracker-field-query.json'), JSON.stringify({ query, variables: { id: fieldId } }));
     const node = this.run(['api', 'graphql', '--input', path.join(os.tmpdir(), 'tracker-field-query.json')], { json: true });
@@ -117,6 +193,7 @@ export class GitHubCli {
   }
 
   createMilestone(owner, repo, title, description) {
+    this._beforeMutation();
     return this.run([
       'api', '--method', 'POST', `repos/${owner}/${repo}/milestones`,
       '-f', `title=${title}`, '-f', `description=${description || ''}`,
@@ -129,6 +206,7 @@ export class GitHubCli {
   }
 
   createLabel(owner, repo, name, color, description) {
+    this._beforeMutation();
     return this.run([
       'label', 'create', name, '--repo', `${owner}/${repo}`,
       '--color', color, '--description', description || '',
@@ -154,10 +232,12 @@ export class GitHubCli {
   }
 
   addAssignee(owner, repo, number, login) {
+    this._beforeMutation();
     return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-assignee', login]);
   }
 
   addComment(owner, repo, number, body) {
+    this._beforeMutation();
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-comment-'));
     const file = path.join(dir, 'comment.md');
     fs.writeFileSync(file, body || '');
@@ -169,10 +249,12 @@ export class GitHubCli {
   }
 
   closeIssue(owner, repo, number) {
+    this._beforeMutation();
     return this.run(['issue', 'close', String(number), '--repo', `${owner}/${repo}`, '--reason', 'completed']);
   }
 
   addBlockedBy(owner, repo, number, blockedByUrl) {
+    this._beforeMutation();
     return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-blocked-by', blockedByUrl]);
   }
 
@@ -181,6 +263,7 @@ export class GitHubCli {
   }
 
   createIssue(owner, repo, { title, body, milestone }) {
+    this._beforeMutation();
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-issue-'));
     const bodyPath = path.join(dir, 'body.md');
     fs.writeFileSync(bodyPath, body || '');
@@ -193,6 +276,7 @@ export class GitHubCli {
   }
 
   setIssueType(owner, repo, number, type) {
+    this._beforeMutation();
     return this.run(['api', `repos/${owner}/${repo}/issues/${number}`, '--method', 'PATCH', '-f', `type=${type}`], { json: true });
   }
 
@@ -202,6 +286,7 @@ export class GitHubCli {
   }
 
   addSubIssue(owner, repo, parent, child) {
+    this._beforeMutation();
     const childId = this.run(['api', `repos/${owner}/${repo}/issues/${child}`, '--jq', '.id']);
     const args = ['api', '--method', 'POST', `repos/${owner}/${repo}/issues/${parent}/sub_issues`, '-F', `sub_issue_id=${childId}`];
     const result = this.run(args, { allowFailure: true });
@@ -219,6 +304,7 @@ export class GitHubCli {
   }
 
   addProjectItem(owner, number, url) {
+    this._beforeMutation();
     return this.run(['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'], { json: true });
   }
 
@@ -245,6 +331,7 @@ export class GitHubCli {
   }
 
   setProjectItemField(projectId, itemId, fieldId, optionId) {
+    this._beforeMutation();
     this.run([
       'project', 'item-edit', '--id', itemId, '--project-id', projectId,
       '--field-id', fieldId, '--single-select-option-id', optionId,

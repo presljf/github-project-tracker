@@ -219,3 +219,16 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - Cross-repo private reusable access unverified: T01.
 - Scratch repo archived; delete later by owner if desired.
 - Unreleased GitHub Release: none published; release workflow disabled.
+
+## 14. Progress log
+
+- [ ] T07 rate-limit-aware transport — in progress
+- [ ] T08 cache/batching
+- [ ] T09 transport guard + no-copy adoption
+- [ ] T06 audit section/hierarchy enforcement
+- [ ] T01 cross-repo reusable/public decision
+- [ ] T02 live release profiles/CI queue
+- [ ] T03 audit CI/branch protection
+- [ ] T04 downstream/security/publication
+- [ ] T05 version pins/docs CI
+- [ ] T10 scratch cleanup
