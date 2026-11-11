@@ -1,0 +1,156 @@
+{
+  "$schema": "../schemas/tracker.config.schema.json",
+  "trackerVersion": 1,
+  "repository": "presljf/castdeck",
+  "project": {
+    "owner": "presljf",
+    "title": "CastDeck Roadmap",
+    "number": 1
+  },
+  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
+  "fields": {
+    "Release": { "options": ["v0.4.6", "v0.5.0", "v0.6.0", "v0.7.0", "v0.8.0"] },
+    "Sprint": {
+      "options": [
+        "0.4.6.1",
+        "0.4.6.2",
+        "0.4.6.3",
+        "0.4.6.4",
+        "0.5.1",
+        "0.5.2",
+        "0.5.3",
+        "0.5.4",
+        "0.5.5",
+        "0.6.1",
+        "0.6.2",
+        "0.6.3",
+        "0.6.4",
+        "0.7.1",
+        "0.7.2",
+        "0.8.1",
+        "0.8.2",
+        "0.8.3"
+      ]
+    },
+    "Area": { "options": ["web", "desktop", "api", "data", "ci", "docs", "cross"] },
+    "Kind": { "options": ["feature", "fix", "ux", "spike", "test", "infra"] },
+    "Estimate": { "options": ["S", "M", "L"] },
+    "Source": { "options": ["Internal", "CastDeck", "Other"] }
+  },
+  "issueTypes": {
+    "task": "Task",
+    "bug": "Bug",
+    "feature": "Feature",
+    "fallback": "Use project Kind if native issue types are unavailable."
+  },
+  "labels": {
+    "risk": ["risk:low", "risk:medium", "risk:high"],
+    "process": ["plan-change", "source:downstream", "status:needs-triage"]
+  },
+  "releases": [
+    {
+      "key": "v0.4.6",
+      "milestone": "v0.4.6 — Quality & automation",
+      "sprints": [
+        { "key": "0.4.6.1", "title": "Formatting/lint profile implementation", "estimate": "M" },
+        { "key": "0.4.6.2", "title": "CI, templates, security, branch protection implementation", "estimate": "M" },
+        { "key": "0.4.6.3", "title": "Desktop smoke + release profile implementation", "estimate": "M" },
+        { "key": "0.4.6.4", "title": "Validation & release readiness", "estimate": "S" }
+      ]
+    },
+    {
+      "key": "v0.5.0",
+      "milestone": "v0.5.0 — Quick wins",
+      "sprints": [
+        { "key": "0.5.1", "title": "Publisher: libraryV3 + A fallback", "estimate": "M" },
+        { "key": "0.5.2", "title": "Sidebar scroll + section collapse", "estimate": "M" },
+        { "key": "0.5.3", "title": "Sidebar icon rail", "estimate": "M" },
+        { "key": "0.5.4", "title": "Version consistency + Unplayed phase-1 copy", "estimate": "M" },
+        { "key": "0.5.5", "title": "Jobs clarity quick pass", "estimate": "M" }
+      ]
+    },
+    {
+      "key": "v0.6.0",
+      "milestone": "v0.6.0 — Lists & sorting",
+      "sprints": [
+        { "key": "0.6.1", "title": "Shared sort framework", "estimate": "M" },
+        { "key": "0.6.2", "title": "Server-side sort for paginated endpoints", "estimate": "M" },
+        { "key": "0.6.3", "title": "Adopt sorting: Unplayed + Show episodes", "estimate": "M" },
+        { "key": "0.6.4", "title": "Adopt sorting: Your Episodes, Saved shows, Dashboard", "estimate": "M" }
+      ]
+    },
+    {
+      "key": "v0.7.0",
+      "milestone": "v0.7.0 — Unplayed coverage",
+      "sprints": [
+        { "key": "0.7.1", "title": "Coverage metadata + API", "estimate": "M" },
+        { "key": "0.7.2", "title": "Window prompt + full-history flow", "estimate": "M" }
+      ]
+    },
+    {
+      "key": "v0.8.0",
+      "milestone": "v0.8.0 — Jobs deep redesign",
+      "sprints": [
+        { "key": "0.8.1", "title": "Job data model + API enrichment", "estimate": "M" },
+        { "key": "0.8.2", "title": "Job history table redesign", "estimate": "M" },
+        { "key": "0.8.3", "title": "Job detail modal + per-item results", "estimate": "L" }
+      ]
+    }
+  ],
+  "automation": {
+    "defaultAssignee": "presljf",
+    "branchPrefix": "task/",
+    "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
+    "templateRepo": "presljf/github-project-tracker",
+    "templateVersion": "1.0.0",
+    "inReviewMode": "manual",
+    "autoAddIssues": true,
+    "closeToDone": true,
+    "bot": { "enabled": false }
+  },
+  "profiles": {
+    "node": {
+      "commands": {
+        "lint": "npm run lint",
+        "format": "npm run format:check",
+        "test": "npm test",
+        "e2e": "npm run test:e2e",
+        "verify": "npm run verify"
+      }
+    }
+  },
+  "workflows": {
+    "ci": {
+      "mode": "copy",
+      "requiredChecks": ["lint", "format", "unit", "web-e2e", "verify"]
+    },
+    "audit": {
+      "mode": "advisory",
+      "tokenSecret": "TRACKER_TOKEN"
+    },
+    "release": {
+      "profile": "macos-app-github-release",
+      "dryRun": true
+    }
+  },
+  "feedback": {
+    "upstreamRepo": "presljf/github-project-tracker",
+    "issueForm": "downstream-bug.yml",
+    "pinnedVersion": "1.0.0"
+  },
+  "governance": {
+    "versioning": {
+      "patch": "Compatible bug fixes",
+      "minor": "Compatible features",
+      "major": "Breaking changes with migration notes"
+    },
+    "publication": {
+      "status": "private",
+      "license": "MIT"
+    },
+    "security": {
+      "contact": "GitHub private vulnerability reporting when available; otherwise the maintainer's private contact in SECURITY.md",
+      "privateVulnerabilityReporting": false
+    }
+  }
+}

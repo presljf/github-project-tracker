@@ -1,0 +1,81 @@
+name: Sprint
+description: A scoped build unit inside a release
+title: "[Sprint] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A sprint is a build unit, not a fixed calendar box. It closes only after exit criteria/evidence are posted and all child tasks are Done or explicitly deferred.
+  - type: input
+    id: release
+    attributes:
+      label: Release/milestone
+      description: Parent release tracker/milestone link or version.
+    validations:
+      required: true
+  - type: input
+    id: sprint_key
+    attributes:
+      label: Sprint key
+      description: Stable key used in the Project Sprint field.
+      placeholder: "1.0.0.1"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Sprint goal
+      description: One or two sentences describing the outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / tasks
+      description: Linked task issues (or titles until created). One task = one branch/PR.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: Explicitly out of scope for this sprint.
+    validations:
+      required: false
+  - type: textarea
+    id: exit
+    attributes:
+      label: Exit criteria / demo
+      description: What must be true before this sprint can close? Include evidence links to be posted.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test & verification requirements
+      description: Required checks/evidence for the sprint.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / blockers
+      description: Linked issues/decisions or "none".
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate
+      placeholder: "6–10h"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: Tasks will pass Definition of Ready before sprint start.
+          required: true
+        - label: No secrets or private vulnerability details are included.
+          required: true
