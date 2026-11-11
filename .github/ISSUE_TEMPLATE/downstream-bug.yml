@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting upstream. Do **not** include secrets, tokens, or vulnerability details here. For a security issue, follow SECURITY.md and use the private channel.
+        Thanks for reporting upstream. Do **not** include secrets, tokens, or vulnerability details here. GitHub private vulnerability reporting is enabled on this repository — use the Security tab → Report a vulnerability for security issues, and follow SECURITY.md.
   - type: input
     id: origin
     attributes:
@@ -19,8 +19,8 @@ body:
     id: tracker_version
     attributes:
       label: Pinned tracker version
-      description: Exact `automation.templateVersion` in use.
-      placeholder: "1.0.0"
+      description: Exact `automation.templateVersion` in use (e.g. 1.0.1). Supported versions are listed in SECURITY.md.
+      placeholder: "1.0.1"
     validations:
       required: true
   - type: textarea
@@ -89,4 +89,6 @@ body:
         - label: This is not a security vulnerability; I will use the private channel for those.
           required: true
         - label: No secrets, tokens, personal data, or exploit details are included.
+          required: true
+        - label: I am using a supported tracker version (see SECURITY.md).
           required: true

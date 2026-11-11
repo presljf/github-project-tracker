@@ -10,7 +10,7 @@
 |---|---|
 | Bug | GitHub issue form **Downstream bug report** |
 | Feature | GitHub issue form **Downstream feature request** |
-| Vulnerability | **Never public** — private channel in [SECURITY.md](../../SECURITY.md) |
+| Vulnerability | **Never public** — Security tab → Report a vulnerability (private reporting enabled); [SECURITY.md](../../SECURITY.md) |
 | Question/usage | Docs first ([HOW TO USE](../HOW_TO_USE.md), [TROUBLESHOOTING](../TROUBLESHOOTING.md)) |
 
 Issue forms: `https://github.com/presljf/github-project-tracker/issues/new/choose`
@@ -26,7 +26,7 @@ Issue forms: `https://github.com/presljf/github-project-tracker/issues/new/choos
 ## Must include
 
 - [ ] Originating project/program + repository link.
-- [ ] Pinned **exact** tracker version (`automation.templateVersion`).
+- [ ] Pinned **exact** tracker version (`automation.templateVersion`); supported versions are listed in SECURITY.md.
 - [ ] Environment: OS, Node, `gh`, shell/runner.
 - [ ] What happened; reproduction steps or minimal example.
 - [ ] Expected vs actual behavior (logs with secrets redacted).

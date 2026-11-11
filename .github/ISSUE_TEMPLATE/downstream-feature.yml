@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Describe the problem/use case first. This is best-effort with no SLA; check the pinned version's docs before filing. Do not include secrets or vulnerability details.
+        Describe the problem/use case first. This is best-effort with no SLA; check the pinned version's docs and SECURITY.md supported versions before filing. Do not include secrets or vulnerability details here — GitHub private vulnerability reporting is enabled for security issues.
   - type: input
     id: origin
     attributes:
@@ -19,7 +19,8 @@ body:
     id: tracker_version
     attributes:
       label: Pinned tracker version
-      placeholder: "1.0.0"
+      description: Exact `automation.templateVersion` in use (e.g. 1.0.1). Supported versions are listed in SECURITY.md.
+      placeholder: "1.0.1"
     validations:
       required: true
   - type: textarea
@@ -66,4 +67,6 @@ body:
         - label: This is not a security vulnerability; I will use the private channel for those.
           required: true
         - label: No secrets or personal data are included.
+          required: true
+        - label: I am using a supported tracker version (see SECURITY.md).
           required: true
