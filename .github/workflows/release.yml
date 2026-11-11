@@ -47,8 +47,14 @@ concurrency:
 jobs:
   release:
     name: release
+    # GitHub requires the caller job to grant at least the union of permissions declared by the
+    # called reusable workflow's jobs: contents: write (release job), packages: write (container
+    # job), id-token: write (package OIDC publishing). Profile jobs that do not apply are skipped
+    # and never use the extra grant; each called job still declares its own reduced permission set.
     permissions:
       contents: write
+      packages: write
+      id-token: write
     uses: ./.github/workflows/reusable-release.yml
     with:
       profile: generic
