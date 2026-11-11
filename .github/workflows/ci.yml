@@ -53,12 +53,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
       - name: Docs, config, and guard checks
+        env:
+          DOCS_GUARD_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           npm run docs:check
           npm run guard:gh
+          node scripts/docs/guard-docs.mjs --base "${DOCS_GUARD_BASE:-origin/main}"
           node scripts/github/validate-config.mjs

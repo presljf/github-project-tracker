@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout project
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Checkout tracker guard
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -35,3 +37,7 @@ jobs:
           node-version: '22'
       - name: Guard GitHub transport
         run: node .tracker-guard/scripts/github/guard-gh-transport.mjs --root .
+      - name: Guard docs coverage
+        env:
+          DOCS_GUARD_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node .tracker-guard/scripts/docs/guard-docs.mjs --root . --base "${DOCS_GUARD_BASE:-origin/main}"
