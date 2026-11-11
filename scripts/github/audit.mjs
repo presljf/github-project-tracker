@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
-import { GitHubCli } from './lib/github.mjs';
+import { createGitHub } from './lib/github.mjs';
 import { parseArgs, UsageError } from './lib/cli.mjs';
 
 export function issueKind(title) {
@@ -242,7 +242,7 @@ if (isMain) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       const errors = validateConfig(config);
       if (errors.length) throw new UsageError(`invalid config:\n- ${errors.join('\n- ')}`);
-      const data = await collectAuditData(new GitHubCli(), config);
+      const data = await collectAuditData(createGitHub(), config);
       const result = auditTracker({ config, data, strict: Boolean(args.strict) });
       if (args.json) {
         process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
-import { GitHubCli } from './lib/github.mjs';
+import { createGitHub } from './lib/github.mjs';
 import { UsageError, parseArgs } from './lib/cli.mjs';
 
 const DEFAULT_CONFIG = 'tracker.config.json';
@@ -404,13 +404,13 @@ if (isMain) {
         const logs = [];
         const result = await runBootstrap({
           config,
-          github: new GitHubCli(),
+          github: createGitHub(),
           apply: Boolean(args.apply),
           logger: { log: (m) => logs.push(m), warn: (m) => logs.push(m), error: (m) => logs.push(m) },
         });
         process.stdout.write(`${JSON.stringify({ ...result, logs }, null, 2)}\n`);
       } else {
-        await runBootstrap({ config, github: new GitHubCli(), apply: Boolean(args.apply) });
+        await runBootstrap({ config, github: createGitHub(), apply: Boolean(args.apply) });
       }
     } catch (err) {
       console.error(`error: ${err.message}`);

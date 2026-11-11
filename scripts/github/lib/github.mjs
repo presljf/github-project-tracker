@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
+import { RateState } from './rate-state.mjs';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import os from 'node:os';
 
 const TRANSIENT = /connection refused|timed out|TLS|502|503|ECONNRESET|EOF|Something went wrong|GraphQL.*(timeout|unavailable)/i;
 
@@ -49,7 +50,7 @@ export function parseIncludeOutput(text) {
 }
 
 export class GitHubCli {
-  constructor({ exec = defaultExec, retries = 3, sleep = sleepSync, minMutationSpacingMs = 1100, budgetFloor = 25, maxWaitMs = 60000 } = {}) {
+  constructor({ exec = defaultExec, retries = 3, sleep = sleepSync, minMutationSpacingMs = 1100, budgetFloor = 25, maxWaitMs = 60000, rateState = null, command = 'tracker' } = {}) {
     this.exec = exec;
     this.retries = retries;
     this.sleep = sleep;
@@ -60,6 +61,8 @@ export class GitHubCli {
     this.lastMutationAt = 0;
     this.mutations = 0;
     this.cache = new Map();
+    this.rateState = rateState;
+    this.command = command;
   }
 
   _cached(key, loader) {
@@ -87,6 +90,11 @@ export class GitHubCli {
       resetAt: data?.resetAt || (headers['x-ratelimit-reset'] ? new Date(Number(headers['x-ratelimit-reset']) * 1000).toISOString() : null),
       cost: Number(data?.cost ?? 1),
     };
+    this.rateState?.record({
+      resource: this.rate.resource, limit: this.rate.limit, remaining: this.rate.remaining,
+      used: this.rate.used, resetEpoch: this.rate.resetEpoch, resetAt: this.rate.resetAt,
+      cost: 1, command: `${this.command}:refresh`,
+    });
     return this.rate;
   }
 
@@ -100,6 +108,12 @@ export class GitHubCli {
   }
 
   _beforeMutation() {
+    if (!this.rate && this.rateState) {
+      const shared = this.rateState.read().resources.graphql;
+      if (shared && shared.resetEpoch * 1000 > Date.now()) {
+        this.rate = { ...shared, cost: 1 };
+      }
+    }
     if (!this.rate) this.refreshRateLimit();
     if (this.rate.remaining <= this.budgetFloor) this.refreshRateLimit();
     if (this.rate.remaining <= 0) {
@@ -112,6 +126,7 @@ export class GitHubCli {
     this.lastMutationAt = Date.now();
     this.mutations += 1;
     this.rate.remaining = Math.max(0, this.rate.remaining - 5);
+    this.rateState?.consume(5, `${this.command}:mutation`);
   }
 
   run(args, { json = false, allowFailure = false } = {}) {
@@ -396,4 +411,9 @@ export class GitHubCli {
     }
     return { comments, subIssues };
   }
+}
+
+
+export function createGitHub(options = {}) {
+  return new GitHubCli({ rateState: new RateState(), command: path.basename(process.argv[1] || 'tracker'), ...options });
 }
