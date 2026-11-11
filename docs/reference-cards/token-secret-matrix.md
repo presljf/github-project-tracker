@@ -2,7 +2,7 @@
 
 <!-- Docs version: v1.0.0-docs.1 · Target template: v1.0.0 · print formats: A4, Letter -->
 
-> Least-privilege tokens and secrets by job. Full model: [REFERENCE §14](../REFERENCE.md#14-token--secret-matrix) · [ACTIONS CATALOG §4](../ACTIONS_CATALOG.md#4-token-and-secret-matrix).
+> Least-privilege tokens and secrets by job. Full model: [REFERENCE §14](../REFERENCE.md#14-token-and-secret-matrix) · [ACTIONS CATALOG §4](../ACTIONS_CATALOG.md#4-token-and-secret-matrix).
 
 ## Who needs what
 
@@ -47,4 +47,4 @@ jobs:
 - [ ] Signing/publish secrets are environment secrets, absent-safe, and documented.
 - [ ] CI needs no secrets; local parity commands run without credentials.
 
-Links: [CI/security token matrix](../CI_SECURITY_PROFILE.md#5-token--secret-matrix-ci--security-profile) · [UPGRADING](../UPGRADING.md) · [SECURITY.md](../../SECURITY.md)
+Links: [CI/security token matrix](../CI_SECURITY_PROFILE.md#5-token-and-secret-matrix) · [UPGRADING](../UPGRADING.md) · [SECURITY.md](../../SECURITY.md)

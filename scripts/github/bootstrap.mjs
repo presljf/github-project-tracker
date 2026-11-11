@@ -324,7 +324,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
     'Enable project workflows: auto-add repo issues; issue closed → Done. Do not auto-start work.',
     'Configure branch protection/required checks and protect release tags/environments.',
     'Create the GitHub App/project token for audit (keep it as a secret; never in config).',
-    'Run the audit manually (audit CLI planned) and record accepted exceptions.',
+    'Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (strict for release gates) and record accepted exceptions.',
   ];
   const result = {
     ok: true,

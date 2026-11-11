@@ -377,6 +377,27 @@
               "items": {
                 "type": "string"
               }
+            },
+            "commands": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "install": {
+                  "type": "string"
+                },
+                "lint": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "test": {
+                  "type": "string"
+                },
+                "build": {
+                  "type": "string"
+                }
+              }
             }
           }
         },

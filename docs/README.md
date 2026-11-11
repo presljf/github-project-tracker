@@ -1,7 +1,7 @@
 # Documentation index
 
 **Docs version:** `v1.0.0-docs.1` (targets Project Tracker OS v1.0.0; refreshed before release)
-**Status:** T11 authored; T12 fresh-eyes validation still required before the v1.0.0 tag.
+**Status:** T12 docs QA fixes applied; v1.0.0 tag follows T08 live validation + release close.
 
 Read in this order depending on your goal:
 
@@ -14,14 +14,21 @@ Read in this order depending on your goal:
 | Adopt the tracker in a project | [ADOPTION](./ADOPTION.md) |
 | Upgrade a pinned tracker version | [UPGRADING](./UPGRADING.md) |
 | Operate as an agent | [AGENT GUIDE](./AGENT_GUIDE.md) |
+| Use the task CLI | [TASK CLI](./TASK_CLI.md) |
+| Work on CI/security/actions | [ACTIONS CATALOG](./ACTIONS_CATALOG.md) · [CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md) |
+| Release a project | [RELEASE PROFILES](./RELEASE_PROFILES.md) |
+| Print quick-reference cards | [Reference cards](./reference-cards/README.md) |
+| Use the repository as a template | [TEMPLATE REPO](./TEMPLATE_REPO.md) |
+| Review bot-identity decision | [GITHUB APP SPIKE](./GITHUB_APP_SPIKE.md) |
 | Run several projects/programs | [MULTI-PROJECT](./MULTI_PROJECT.md) |
 | Understand the conceptual model | [Playbook](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md) |
 | Report a bug/feature upstream | [Downstream feedback](./DOWNSTREAM_FEEDBACK.md) · [reporting card](./reference-cards/reporting-upstream.md) |
 | Security | [SECURITY.md](../SECURITY.md) |
+| Docs QA evidence | [DOCS VALIDATION](./DOCS_VALIDATION.md) |
 
-**Automation availability:** the tracker CLI/bootstrap/audit scripts and reusable workflows are delivered in sprint 1.0.0.2+. Until they exist, use the manual/GitHub-UI paths in this suite. Planned commands are marked **planned** and have explicit manual fallbacks.
+**Automation availability:** bootstrap, audit, task CLI, reusable CI/security, and release profiles are implemented. Planned contracts are labeled; manual fallbacks remain documented.
 
-**Docs conventions:** shell snippets are copy-pasteable and show expected results; secrets are never shown; screenshots/diagrams are sanitized and reproducible (Mermaid or text snapshots). A style guide is planned in T13.
+**Docs conventions:** shell snippets are copy-pasteable and show expected results; secrets are never shown; screenshots/diagrams are sanitized and reproducible (Mermaid or text snapshots). See the [style guide](./DOCS_STYLE_GUIDE.md).
 
 ## Coverage map
 

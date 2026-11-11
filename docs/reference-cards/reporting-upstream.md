@@ -26,7 +26,7 @@ Issue forms: `https://github.com/presljf/github-project-tracker/issues/new/choos
 ## Must include
 
 - [ ] Originating project/program + repository link.
-- [ ] Pinned **exact** tracker version (`trackerTemplateVersion`).
+- [ ] Pinned **exact** tracker version (`automation.templateVersion`).
 - [ ] Environment: OS, Node, `gh`, shell/runner.
 - [ ] What happened; reproduction steps or minimal example.
 - [ ] Expected vs actual behavior (logs with secrets redacted).

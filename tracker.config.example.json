@@ -129,7 +129,13 @@
         "lint",
         "format",
         "test"
-      ]
+      ],
+      "commands": {
+        "lint": "npm run lint",
+        "format": "npm run format:check",
+        "test": "npm test",
+        "build": "npm run build"
+      }
     },
     "audit": {
       "mode": "advisory",

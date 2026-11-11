@@ -3,7 +3,7 @@
 **Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
 This guide onboards a **new project** onto the tracker. The CastDeck pilot is only an example; do not copy its product-specific plan.
 
-> **Automation note:** bootstrap is planned for 1.0.0.2. Until then, use this manual path. The same inputs become `tracker.config.json` for bootstrap later.
+> **Automation note:** bootstrap/audit/task CLI are available now. This manual path explains the steps; the same config drives `bootstrap.mjs`, and the CLIs automate the lifecycle.
 
 ## 0. Choose the adoption shape
 
@@ -67,7 +67,7 @@ Copy from the tracker template:
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `docs/comment-templates/*` (or link the upstream docs)
 - `tracker.config.example.json` → `tracker.config.json`
-- `.github/workflows/*` caller workflows (when available; otherwise mark planned)
+- `.github/workflows/*` caller workflows (CI/security/audit are shipped; release profile callers are shipped; contract-only workflows are labeled)
 
 Edit config for your repo/project/releases/sprints/commands. Validate:
 ```bash

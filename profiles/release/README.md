@@ -2,7 +2,7 @@
 
 Copyable release-profile examples for Project Tracker OS adopters. The canonical documentation,
 security model, and full interface contract live in [docs/RELEASE_PROFILES.md](../../docs/RELEASE_PROFILES.md)
-(interface source: [docs/ACTIONS_CATALOG.md §7.5](../../docs/ACTIONS_CATALOG.md#75-reusable-releaseyml--release-contract)).
+(interface source: [docs/ACTIONS_CATALOG.md §7.5](../../docs/ACTIONS_CATALOG.md#75-release-workflow-contract)).
 
 There are two adoption modes (hybrid D model, see ACTIONS CATALOG §8):
 

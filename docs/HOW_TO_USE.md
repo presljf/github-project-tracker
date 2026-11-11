@@ -4,7 +4,7 @@
 **Audience:** humans and agents setting up or operating a GitHub project tracker.
 **Companion docs:** [Quickstart](./QUICKSTART.md) · [Reference](./REFERENCE.md) · [Troubleshooting](./TROUBLESHOOTING.md) · [Adoption](./ADOPTION.md) · [Agent guide](./AGENT_GUIDE.md) · [Playbook](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md)
 
-> **Availability:** bootstrap/audit/task scripts and reusable workflows are **planned for 1.0.0.2+**. This handbook uses GitHub UI + `gh` commands that work now and marks planned automation. T12 validates this docs-only path before release.
+> **Availability:** bootstrap, audit, task CLI, CI/security workflows, and release profiles are implemented. This handbook documents both manual GitHub UI + `gh` paths and the CLIs; planned contracts are labeled.
 
 ## Contents
 
@@ -68,7 +68,7 @@ One owner = one identity. If a human delegates to an agent, the check-in records
 gh --version
 # gh version 2.x.x (...)
 node --version
-# v22.x.x (needed for planned scripts; optional for UI path)
+# v22.x.x (required for CLI/automation; optional for UI path)
 git --version
 # git version 2.x.x
 ```
@@ -368,7 +368,7 @@ Acceptance: no Done sprint with open children unless deferral is recorded.
 
 ## 13. Audit
 
-Manual audit now; script planned (`scripts/github/audit.mjs`).
+Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (or `--strict` for release gates).
 
 Checklist:
 - [ ] Open release issues have milestone + type.
@@ -407,7 +407,7 @@ Sanitized scenario: docs task with review.
    # post check-in template; status In Progress
    ```
 3. **Work:** write `docs/guide.md`; commit/push; early PR `Refs #123`.
-4. **Update:** comment progress + planned evidence; status In Review once PR is ready.
+4. **Update:** comment progress + evidence; status In Review once PR is ready.
 5. **Review:** reviewer checks links, commands, acceptance; requests a fix; owner pushes; checks rerun.
 6. **Check out:** merge `Closes #123`; status Done; post check-out with `npm test`/link-check output.
 7. **Sprint close:** all tasks Done; post exit/demo; close sprint; update release tracker.

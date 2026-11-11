@@ -1,24 +1,24 @@
 # GitHub Project Tracker Playbook
 
-**Status:** v0.1 — Project Tracker OS v1.0.0 working playbook  
+**Docs version:** v1.0.0-docs.1 · **Status:** Project Tracker OS v1.0.0 playbook  
 **Audience:** maintainers, contributors, and agents operating a GitHub-based project tracker  
 **Scope:** portable, project-agnostic operating procedure. Project-specific commands/artifacts belong in the adopting project's config and docs.
 
-> This playbook is the conceptual/operating model. The exhaustive step-by-step user guide is the separate **HOW TO USE** suite (`docs/HOW_TO_USE.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, quick starts, reference cards) planned in T11/T12. If a step needs copy-paste detail, the HOW TO USE suite is the authority; this playbook explains the rules and the why.
+> This playbook is the conceptual/operating model. The exhaustive step-by-step user guide is the separate **HOW TO USE** suite (`docs/HOW_TO_USE.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, quick starts, reference cards). If a step needs copy-paste detail, the HOW TO USE suite is the authority; this playbook explains the rules and the why.
 
-Related planned artifacts (not all present yet):
+Related artifacts:
 
 | Artifact | Purpose | Status |
 |---|---|---|
-| `docs/HOW_TO_USE.md`, `docs/QUICKSTART.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, `docs/ADOPTION.md`, `docs/UPGRADING.md`, `docs/AGENT_GUIDE.md`, `docs/MULTI_PROJECT.md` | exhaustive task-oriented usage docs/reference/adoption/upgrade/agent/multi-project | existing (T11); T12 validation pending |
-| `docs/DOCS_STYLE_GUIDE.md`, `docs/reference-cards/` | doc standards and printable one-page cards | planned (T13) |
-| `docs/ACTIONS_CATALOG.md` | Actions/workflow catalog + token/runner matrices | planned (T09/T15) |
+| `docs/HOW_TO_USE.md`, `docs/QUICKSTART.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, `docs/ADOPTION.md`, `docs/UPGRADING.md`, `docs/AGENT_GUIDE.md`, `docs/MULTI_PROJECT.md` | exhaustive task-oriented usage docs/reference/adoption/upgrade/agent/multi-project | existing |
+| `docs/DOCS_STYLE_GUIDE.md`, `docs/reference-cards/` | doc standards and seven printable one-page cards | existing (T13) |
+| `docs/ACTIONS_CATALOG.md` | Actions catalog + token/runner matrices | existing (T09/T15/T10) |
 | `tracker.config.example.json`, `schemas/tracker.config.schema.json`, `scripts/github/validate-config.mjs` | config contract/validation/examples | existing (T02) |
 | `tracker.config.json` | adopting project's own pinned config | created per project at adoption |
 | `scripts/github/bootstrap.mjs` | idempotent setup from config | existing (T03) |
 | `scripts/github/audit.mjs` | invariant audit | existing (T04) |
 | `scripts/github/task.mjs` | check-in/update/review/block/done CLI | existing (T05) |
-| `.github/ISSUE_TEMPLATE/{task,sprint,release,spike}.yml` | issue intake forms | existing (T02); PR template + downstream forms planned (T07/T16) |
+| `.github/ISSUE_TEMPLATE/*`, `PULL_REQUEST_TEMPLATE.md` | issue/PR intake | existing |
 | `docs/comment-templates/` | copy-paste lifecycle comments | existing (T02) |
 | `profiles/node/` | generic Node lint/format profile (ESLint/Prettier/editorconfig/ignore) | existing (T14) |
 | `docs/DOWNSTREAM_FEEDBACK.md`, `SUPPORT.md` | downstream reporting/triage/versioning/support | existing (T16) |
@@ -26,6 +26,26 @@ Related planned artifacts (not all present yet):
 | `presljf/github-project-tracker` | reusable template repository | existing (private) |
 
 ---
+
+## Contents
+
+- [1. Principles](#1-principles)
+- [2. Prerequisites and capability matrix](#2-prerequisites-and-capability-matrix)
+- [3. Repository and project setup checklist](#3-repository-and-project-setup-checklist)
+- [4. Data model and single-source rules](#4-data-model-and-single-source-rules)
+- [5. Statuses, ownership, WIP](#5-statuses-ownership-wip)
+- [6. Definition of Ready / Definition of Done](#6-definition-of-ready-definition-of-done)
+- [7. Lifecycles](#7-lifecycles)
+- [8. Change protocol](#8-change-protocol)
+- [9. Audit invariants](#9-audit-invariants)
+- [10. Actions and CI-CD contract](#10-actions-and-ci-cd-contract)
+- [11. Documentation and gates](#11-documentation-and-gates)
+- [12. Downstream projects, versioning, support, security](#12-downstream-projects-versioning-support-security)
+- [13. Minimum viable tracker vs full automation](#13-minimum-viable-tracker-vs-full-automation)
+- [14. Porting checklist for a new project](#14-porting-checklist-for-a-new-project)
+- [15. Copy-paste templates](#15-copy-paste-templates)
+- [16. Glossary](#16-glossary)
+- [References and companion docs](#references-and-companion-docs)
 
 ## 1. Principles
 
@@ -71,7 +91,7 @@ Do this once per adopting repository.
 - [ ] Issues enabled; Discussions optional/decided.
 - [ ] Projects enabled.
 - [ ] Actions enabled; decide who can approve workflows.
-- [ ] Default branch `main`; branch protection/ruleset planned.
+- [ ] Default branch `main`; branch protection/ruleset enabled when public/Pro (private personal repo returns 403).
 - [ ] Templates/issue forms installed (from tracker template or copied).
 - [ ] Security policy placeholder (`SECURITY.md`) with private reporting channel.
 - [ ] License decided (MIT recommended at/public transition).
@@ -314,7 +334,7 @@ Any scope, acceptance, estimate, gate, or policy change requires:
 
 ## 9. Audit invariants
 
-Run the tracker audit regularly (planned `scripts/github/audit.mjs`; CLI/manual until available).
+Run the tracker audit regularly (`node scripts/github/audit.mjs --config tracker.config.json --advisory`; `--strict` for release gates).
 
 Invariants:
 - Every open issue has a native type (or documented fallback) and a milestone when it belongs to a release.
@@ -325,7 +345,7 @@ Invariants:
 - Blocked items have a reason + dependency link/comment.
 - No duplicate/retired labels or dimensions.
 - Sprint/release trackers have exit evidence when Done.
-- Template version (`trackerTemplateVersion`) is recorded; stale versions flagged.
+- Template version (`automation.templateVersion`) is recorded; stale versions flagged.
 - Downstream issues have origin/version/context; `Source` set during triage.
 - No secrets in issues/comments/artifacts.
 
@@ -337,7 +357,7 @@ Enforcement:
 
 ---
 
-## 10. Actions / CI-CD contract
+## 10. Actions and CI-CD contract
 
 ### 10.1 Workflow catalog
 
@@ -386,7 +406,7 @@ Every workflow must have a documented local equivalent (`npm test`, `npm run lin
 ### 10.7 Hybrid D reuse model
 - Tracker owns reusable workflow/composite-action contracts and templates.
 - Adopting projects keep **thin caller workflows** plus project-specific config/commands; publish/build/sign steps stay project-local.
-- Pin `trackerTemplateVersion`; validate private cross-repo access.
+- Pin `automation.templateVersion`; validate private cross-repo access.
 - If private reusable workflows are blocked, copy thin callers/composite actions or make the template public.
 - No automated template-sync PRs initially; projects follow the upgrade guide and pin exact versions.
 
@@ -403,8 +423,8 @@ Projects adopt only the profiles they need; do not validate unused profiles in t
 
 ## 11. Documentation and gates
 
-- **HOW TO USE suite** (planned) is the task-oriented authority; this playbook is the model.
-- **Documentation style guide** (`docs/DOCS_STYLE_GUIDE.md`, planned) governs voice/structure, commands with expected output, screenshots, terminology, and maintenance.
+- **HOW TO USE suite** is the task-oriented authority; this playbook is the model.
+- **Documentation style guide** (`docs/DOCS_STYLE_GUIDE.md`) governs voice/structure, commands with expected output, screenshots, terminology, and maintenance.
 - **Printable one-page reference cards** cover task lifecycle, statuses/WIP, commands, tokens, troubleshooting/audit, sprint/release, and reporting upstream.
 - **Fresh-eyes validation:** a fresh uninvolved agent session attempts setup/lifecycle using only docs, fixes gaps, then a human performs final review. Both rounds are recorded before a template release.
 - Documentation changes to behavior ship in the same PR; stale commands/screenshots are defects.
@@ -417,7 +437,7 @@ Projects adopt only the profiles they need; do not validate unused profiles in t
 ### 12.1 Downstream feedback
 Projects that adopt the template are **downstream**. They must:
 - report bugs/features **upstream** via the tracker repository issue forms;
-- include origin project, pinned `trackerTemplateVersion`, environment, reproduction, expected/actual, impact, workaround, and links;
+- include origin project, pinned `automation.templateVersion`, environment, reproduction, expected/actual, impact, workaround, and links;
 - not fork silently; temporary local workarounds must be documented with an upstream issue link.
 
 Tracker triage:
@@ -479,7 +499,7 @@ Best-effort/no SLA. Triage labels and Source field make ownership visible. Secur
 7. Set minimal labels + Source field; remove duplicates.
 8. Install issue/PR templates and the tracker audit caller (copy or reusable).
 9. Configure branch protection/required checks; keep expensive jobs advisory initially.
-10. Create `tracker.config.json`; pin `trackerTemplateVersion`; record feedback channel.
+10. Create `tracker.config.json`; pin `automation.templateVersion`; record feedback channel.
 11. Write/link project-specific docs; link the HOW TO USE suite and cards.
 12. Run the audit; fix drift; record accepted exceptions.
 13. Dry-run the process on a small task: check-in → update → review → done.
@@ -626,15 +646,15 @@ Source = <project>; label `source:downstream`; no secrets/vulnerability details.
 
 ---
 
-## References and planned companion docs
+## References and companion docs
 
-- `docs/HOW_TO_USE.md` — step-by-step operating guide (planned T11)
-- `docs/REFERENCE.md` — commands/config/API/field reference (planned T11)
-- `docs/TROUBLESHOOTING.md` — failure modes and fixes (planned T11)
-- `docs/ADOPTION.md` — new-project walkthrough (planned T11)
-- `docs/UPGRADING.md` — version pinning/upgrades (planned T11)
-- `docs/DOWNSTREAM_FEEDBACK.md` — reporting/triage/versioning policy (planned T16)
-- `docs/DOCS_STYLE_GUIDE.md` + `docs/reference-cards/` — documentation standards and printable cards (planned T13)
-- `docs/ACTIONS_CATALOG.md` — workflow catalog and token/runner matrices (planned T09/T15)
-- `tracker.config.example.json` — config schema/examples (planned T02)
-- `scripts/github/bootstrap.mjs`, `audit.mjs`, `task.mjs` — automation (planned T03/T04/T05)
+- `docs/HOW_TO_USE.md` — step-by-step operating guide
+- `docs/REFERENCE.md` — commands/config/API/field reference
+- `docs/TROUBLESHOOTING.md` — failure modes and fixes
+- `docs/ADOPTION.md` — new-project walkthrough
+- `docs/UPGRADING.md` — version pinning/upgrades
+- `docs/DOWNSTREAM_FEEDBACK.md` — reporting/triage/versioning policy
+- `docs/DOCS_STYLE_GUIDE.md` + `docs/reference-cards/` — documentation standards and printable cards
+- `docs/ACTIONS_CATALOG.md` — workflow catalog and token/runner matrices
+- `tracker.config.example.json` — config schema/examples
+- `scripts/github/bootstrap.mjs`, `audit.mjs`, `task.mjs` — automation

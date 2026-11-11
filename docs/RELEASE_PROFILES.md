@@ -3,7 +3,22 @@
 **Docs version:** `v1.0.0-docs.1` · Target template: `v1.0.0`
 **Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and copy-mode examples under `profiles/release/`.
 **Status:** T10 implements this profile layer. Publishing is dry-run/skip guarded by default; no live release was published while authoring.
-**Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog-planned-1002), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
+**Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
+
+## Contents
+
+- [1. Safety model (read this first)](#1-safety-model-read-this-first)
+- [2. Profiles](#2-profiles)
+- [3. Reusable workflow contract (`reusable-release.yml`)](#3-reusable-workflow-contract-reusable-releaseyml)
+- [4. Profile details](#4-profile-details)
+- [5. Callers and wiring](#5-callers-and-wiring)
+- [6. Composite actions](#6-composite-actions)
+- [7. Artifact naming and checksums](#7-artifact-naming-and-checksums)
+- [8. Validation checklist](#8-validation-checklist)
+- [9. Troubleshooting](#9-troubleshooting)
+- [10. Versioning and stability](#10-versioning-and-stability)
+- [11. What was and was not verified (T10)](#11-what-was-and-was-not-verified-t10)
+- [12. Related documents](#12-related-documents)
 
 ## 1. Safety model (read this first)
 
