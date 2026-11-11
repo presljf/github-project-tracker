@@ -1,0 +1,12 @@
+node_modules/
+coverage/
+dist/
+build/
+out/
+.next/
+generated/
+.DS_Store
+*.log
+tmp/
+temp/
+*.tmp

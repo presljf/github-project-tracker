@@ -1,45 +1,83 @@
-# github-project-tracker
+# Project Tracker OS
 
-Portable GitHub project-tracker operating system: playbook, exhaustive HOW TO USE docs, config schema/templates, generic Node profile, reusable Actions, release profiles, and downstream feedback intake.
+A portable, auditable GitHub project-tracker operating system: playbook, exhaustive docs, versioned config, bootstrap/audit/task CLIs, reusable CI/security workflows, release profiles, and downstream feedback intake.
 
-**Docs version:** `v1.0.0-docs.1` (targets template v1.0.0; validation pending T12)
+**Status:** v1.0.0 release candidate (tag pending T08/T12 validation) · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
 
-## Five-minute quickstart
+## Use this template
 
-> Full walkthrough: [docs/QUICKSTART.md](docs/QUICKSTART.md) · Handbook: [docs/HOW_TO_USE.md](docs/HOW_TO_USE.md)
-
-1. **Auth + prerequisites**
+1. **Create a repo from this template** (GitHub **Use this template**) or copy the needed files into an existing repository.
+2. **Read the quickstart:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Handbook:** [docs/HOW_TO_USE.md](docs/HOW_TO_USE.md)
+3. **Configure:** copy `tracker.config.example.json` → `tracker.config.json`; edit repo/project/releases/sprints/commands.
    ```bash
-   gh --version
-   gh auth status   # token must include 'project'
-   gh auth refresh -s project   # only if missing
+   node scripts/github/validate-config.mjs tracker.config.json
+   # OK   tracker.config.json
    ```
-2. **Create/link a project**
+4. **Bootstrap** (dry-run first):
    ```bash
-   gh project create --owner @me --title "Project Tracker"
-   gh project link PROJECT_NUMBER --owner @me --repo OWNER/REPO
+   node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
+   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
    ```
-3. **Add fields/statuses** (UI): Status (`Todo`, `In Progress`, `In Review`, `Blocked`, `Done`), Release, Sprint, Area, Kind, Estimate, Source. Create a release milestone.
-4. **Create sprint + task**, link them as sub-issues.
-5. **Run one task through the loop:** check-in → branch `task/<issue>-<slug>` → PR `Closes #<issue>` → In Review → merge → Done → check-out.
+5. **Run one task through the lifecycle** with the task CLI or manual docs:
+   ```bash
+   node scripts/github/task.mjs start --issue 123 --owner YOUR_LOGIN
+   # ... branch/PR/evidence ...
+   node scripts/github/task.mjs done --issue 123 --evidence "tests pass"
+   ```
+6. **Audit:**
+   ```bash
+   node scripts/github/audit.mjs --config tracker.config.json --advisory
+   ```
 
-That proves the tracker. Then read the docs below for fields/views, sprint/release closes, audit, agents, and adoption.
+Full adoption path: [docs/ADOPTION.md](docs/ADOPTION.md) · Template structure/versioning: [docs/TEMPLATE_REPO.md](docs/TEMPLATE_REPO.md).
 
-## Docs
+## Documentation
 
 - [Documentation index](docs/README.md)
-- [Playbook](docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md) — conceptual model/rules
-- [Quickstart](docs/QUICKSTART.md) — first tracker
+- [Playbook](docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md) — model/rules
+- [Quickstart](docs/QUICKSTART.md)
 - [HOW TO USE](docs/HOW_TO_USE.md) — exhaustive handbook
 - [Reference](docs/REFERENCE.md) — commands/fields/tokens/workflows
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — symptom → cause → fix
-- [Adoption](docs/ADOPTION.md) — zero→first task
-- [Upgrading](docs/UPGRADING.md) — pin/upgrade/rollback
-- [Agent guide](docs/AGENT_GUIDE.md) — agent operating protocol
-- [Multi-project](docs/MULTI_PROJECT.md) — program/project/umbrella
-- [Downstream feedback](docs/DOWNSTREAM_FEEDBACK.md) — report upstream
-- [Support](SUPPORT.md) · [Security](SECURITY.md) · [Issue forms](https://github.com/presljf/github-project-tracker/issues/new/choose)
+- [Task CLI](docs/TASK_CLI.md) — lifecycle commands
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Adoption](docs/ADOPTION.md) · [Upgrading](docs/UPGRADING.md)
+- [Agent guide](docs/AGENT_GUIDE.md) · [Multi-project](docs/MULTI_PROJECT.md)
+- [Actions catalog](docs/ACTIONS_CATALOG.md) · [CI/security profile](docs/CI_SECURITY_PROFILE.md)
+- [Downstream feedback](docs/DOWNSTREAM_FEEDBACK.md) · [Support](SUPPORT.md) · [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md) · [License](LICENSE)
 
-## Status
+## What’s included
 
-Project Tracker OS v1.0.0 is in active development. The template stays private through its own v1.0.0 validation; downstream adoption starts after release. Deeper docs are versioned with the template tag; T12 fresh-eyes validation is the release gate.
+| Area | Artifacts |
+|---|---|
+| Procedure | playbook, HOW TO USE, reference, troubleshooting, adoption/upgrading, agent/multi-project docs |
+| Config | JSON Schema, generic + pilot examples, validator, comment/issue/PR templates |
+| Automation | bootstrap, audit (advisory/strict/JSON), task lifecycle CLI, tests |
+| CI/security | reusable CI/caller, Dependabot + dependency review, opt-in CodeQL, required-check runbook |
+| Release | GitHub Release/macOS/container/package profiles with dry-run/skip guards |
+| Downstream | bug/feature forms, Source field, triage/versioning/no-fork policy |
+| Profiles/docs | generic Node lint/format profile, printable reference cards (T13) |
+
+## Repository layout
+
+```
+docs/                 docs, playbook, comment templates, reference cards
+scripts/github/       bootstrap, audit, task CLI, validate-config, adapters
+schemas/, examples/   config contract + examples
+profiles/             Node and release profiles
+tests/                dependency-free Node test suite (npm test)
+.github/              issue/PR forms, CI/security/audit/release workflows
+tracker.config.json   self-config for this repo
+```
+
+## Versioning and support
+
+- Adopters pin `automation.templateVersion` exactly; see [Upgrading](docs/UPGRADING.md).
+- Patch = compatible fixes; minor = compatible features; major = breaking changes.
+- Template tag `v1.0.0` is created only after T08 replication/validation and T12 fresh-eyes docs QA.
+- Best-effort support/no SLA; report bugs/features via [Downstream feedback](docs/DOWNSTREAM_FEEDBACK.md).
+- Security: private reporting only per [SECURITY.md](SECURITY.md); no public vulnerability details.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The template stays private through its own v1.0.0 validation; public transition follows the documented checklist in [docs/TEMPLATE_REPO.md](docs/TEMPLATE_REPO.md).
