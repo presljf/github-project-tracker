@@ -386,6 +386,104 @@ export class GitHubCli {
     return result;
   }
 
+  _graphql(query, variables) {
+    const inputPath = path.join(os.tmpdir(), `tracker-graphql-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+    fs.writeFileSync(inputPath, JSON.stringify({ query, variables }));
+    try {
+      return this.run(['api', 'graphql', '--input', inputPath], { json: true });
+    } finally {
+      fs.rmSync(inputPath, { force: true });
+    }
+  }
+
+  _parseProjectItem(node, issueNumber) {
+    if (!node) return null;
+    const fields = {};
+    for (const value of node.fieldValues?.nodes || []) {
+      const fieldName = value?.field?.name;
+      if (!fieldName) continue;
+      const key = fieldName.toLowerCase();
+      fields[key] = value.name ?? value.text ?? value.number ?? value.date ?? null;
+    }
+    return { id: node.id, content: { number: issueNumber }, ...fields };
+  }
+
+  getProjectItemForIssue(owner, projectNumber, repoOwner, repoName, issueNumber) {
+    const query = `query($owner: String!, $name: String!, $issue: Int!) {
+      repository(owner: $owner, name: $name) {
+        issue(number: $issue) {
+          projectItems(first: 20) {
+            nodes { id project { number } fieldValues(first: 50) { nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name id } } }
+              ... on ProjectV2ItemFieldTextValue { text field { ... on ProjectV2FieldCommon { name id } } }
+              ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2FieldCommon { name id } } }
+              ... on ProjectV2ItemFieldDateValue { date field { ... on ProjectV2FieldCommon { name id } } }
+            } } }
+          }
+        }
+      }
+    }`;
+    const data = this._graphql(query, { owner: repoOwner, name: repoName, issue: issueNumber });
+    const nodes = data?.data?.repository?.issue?.projectItems?.nodes || [];
+    const node = nodes.find((entry) => entry.project?.number === projectNumber);
+    return this._parseProjectItem(node, issueNumber);
+  }
+
+  batchProjectItems(owner, projectNumber, repoOwner, repoName, numbers, { chunkSize = 20 } = {}) {
+    const result = {};
+    for (let start = 0; start < numbers.length; start += chunkSize) {
+      const chunk = numbers.slice(start, start + chunkSize);
+      const aliases = chunk.map((_, i) => `i${i}: issue(number: $n${i}) { projectItems(first: 20) { nodes { id project { number } fieldValues(first: 50) { nodes {
+        ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name id } } }
+        ... on ProjectV2ItemFieldTextValue { text field { ... on ProjectV2FieldCommon { name id } } }
+        ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2FieldCommon { name id } } }
+        ... on ProjectV2ItemFieldDateValue { date field { ... on ProjectV2FieldCommon { name id } } }
+      } } } } }`).join('\n');
+      const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) {
+        repository(owner: $owner, name: $name) { ${aliases} }
+      }`;
+      const variables = { owner: repoOwner, name: repoName };
+      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      const data = this._graphql(query, variables);
+      const repoData = data?.data?.repository || {};
+      chunk.forEach((n, i) => {
+        const node = repoData[`i${i}`]?.projectItems?.nodes?.find((entry) => entry.project?.number === projectNumber);
+        result[n] = this._parseProjectItem(node, n);
+      });
+    }
+    return result;
+  }
+
+  batchIssueDependencies(owner, repo, numbers, { chunkSize = 20 } = {}) {
+    const result = {};
+    for (let start = 0; start < numbers.length; start += chunkSize) {
+      const chunk = numbers.slice(start, start + chunkSize);
+      const aliases = chunk.map((_, i) => `i${i}: issue(number: $n${i}) { blockedBy(first: 100) { nodes { number } } }`).join('\n');
+      const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) { repository(owner: $owner, name: $name) { ${aliases} } }`;
+      const variables = { owner, name: repo };
+      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      const data = this._graphql(query, variables);
+      const repoData = data?.data?.repository || {};
+      chunk.forEach((n, i) => { result[n] = (repoData[`i${i}`]?.blockedBy?.nodes || []).map((x) => x.number); });
+    }
+    return result;
+  }
+
+  setProjectItemFieldValues(projectId, itemId, updates) {
+    this._beforeMutation();
+    const variables = { projectId, itemId };
+    const aliases = updates.map((update, i) => {
+      variables[`field${i}`] = update.fieldId;
+      variables[`option${i}`] = update.optionId;
+      return `u${i}: updateProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $field${i}, value: { singleSelectOptionId: $option${i} } }) { projectV2Item { id } }`;
+    }).join('\n');
+    const query = `mutation($projectId: ID!, $itemId: ID!${updates.map((_, i) => `, $field${i}: ID!, $option${i}: String!`).join('')}) { ${aliases} }`;
+    const data = this._graphql(query, variables);
+    this.clearCache('items:');
+    this.rateState?.consume(5 * Math.max(1, updates.length), `${this.command}:mutation-batch`);
+    return data;
+  }
+
   batchIssueActivity(owner, repo, numbers, { chunkSize = 10 } = {}) {
     const comments = {};
     const subIssues = {};

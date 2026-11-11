@@ -203,11 +203,16 @@ export async function collectAuditData(github, config) {
   const activity = typeof github.batchIssueActivity === 'function'
     ? await github.batchIssueActivity(repoOwner, repoName, numbers)
     : null;
+  const dependencyBatch = typeof github.batchIssueDependencies === 'function'
+    ? await github.batchIssueDependencies(repoOwner, repoName, numbers)
+    : null;
   for (const raw of issues) {
     const issue = normalizeIssue(raw);
     comments[issue.number] = activity?.comments?.[issue.number] ?? await github.issueComments(repoOwner, repoName, issue.number);
     subIssues[issue.number] = activity?.subIssues?.[issue.number] ?? await github.listSubIssues(repoOwner, repoName, issue.number);
-    if (issue.state === 'OPEN') dependencies[issue.number] = await github.issueDependencies(repoOwner, repoName, issue.number);
+    if (issue.state === 'OPEN') {
+      dependencies[issue.number] = dependencyBatch?.[issue.number] ?? await github.issueDependencies(repoOwner, repoName, issue.number);
+    }
   }
   return { issues, projectItems, comments, subIssues, dependencies };
 }

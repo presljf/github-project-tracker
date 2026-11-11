@@ -257,6 +257,6 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
 - [x] T04 downstream/security/publication — **COMPLETED 2026-11-11** (PR #64; private vulnerability reporting enabled; publication checklist)
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
-- [~] T12 shared rate-limit state/targeted queries/cost instrumentation — **PARTIAL 2026-11-11** (PR #66: shared state+cost report; targeted queries/dependency batching remain) — #60
+- [x] T12 shared rate-limit state/targeted queries/cost instrumentation — **COMPLETED 2026-11-11** (PR #67; shared state+cost report; targeted item lookups; batched dependencies/mutations; tests 58/58) — #60
 - [x] T11 docs coverage guard — **COMPLETED 2026-11-11** (PR #65; CI docs coverage; tests 53/53; issue-type CI wiring follow-up) — #58
 - [ ] T10 scratch cleanup — #51 (P3)
