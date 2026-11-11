@@ -29,8 +29,8 @@ jobs:
     name: probe
     permissions:
       contents: read
-    uses: ./.github/workflows/reusable-ci.yml
+    uses: ./.github/workflows/reusable-release.yml
     with:
-      node-version: '22'
-      working-directory: '.'
-      test-command: 'npm test'
+      profile: generic
+      dry-run: true
+      publish: false
