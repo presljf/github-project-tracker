@@ -108,6 +108,8 @@ Extend `audit.mjs` so manual normalization cannot silently pass again:
 | T03 audit-in-CI token + branch protection | #41 | P2 | needs public/Pro for protection; token scoped |
 | T04 downstream feedback/security/publication | #42 | P2 | private reporting requires public/org setting |
 | T05 pin examples/docs to v1.0.1 + docs:check/actionlint CI | #43 | P2 | do before adoption if pin still v1.0.0 |
+| T09 transport-only + teammate scope guards | to create | P0 | depends T07; template/profile + CI guard |
+| T10 cleanup archived scratch/test artifacts | to create | P3 | owner decision/delete; low risk |
 
 T01/T04/T05 are docs/repo-scoped and can run in parallel worktrees; T02/T03 share CI workflow files and must be serialized. T06/T07/T08 stay with the Lead/integrator.
 
@@ -142,7 +144,53 @@ Do not start CastDeck quality/product work before gate #77 closes.
 6. Recover Actions queue/billing; rerun CI; keep Release disabled until T02.
 7. T05 pin update; adoption #78–#81; close gate #77; start CastDeck v0.4.6.
 
-## 10. Definition of done for this plan
+## 10. Teammate isolation and parallelization mechanism
+
+**Hard truth:** the current DSH teammate model shares the filesystem. Prompts, write-scope lists and worktrees prevent accidental collisions, but they are **not an OS security boundary**. Do not claim “absolutely zero” isolation unless agents run in separate OS/container sandboxes.
+
+Layered mechanism:
+
+1. **One task = one owner = one branch = one worktree.** Lead creates a dedicated `git worktree`; teammates never switch or share branches. Shared files are immutable to teammates.
+2. **Declared write scopes.** `team_task_create`/GitHub task record lists exact paths; preflight script rejects changes outside allowlist.
+3. **Pre-commit guard in each worktree.** `scripts/github/guard-scope.mjs --scope <paths>` checks staged files; installed as a local hook. Bypassable, so it is not the final gate.
+4. **Post-run Lead diff gate.** Before merge, Lead runs `git diff --name-only base...HEAD` against the task allowlist, plus tests/audit. Any file outside scope means reject/redo.
+5. **Shared-file serialization.** Lead alone edits shared files (`package.json`, schema, workflows, docs index, README, config). Teammates create new files or disjoint sections; no two agents edit the same file.
+6. **Serialized integrator merges.** Teammates open PRs only; Lead merges one at a time. No teammate merges/closes/releases.
+7. **Dependency waves.** P0 transport first; then independent docs tasks in parallel; CI tasks serialized because they touch workflows.
+8. **True hard isolation (optional future):** run each teammate in a container/VM with only its worktree mounted and a restricted PATH containing only the transport `gh` wrapper; otherwise maintain the Lead diff gate.
+
+**Custom DSH preset:** a preset can set instructions/tools/skills and enforce this default behavior, but unless DSH exposes a hard tool/filesystem policy hook, the preset is guidance, not enforcement. The enforceable layers are the worktree + scope guard + Lead diff gate + CI/audit.
+
+## 11. Transport-only GitHub access mechanism
+
+**Tracker OS level:** `scripts/github/lib/github.mjs` is the only module allowed to invoke `gh`/GitHub HTTP. Add `scripts/github/guard-gh-transport.mjs` that scans `scripts/**` (and workflow YAML) for raw `gh`/`child_process`/`curl` usage and fails unless the path is on a small allowlist. Add `npm run guard:gh` to tests/CI/pre-commit. This is static enforcement over repo automation.
+
+**Adopting-project level:** the template adopts the transport, guard command and CI job. The guard prevents **repository automation code** from bypassing the transport; it cannot prevent a human or external agent from typing `gh` in a terminal. For an absolute boundary, the project needs a sandbox/container with only the wrapper exposed; DSH’s shared tool environment does not provide that by default.
+
+**DSH level:** a custom preset can instruct agents to use the transport and dedicated worktrees, but it cannot make direct `bash -> gh` calls impossible unless a hard tool/sandbox policy is available. Treat DSH preset as defense-in-depth guidance; treat the guard script + CI/Lead diff gate as the enforceable control.
+
+## 12. Backlog / OI mapping (nothing deferred is left only in chat)
+
+Add a **Priority** project field (P0/P1/P2/P3) before creating these, and link every task under roadmap → release → sprint.
+
+| Priority | Task | Source of follow-up |
+|---|---|---|
+| P0 | T07 rate-limit transport | this plan |
+| P0 | T08 cache/batching | this plan |
+| P0 | T09 transport-only + teammate guards | this plan |
+| P0 | T06 audit section/hierarchy enforcement | #47 |
+| P1 | T05 pin/docs:check/actionlint CI | #43 |
+| P1 | T03 audit-in-CI/token/branch protection | #41 |
+| P2 | T02 live release profiles/actionlint/CI queue | #40 |
+| P2 | T01 cross-repo reusable access/public decision | #39 |
+| P2 | T04 downstream/security/publication | #42 |
+| P3 | T10 scratch-artifact cleanup | archived smoke repo |
+
+Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; Pro does not raise API limits; release workflow disabled until T02; branch protection unavailable until public/Pro. Actionable work from those decisions maps to T02/T03/T07/T09.
+
+**Native dependencies:** T08, T09, T06 blocked by T07; CastDeck adoption #78–#81 blocked by tracker T05/T06/T07/T08/T09 (add cross-repo blocked-by when those issues exist); T02/T03 use the hardened transport.
+
+## 13. Definition of done for this plan
 
 - [ ] T07/T08 merged; rate-limit tests pass; no unbounded request loops.
 - [ ] T06 merged; strict audit enforces sections + hierarchy; seeded violations demonstrated.
