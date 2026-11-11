@@ -192,8 +192,9 @@ Add a **Priority** project field (P0/P1/P2/P3) before creating these, and link e
 | P2 | T02 live release profiles/actionlint/CI queue | #40 |
 | P2 | T01 cross-repo reusable access/public decision | #39 |
 | P2 | T04 downstream/security/publication | #42 |
-| P0 | T12 shared budget state + targeted queries + cost instrumentation | this plan; extension of T08 |
-| P3 | T10 scratch-artifact cleanup | archived smoke repo |
+| P0 | T12 shared budget state + targeted queries + cost instrumentation — #60 | this plan; extension of T08 |
+| P1 | T11 docs coverage guard — #58 | this plan |
+| P3 | T10 scratch-artifact cleanup — #51 | archived smoke repo |
 
 Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; Pro does not raise API limits; release workflow disabled until T02; branch protection unavailable until public/Pro. Actionable work from those decisions maps to T02/T03/T07/T09.
 
@@ -256,5 +257,6 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
 - [ ] T04 downstream/security/publication
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
-- [ ] T12 shared rate-limit state/targeted queries/cost instrumentation
-- [ ] T10 scratch cleanup
+- [ ] T12 shared rate-limit state/targeted queries/cost instrumentation — #60 (P0)
+- [ ] T11 docs coverage guard — #58 (P1)
+- [ ] T10 scratch cleanup — #51 (P3)
