@@ -228,7 +228,7 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [x] T06 audit section/hierarchy enforcement — **COMPLETED 2026-11-11** (PR #54; tests 44/44; strict audit 34/34)
 - [x] T01 cross-repo reusable/public decision — **COMPLETED 2026-11-11** (PR #55; private access blocked; public fallback validated)
 - [ ] T02 live release profiles/CI queue
-- [ ] T03 audit CI/branch protection
+- [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
 - [ ] T04 downstream/security/publication
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [ ] T10 scratch cleanup

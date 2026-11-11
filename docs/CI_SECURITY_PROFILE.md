@@ -1,7 +1,7 @@
 # CI, required-check, and security profile
 
 **Profile version:** `v1.0.0` (T15)
-**Status:** shipped; T12 docs QA applied; v1.0.0 tag follows T08/T12 validation. T09 catalog is merged and its `reusable-ci.yml` interface was reconciled in T12.
+**Status:** shipped; branch protection enabled on public repo with required `ci / ci-gate` + `docs-guard`; project-scoped audit token still pending owner provisioning.
 **Applies to:** Node >= 22 projects adopting the Project Tracker OS. The template repository uses the same callers, so the profile is exercised on every PR to this repo.
 
 This profile centralizes CI and security logic once, in reusable workflows, and keeps project-specific values in thin callers. It does not hardcode product commands, does not require secrets, and does not publish anything.
@@ -190,13 +190,12 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
 
 ### 3.2 Current platform state (verified 2026-11-11)
 
-This repository is **private on a personal account**. The GitHub APIs for classic branch protection and repository rulesets return:
+The repository is now **public**. Classic branch protection is enabled on `main` with required checks:
 
-```text
-403 Upgrade to GitHub Pro or make this repository public to enable this feature.
-```
+- `ci / ci-gate`
+- `docs-guard`
 
-So the required-check contract is documented and validated here, but protection cannot be enabled yet. Apply it when the repository becomes public or the account has GitHub Pro+; T12 records the final settings as release evidence. This is a documented platform limitation, not a skipped gate.
+Force pushes/deletions are disabled; `strict` requires branches to be current. `Release (generic)` remains disabled until T02. Audit-in-CI still needs an owner-provided project-scoped `TRACKER_TOKEN` secret; no token is committed.
 
 ### 3.3 Inspect current protections
 
@@ -494,4 +493,4 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Live PR checks (PR #32, final head) | `gh pr checks 32` after the naming-alignment push | `ci / prepare`, `ci / lint`, `ci / format`, `ci / test`, `ci / build`, `ci / ci-gate` all pass; `security / dependency-review` passes via clean platform-guard skip; `codeql` skipped (opt-in off) |
 | Docs links | relative Markdown links resolved against the repo | all targets exist |
 | Platform settings | `gh api repos/presljf/github-project-tracker/actions/permissions/workflow` | default token permission `read` |
-| Branch protection/rulesets availability | `gh api .../branches/main/protection`, `.../rulesets` | 403 (private personal repo; documented limitation) |
+| Branch protection/rulesets availability | `gh api .../branches/main/protection` | enabled on public repo: `ci / ci-gate`, `docs-guard` required |
