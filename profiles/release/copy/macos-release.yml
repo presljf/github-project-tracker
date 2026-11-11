@@ -1,0 +1,166 @@
+# COPY-MODE EXAMPLE — macOS sign/notarize release profile (T10).
+#
+# Copy this file into .github/workflows/release-macos.yml when cross-repo reusable workflows are
+# blocked. Copy `.github/actions/checksum/` and `.github/actions/sign-notarize-macos/` too.
+# Prefer the reusable mode (`.github/workflows/release-macos.yml` in this template) when the
+# template ref is accessible: it validates and checksums on dry-runs, which this compact copy
+# example does not (it builds on dry-runs and only signs/publishes on the guarded tag path).
+#
+# Secrets are environment secrets on the protected `release` environment. Missing signing
+# secrets => clean skip (ad-hoc fallback shown below) on a real publish run; dry-run never signs.
+name: Release (copy mode, macOS)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0).'
+        required: false
+        default: ''
+      publish:
+        description: 'Publish (only honored on a matching release tag ref).'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      should-publish: ${{ steps.resolve.outputs.should-publish }}
+    steps:
+      - name: Validate ref and version
+        id: resolve
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION_INPUT: ${{ inputs.version }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          if [[ "${VERSION_INPUT:-}" != "" ]]; then version="${VERSION_INPUT#v}"
+          elif [[ "$REF_TYPE" == "tag" ]]; then version="${REF_NAME#v}"
+          else version="0.0.0-dryrun"; fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "invalid version '${version}'"
+          tag="v${version}"
+          should_publish="false"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "tag '${REF_NAME}' is not a release tag"
+            [[ "$REF_NAME" == "$tag" ]] || fail "tag/version mismatch: ${REF_NAME} vs ${tag}"
+            if [[ "${PUBLISH_INPUT:-false}" == "true" ]]; then should_publish="true"; fi
+          fi
+          { echo "version=${version}"; echo "tag=${tag}"; echo "should-publish=${should_publish}"; } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build-macos
+    needs: guard
+    runs-on: macos-14
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build app artifacts
+        env:
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Replace with the real Xcode/electron-builder build producing .app/.dmg under dist/.
+          mkdir -p dist/staging
+          cp -R docs dist/staging/docs
+          ditto -c -k --keepParent dist/staging "dist/App-${VERSION}.zip"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-artifacts
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 30
+
+  sign:
+    name: sign-and-publish
+    needs: [guard, build]
+    if: ${{ needs.guard.outputs.should-publish == 'true' }}
+    runs-on: macos-14
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (local composite actions)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-artifacts
+          path: signed
+      - name: Detect signing credentials
+        id: auth
+        env:
+          CERT_PRESENT: ${{ secrets.MACOS_CERT_P12 != '' }}
+        run: echo "has-cert=${CERT_PRESENT:-false}" >> "$GITHUB_OUTPUT"
+      - name: Ad-hoc sign fallback when credentials are absent
+        if: ${{ steps.auth.outputs.has-cert != 'true' }}
+        run: |
+          set -euo pipefail
+          echo "::warning::No MACOS_CERT_P12 configured; ad-hoc signing only (not notarized). Configure signing secrets before distribution."
+          shopt -s nullglob
+          for app in signed/**/*.app; do codesign --force --deep --sign - "$app"; done
+      - name: Sign and notarize
+        if: ${{ steps.auth.outputs.has-cert == 'true' }}
+        uses: ./.github/actions/sign-notarize-macos
+        with:
+          artifact-path: signed/App.zip
+          signing-identity: Developer ID Application
+          team-id: ${{ vars.MACOS_TEAM_ID }}
+          notarize: 'true'
+          dry-run: 'false'
+          certificate-p12: ${{ secrets.MACOS_CERT_P12 }}
+          certificate-password: ${{ secrets.MACOS_CERT_PASSWORD }}
+          apple-id: ${{ secrets.APPLE_ID }}
+          apple-app-password: ${{ secrets.APPLE_APP_PASSWORD }}
+      - name: Generate checksums
+        id: checksum
+        uses: ./.github/actions/checksum
+        with:
+          paths: '**'
+          algorithm: sha256
+          output-file: SHA256SUMS
+          working-directory: 'signed'
+      - name: Verify checksums
+        env:
+          CHECKSUMS_FILE: ${{ steps.checksum.outputs.checksums-file }}
+        run: ( cd signed && shasum -a 256 -c "${CHECKSUMS_FILE}" )
+      - name: Upload bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-bundle
+          path: signed/**
+          if-no-files-found: error
+          retention-days: 30
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.guard.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release ${TAG} already exists; releases are immutable by policy."; exit 1
+          fi
+          gh release create "$TAG" signed/* --verify-tag --draft --generate-notes

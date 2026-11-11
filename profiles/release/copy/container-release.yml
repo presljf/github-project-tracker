@@ -1,0 +1,131 @@
+# COPY-MODE EXAMPLE — container release profile (T10).
+#
+# Copy this file into .github/workflows/release-container.yml when cross-repo reusable workflows
+# are blocked. Prefer the reusable mode (`.github/workflows/release-container.yml` in this
+# template) when the template ref is accessible.
+#
+# Dry-run (dispatch without publish) builds and saves the image but never logs in or pushes.
+# Publishing is guarded by a matching release tag, `publish: true`, and the protected `release`
+# environment, and pushes to GHCR with the workflow token (`packages: write`).
+name: Release (copy mode, container)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0).'
+        required: false
+        default: ''
+      publish:
+        description: 'Publish the image to GHCR (only honored on a matching release tag ref).'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      should-publish: ${{ steps.resolve.outputs.should-publish }}
+    steps:
+      - name: Validate ref and version
+        id: resolve
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION_INPUT: ${{ inputs.version }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          if [[ "${VERSION_INPUT:-}" != "" ]]; then version="${VERSION_INPUT#v}"
+          elif [[ "$REF_TYPE" == "tag" ]]; then version="${REF_NAME#v}"
+          else version="0.0.0-dryrun"; fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "invalid version '${version}'"
+          tag="v${version}"
+          should_publish="false"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "tag '${REF_NAME}' is not a release tag"
+            [[ "$REF_NAME" == "$tag" ]] || fail "tag/version mismatch: ${REF_NAME} vs ${tag}"
+            if [[ "${PUBLISH_INPUT:-false}" == "true" ]]; then should_publish="true"; fi
+          fi
+          { echo "version=${version}"; echo "tag=${tag}"; echo "should-publish=${should_publish}"; } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build-image
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and save image
+        env:
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Replace with the project's real Dockerfile build.
+          mkdir -p dist
+          printf 'release payload %s\n' "$VERSION" > dist/payload.txt
+          printf 'FROM scratch\nCOPY payload.txt /payload.txt\n' > dist/Dockerfile
+          docker build -t "${IMAGE_NAME}:${VERSION}" -f dist/Dockerfile dist
+          docker save "${IMAGE_NAME}:${VERSION}" -o "dist/image-${VERSION}.tar"
+          printf '{"image":"%s:%s"}\n' "$IMAGE_NAME" "$VERSION" > dist/container-metadata.json
+      - name: Upload image artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: container-artifacts
+          path: |
+            dist/image-*.tar
+            dist/container-metadata.json
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: publish-image
+    needs: [guard, build]
+    if: ${{ needs.guard.outputs.should-publish == 'true' }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: container-artifacts
+          path: container
+      - name: Load and push to GHCR
+        env:
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -euo pipefail
+          tar_path="$(find container -maxdepth 1 -name 'image-*.tar' -print -quit)"
+          [[ -n "$tar_path" ]] || { echo "::error::image tar missing"; exit 1; }
+          local_image="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["image"])' "$(find container -maxdepth 1 -name 'container-metadata.json' -print -quit)")"
+          docker load -i "$tar_path"
+          echo "::add-mask::${GH_TOKEN}"
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for ref in "${IMAGE_NAME}:${VERSION}" "${IMAGE_NAME}:sha-${GITHUB_SHA:0:12}"; do
+            docker tag "$local_image" "$ref"
+            docker push "$ref"
+          done

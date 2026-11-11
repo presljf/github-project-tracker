@@ -1,0 +1,70 @@
+# Thin generic GitHub Release caller (T10 release profile, template repository).
+#
+# Reusable workflow: ./.github/workflows/reusable-release.yml (contract in
+# docs/ACTIONS_CATALOG.md §7.5; profile details in docs/RELEASE_PROFILES.md).
+#
+# Profile: generic — build release artifacts, checksum them, and attach them to a GitHub Release.
+# - Tag push (`v*`): validates tag == version, builds, checksums, and creates a DRAFT release by
+#   default. Publishing to the public release list is a deliberate human step after review.
+# - workflow_dispatch: dry-run by default. `publish: true` is honored only when the dispatch ref
+#   is the release tag and `dry-run` is false; both are still gated by the protected `release`
+#   environment (configure required reviewers before relying on publish).
+#
+# Adopters: copy this caller, keep `.github/workflows/reusable-release.yml` in sync (or call the
+# template by pinned ref — see docs/RELEASE_PROFILES.md), and replace the build-command with your
+# project's real build. Never publish from a pull_request event; this workflow has no PR trigger.
+name: Release (generic)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0). Empty uses the tag ref, or 0.0.0-dryrun on a dry-run dispatch.'
+        required: false
+        type: string
+        default: ''
+      dry-run:
+        description: 'Build and validate only; never create or publish a release (default).'
+        required: false
+        type: boolean
+        default: true
+      publish:
+        description: 'Request publishing. Honored only when dispatching on a release tag ref with dry-run disabled.'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reusable-release.yml
+    with:
+      profile: generic
+      version: ${{ inputs.version }}
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
+      publish: ${{ github.event_name == 'push' || inputs.publish }}
+      # Template release artifact: deterministic source archive + manifest. Replace with the
+      # adopting project's real build command.
+      build-command: |
+        set -euo pipefail
+        mkdir -p dist
+        prefix="github-project-tracker-${VERSION}"
+        git archive --format=tar.gz --prefix="${prefix}/" -o "dist/${prefix}.tar.gz" HEAD
+        node -e 'const fs = require("node:fs"); fs.writeFileSync("dist/release-manifest.json", JSON.stringify({ version: process.env.VERSION, commit: process.env.GITHUB_SHA }, null, 2) + "\n");'
+      artifact-globs: |
+        dist/*.tar.gz
+        dist/release-manifest.json
+      node-version: '22'
+      checksum-algorithm: sha256
