@@ -100,7 +100,7 @@ export function auditTracker({ config, data, strict = false }) {
 
   const hasCheckIn = (number) => (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
   const hasBlockerNote = (number) => (comments.get(number) || []).some((body) => /###\s*Blocker/i.test(body));
-  const hasSprintExit = (number) => (comments.get(number) || []).some((body) => /###\s*Sprint (demo|close)|Status\s*→\s*Done/i.test(body));
+  const hasSprintExit = (number) => (comments.get(number) || []).some((body) => /###\s*Sprint (demo|close|exit)|Status\s*→\s*Done/i.test(body));
   const hasReleaseExit = (number) => (comments.get(number) || []).some((body) => /###\s*Release close/i.test(body));
 
   if (!config.automation?.templateVersion) add('TEMPLATE_VERSION_MISSING', null, 'config.automation.templateVersion is required');
