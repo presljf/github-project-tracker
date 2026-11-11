@@ -9,16 +9,63 @@
   },
   "roadmap": {
     "title": "Program roadmap",
-    "body": "# Project Tracker OS — program roadmap\n\nSee issue #1.\n"
+    "body": "# Project Tracker OS \u2014 program roadmap\n\nSee issue #1.\n"
   },
-  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
+  "statuses": [
+    "Todo",
+    "In Progress",
+    "In Review",
+    "Blocked",
+    "Done"
+  ],
   "fields": {
-    "Release": { "options": ["v1.0.0"] },
-    "Sprint": { "options": ["1.0.0.1", "1.0.0.2", "1.0.0.3"] },
-    "Area": { "options": ["docs", "ci", "code", "cross", "process"] },
-    "Kind": { "options": ["feature", "fix", "ux", "spike", "test", "infra"] },
-    "Estimate": { "options": ["S", "M", "L"] },
-    "Source": { "options": ["Internal", "CastDeck", "Other"] }
+    "Release": {
+      "options": [
+        "v1.0.0",
+        "v1.1.0"
+      ]
+    },
+    "Sprint": {
+      "options": [
+        "1.0.0.1",
+        "1.0.0.2",
+        "1.0.0.3",
+        "backlog"
+      ]
+    },
+    "Area": {
+      "options": [
+        "docs",
+        "ci",
+        "code",
+        "cross",
+        "process"
+      ]
+    },
+    "Kind": {
+      "options": [
+        "feature",
+        "fix",
+        "ux",
+        "spike",
+        "test",
+        "infra"
+      ]
+    },
+    "Estimate": {
+      "options": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    "Source": {
+      "options": [
+        "Internal",
+        "CastDeck",
+        "Other"
+      ]
+    }
   },
   "issueTypes": {
     "task": "Task",
@@ -27,17 +74,37 @@
     "fallback": "Use project Kind if native issue types are unavailable."
   },
   "labels": {
-    "risk": ["risk:low", "risk:medium", "risk:high"],
-    "process": ["plan-change", "source:downstream", "status:needs-triage"]
+    "risk": [
+      "risk:low",
+      "risk:medium",
+      "risk:high"
+    ],
+    "process": [
+      "plan-change",
+      "source:downstream",
+      "status:needs-triage"
+    ]
   },
   "releases": [
     {
       "key": "v1.0.0",
-      "milestone": "v1.0.0 — Tracker OS",
+      "milestone": "v1.0.0 \u2014 Tracker OS",
       "sprints": [
-        { "key": "1.0.0.1", "title": "Portable playbook + lifecycle templates", "estimate": "L" },
-        { "key": "1.0.0.2", "title": "Automation toolkit + tracker workflows", "estimate": "M" },
-        { "key": "1.0.0.3", "title": "Template repo + release profiles + docs QA", "estimate": "M" }
+        {
+          "key": "1.0.0.1",
+          "title": "Portable playbook + lifecycle templates",
+          "estimate": "L"
+        },
+        {
+          "key": "1.0.0.2",
+          "title": "Automation toolkit + tracker workflows",
+          "estimate": "M"
+        },
+        {
+          "key": "1.0.0.3",
+          "title": "Template repo + release profiles + docs QA",
+          "estimate": "M"
+        }
       ]
     }
   ],
@@ -50,12 +117,27 @@
     "inReviewMode": "manual",
     "autoAddIssues": true,
     "closeToDone": true,
-    "bot": { "enabled": false }
+    "bot": {
+      "enabled": false
+    }
   },
   "workflows": {
-    "ci": { "mode": "copy", "requiredChecks": ["lint", "format", "test"] },
-    "audit": { "mode": "advisory", "tokenSecret": "TRACKER_TOKEN" },
-    "release": { "profile": "generic", "dryRun": true }
+    "ci": {
+      "mode": "copy",
+      "requiredChecks": [
+        "lint",
+        "format",
+        "test"
+      ]
+    },
+    "audit": {
+      "mode": "advisory",
+      "tokenSecret": "TRACKER_TOKEN"
+    },
+    "release": {
+      "profile": "generic",
+      "dryRun": true
+    }
   },
   "feedback": {
     "upstreamRepo": "presljf/github-project-tracker",
@@ -68,7 +150,10 @@
       "minor": "Compatible features",
       "major": "Breaking changes with migration notes"
     },
-    "publication": { "status": "private", "license": "MIT" },
+    "publication": {
+      "status": "private",
+      "license": "MIT"
+    },
     "security": {
       "contact": "GitHub private vulnerability reporting when available; otherwise SECURITY.md private channel",
       "privateVulnerabilityReporting": false
