@@ -94,9 +94,8 @@ export class GitHubCli {
   }
 
   updateFieldOptions(fieldId, options) {
-    const fields = [{ id: fieldId }];
     const query = 'query($id: ID!) { node(id: $id) { ... on ProjectV2SingleSelectField { id options { id name color description } } } }';
-    fs.writeFileSync(path.join(os.tmpdir(), 'tracker-field-query.json'), JSON.stringify({ query, variables: fields }));
+    fs.writeFileSync(path.join(os.tmpdir(), 'tracker-field-query.json'), JSON.stringify({ query, variables: { id: fieldId } }));
     const node = this.run(['api', 'graphql', '--input', path.join(os.tmpdir(), 'tracker-field-query.json')], { json: true });
     const existing = node?.data?.node?.options || [];
     const byName = new Map(existing.map((option) => [option.name, option]));

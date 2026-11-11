@@ -97,6 +97,14 @@ gh issue create --repo OWNER/REPO --title "[Task] Create tracker config" \
 # https://github.com/OWNER/REPO/issues/2
 ```
 
+Set native type and milestone (required by audit/task CLI; UI: Type dropdown + Milestone):
+```bash
+gh api repos/OWNER/REPO/issues/1 --method PATCH -f type=Task
+gh api repos/OWNER/REPO/issues/2 --method PATCH -f type=Task
+gh issue edit 1 --repo OWNER/REPO --milestone v0.1.0
+gh issue edit 2 --repo OWNER/REPO --milestone v0.1.0
+```
+
 Set project fields on the task. The task CLI/audit require Area/Kind/Estimate plus Release/Sprint; use `docs`/`feature`/`S` for this sample (UI: open item → fields; CLI below discovers IDs first):
 ```bash
 gh project field-list PROJECT_NUMBER --owner @me --format json > /tmp/fields.json

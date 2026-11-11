@@ -18,8 +18,8 @@ profile docs: `docs/RELEASE_PROFILES.md` §6.1.
     paths: |
       dist/**
     algorithm: sha256
-    working-directory: dist
-- run: ( cd dist && sha256sum -c "${{ steps.checksum.outputs.checksums-file }}" )
+    working-directory: .
+- run: sha256sum -c SHA256SUMS
 ```
 
 Copy-mode consumers: `profiles/release/copy/*.yml`. Cross-repo consumers pin the action by exact

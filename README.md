@@ -18,17 +18,28 @@ A portable, auditable GitHub project-tracker operating system: playbook, exhaust
    node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
    node scripts/github/bootstrap.mjs --config tracker.config.json --apply
    ```
-   Bootstrap seeds valid default Area/Kind/Estimate (and Status/Release/Sprint/Source) so generated tasks pass DoR/audit; adjust any defaults for your project before check-in.
+   Bootstrap seeds valid default Area/Kind/Estimate (and Status/Release/Sprint/Source) so generated tasks pass DoR/audit; adjust any defaults for your project before check-in. Ensure `project.number` is the actual project number (task/audit require it). Expected output starts `Dry-run: N planned action(s); no mutations performed.` then `Applied N action(s).`
 5. **Run one task through the lifecycle** with the task CLI or manual docs:
    ```bash
    node scripts/github/task.mjs start --issue 123 --owner YOUR_LOGIN
    # ... branch/PR/evidence ...
    node scripts/github/task.mjs done --issue 123 --evidence "tests pass"
    ```
-6. **Audit:**
+6. **Replace the bootstrap task placeholder:** generated task bodies contain `- [ ] Fill a testable criterion.` Edit/check acceptance criteria before `task.mjs done` (or use `--force` after review).
+7. **Audit:**
    ```bash
    node scripts/github/audit.mjs --config tracker.config.json --advisory
    ```
+
+Expected output examples:
+```text
+$ node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
+Dry-run: N planned action(s); no mutations performed.
+$ node scripts/github/task.mjs status --issue 123
+status #123: Todo; project status=Todo; assignee=(none)
+$ node scripts/github/audit.mjs --config tracker.config.json --advisory
+No violations.
+```
 
 Full adoption path: [docs/ADOPTION.md](docs/ADOPTION.md) · Template structure/versioning: [docs/TEMPLATE_REPO.md](docs/TEMPLATE_REPO.md).
 

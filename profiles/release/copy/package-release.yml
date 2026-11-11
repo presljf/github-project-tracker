@@ -101,7 +101,7 @@ jobs:
           paths: 'dist/**'
           algorithm: sha256
           output-file: SHA256SUMS
-          working-directory: 'dist'
+          working-directory: '.'
       - name: Upload bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

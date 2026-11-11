@@ -76,4 +76,4 @@ Stop and ask/block when:
 
 ## Commands
 
-Use [Reference](./REFERENCE.md) for exact commands/flags. Planned scripts are marked; use manual fallbacks until 1.0.0.2 acceptance. Report upstream via [Downstream feedback](./DOWNSTREAM_FEEDBACK.md) when the tracker itself is deficient.
+Use [Reference](./REFERENCE.md) for exact commands/flags. Scripts are available now; manual fallbacks remain documented for UI-only or restricted environments. Report upstream via [Downstream feedback](./DOWNSTREAM_FEEDBACK.md) when the tracker itself is deficient.

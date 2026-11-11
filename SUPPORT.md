@@ -7,7 +7,7 @@ Project Tracker OS is supported on a **best-effort, no-SLA** basis.
 - [Playbook](./docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md) — conceptual/operating model
 - [Downstream feedback](./docs/DOWNSTREAM_FEEDBACK.md) — reporting, triage, versioning, contributions
 
-The exhaustive HOW TO USE suite, reference, troubleshooting, adoption/upgrading guides, style guide, and printable cards are planned for the v1.0.0 release.
+The exhaustive HOW TO USE suite, reference, troubleshooting, adoption/upgrading guides, style guide, and printable cards are available now.
 
 ## Report a bug or request a feature
 

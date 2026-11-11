@@ -35,6 +35,12 @@ All notable changes to Project Tracker OS are documented here. The format follow
 - Config positive/negative validation, issue-form YAML, docs link/anchor checks, bootstrap dry-run/apply-idempotency tests, audit seeded violations, task CLI tests.
 - Branch protection/rulesets unavailable on the private personal repo (403); contract documented and applied when public/Pro.
 
-## v1.0.1+ (planned)
+## v1.0.1 — template patch (2026-11-11)
+
+- Fixed `updateFieldOptions` GraphQL variables (array → object), which blocked bootstrap apply when adding Status options. Found by T08 scratch replication; regression test added.
+- Docs QA follow-up: copy-path completeness, required `project.number`, quickstart native type/milestone, bootstrap acceptance placeholder guidance, audit-claim narrowing, checksum working-directory fixes, action SHA pinning, and status-output wording.
+- Validation: live scratch repo/project bootstrap apply + idempotent re-run + task lifecycle + strict audit; `npm test` 37/37.
+
+## v1.0.2+ (planned)
 
 Patch = compatible fixes; minor = compatible features; major = breaking changes with migration notes. Downstream projects pin exact versions and upgrade explicitly.
