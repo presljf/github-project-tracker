@@ -1,0 +1,390 @@
+# REFERENCE
+
+**Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
+**Scope:** commands, config, fields/statuses, labels, templates, audit rules, workflows, tokens, runners, release profiles, and expected outputs.
+
+> **Availability key:** **now** = works with current repo/UI/`gh`; **planned 1.0.0.2+** = tracker scripts/workflows delivered later in v1.0.0, with manual fallbacks. Planned items are not claimed as shipped.
+
+---
+
+## 1. Repository map
+
+| Path | Purpose | Availability |
+|---|---|---|
+| `docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md` | conceptual/operating model | now |
+| `docs/HOW_TO_USE.md` | full handbook | now |
+| `docs/QUICKSTART.md` | first tracker | now |
+| `docs/REFERENCE.md` | this reference | now |
+| `docs/TROUBLESHOOTING.md` | symptom → cause → fix | now |
+| `docs/ADOPTION.md` | zero→first task adoption | now |
+| `docs/UPGRADING.md` | pin/upgrade/rollback | now |
+| `docs/AGENT_GUIDE.md` | agent operating protocol | now |
+| `docs/MULTI_PROJECT.md` | program/multi-project model | now |
+| `docs/DOWNSTREAM_FEEDBACK.md` | upstream reporting/triage | now |
+| `docs/comment-templates/` | check-in/update/out/blocker/plan-change/sprint/release | now |
+| `docs/reference-cards/` | printable cards | now (reporting), T13 expands |
+| `tracker.config.example.json` | generic config | now |
+| `schemas/tracker.config.schema.json` | config contract | now |
+| `scripts/github/validate-config.mjs` | config validation | now |
+| `scripts/github/bootstrap.mjs` | idempotent repo/project setup | planned 1.0.0.2 |
+| `scripts/github/audit.mjs` | tracker audit | planned 1.0.0.2 |
+| `scripts/github/task.mjs` | check-in/update/review/block/done | planned 1.0.0.2 |
+| `profiles/node/` | generic lint/format profile | now |
+| `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
+| `.github/workflows/`, `.github/actions/` | reusable/CI/release workflows | planned 1.0.0.2+ |
+
+## 2. Command conventions
+
+- `OWNER/REPO`, `PROJECT_NUMBER`, `ITEM_ID`, `FIELD_ID`, `OPTION_ID` are placeholders; discover IDs in §3.
+- Every CLI command is shown with expected success output or no output (exit 0).
+- Failure exit codes are typically 1; GraphQL/auth failures print the API message and exit 1.
+- Never paste tokens into commands; use `GH_TOKEN`/secrets.
+
+## 3. Discover project IDs
+
+```bash
+gh project list --owner @me --format json
+# {"projects":[{"number":1,"title":"Project Tracker","id":"PVT_..."}]}
+
+gh project field-list PROJECT_NUMBER --owner @me --format json
+# {"fields":[{"id":"PVTSSF_...","name":"Status","options":[{"id":"...","name":"Todo"}]}]}
+
+gh project item-list PROJECT_NUMBER --owner @me --format json --limit 100
+# {"items":[{"id":"PVTI_...","content":{"number":123,"title":"..."},...}]}
+```
+
+Extract with `jq` if installed:
+
+```bash
+gh project field-list "$PROJECT_NUMBER" --owner @me --format json \
+  | jq -r '.fields[] | [.name,.id] | @tsv'
+# Status  PVTSSF_...
+# Release PVTSSF_...
+```
+
+## 4. `gh` commands used in this tracker
+
+### Auth
+```bash
+gh auth status
+# ✓ Logged in to github.com account <you> (...)
+# - Token scopes: 'repo', 'project', ...
+
+gh auth refresh -s project,repo
+# opens browser; required when scope is missing
+```
+
+### Issues
+```bash
+gh issue create --repo OWNER/REPO --title "[Task] ..." --body-file task.md
+# https://github.com/OWNER/REPO/issues/123
+
+gh issue list --repo OWNER/REPO --state open --limit 50
+# shows number/title/labels
+
+gh issue view 123 --repo OWNER/REPO --json number,title,state,body
+gh issue edit 123 --repo OWNER/REPO --add-assignee @me
+gh issue comment 123 --repo OWNER/REPO --body-file comment.md
+gh issue close 123 --repo OWNER/REPO --reason completed
+```
+
+### PRs
+```bash
+gh pr create --fill --body "Closes #123"
+# https://github.com/OWNER/REPO/pull/45
+
+gh pr view 45 --json state,mergeable,checks
+gh pr checks 45
+gh pr merge 45 --squash --delete-branch
+# ✓ Merged pull request #45
+```
+
+### Milestones
+```bash
+gh api repos/OWNER/REPO/milestones -f title="v1.0.0" -f description="Target"
+# {"number":1,...}
+gh api repos/OWNER/REPO/milestones/1 -X PATCH -f state=closed
+```
+
+### Project fields/items
+```bash
+gh project field-create PROJECT_NUMBER --owner @me --name "Status" \
+  --data-type SINGLE_SELECT --single-select-options "Todo,In Progress,In Review,Blocked,Done"
+# creates field/options (verify with field-list)
+
+gh project item-add PROJECT_NUMBER --owner @me \
+  --url https://github.com/OWNER/REPO/issues/123
+# item JSON
+
+gh project item-edit --id ITEM_ID --project-id PROJECT_ID \
+  --field-id FIELD_ID --single-select-option-id OPTION_ID
+# no output on success
+```
+
+Notes:
+- Field option IDs must be discovered; `gh project field-create` may return them only via `--format json`.
+- Changing a single-select field value requires option IDs, not labels.
+- Field names must not collide with reserved names (`Type` is reserved; use `Kind`).
+
+### Sub-issues / dependencies
+```bash
+CHILD_ID=$(gh api repos/OWNER/REPO/issues/123 --jq .id)
+gh api repos/OWNER/REPO/issues/100/sub_issues -X POST -F sub_issue_id="$CHILD_ID"
+# no body; parent progress updates
+
+gh issue edit 123 --repo OWNER/REPO \
+  --add-blocked-by https://github.com/OWNER/REPO/issues/99
+# blocked-by relationship (GitHub native dependencies)
+```
+
+If native sub-issues/dependencies are unavailable: use body links + labels; document fallback.
+
+### Views
+```bash
+gh api graphql --input view-query.json
+# project views/filter; UI is authoritative for filters
+```
+UI: Project → view tabs → New view → set layout/filter/group.
+
+## 5. Planned tracker CLI (1.0.0.2+)
+
+**Not shipped yet.** Intended contract (flags may be finalized in 1.0.0.2):
+
+| Command | Flags | Purpose |
+|---|---|---|
+| `node scripts/github/bootstrap.mjs --config tracker.config.json [--dry-run] [--yes] [--json]` | config path, dry-run, non-interactive, JSON | idempotent repo/project/fields/labels/views/sample issues |
+| `node scripts/github/audit.mjs --config tracker.config.json [--advisory] [--json] [--format json]` | advisory mode, machine output | invariants; exit 1 on violations |
+| `node scripts/github/task.mjs check-in --issue 123 --branch task/123-slug [--json]` | issue/branch; optional owner/executor | status In Progress + comment |
+| `node scripts/github/task.mjs update --issue 123 --message-file update.md` | message | update comment |
+| `node scripts/github/task.mjs review --issue 123 [--pr 45]` | issue/PR | status In Review + evidence note |
+| `node scripts/github/task.mjs block --issue 123 --blocked-by 99 --reason "..."` | dependency/reason | status Blocked |
+| `node scripts/github/task.mjs unblock --issue 123` | issue | status In Progress |
+| `node scripts/github/task.mjs done --issue 123 --evidence evidence.md` | evidence | status Done + check-out |
+| `node scripts/github/task.mjs status --issue 123` | issue | show current state |
+
+Manual fallbacks are in [HOW TO USE](./HOW_TO_USE.md) and [Troubleshooting](./TROUBLESHOOTING.md). No command is considered shipped until 1.0.0.2 acceptance passes.
+
+## 6. Config reference
+
+Validate:
+```bash
+node scripts/github/validate-config.mjs tracker.config.json
+# OK   tracker.config.json
+```
+
+| Key | Required | Notes |
+|---|---|---|
+| `$schema` | no | path/URL to schema |
+| `trackerVersion` | yes | `1`; bump only with migration |
+| `repository` | yes | `owner/repo` |
+| `project` | yes | `owner`, `title`, optional `number` |
+| `statuses` | yes | 5+ unique, standard set recommended |
+| `fields` | yes | Release/Sprint/Area/Kind/Estimate required; Source recommended |
+| `issueTypes` | no | task/bug/feature + fallback notes |
+| `labels` | no | risk/process only; no dimension labels |
+| `releases` | yes | key, milestone, sprints (key/title/estimate/tasks) |
+| `automation` | no | defaultAssignee, branchPrefix, tagPattern, templateRepo/version, inReviewMode, autoAddIssues, closeToDone, bot |
+| `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
+| `workflows` | no | ci mode/ref/requiredChecks; audit mode/tokenSecret; release profile/ref/dryRun |
+| `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
+| `governance` | no | versioning, publication status/license, security contact/private reporting |
+
+Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version. Exit 1 with `$path: message`.
+
+## 7. Fields, statuses, transitions
+
+### Fields
+| Field | Values | Applies to |
+|---|---|---|
+| Status | Todo/In Progress/In Review/Blocked/Done | all work items |
+| Release | version keys (+ pre-release if documented) | release work |
+| Sprint | sprint keys | release work |
+| Area | stable areas | all |
+| Kind | feature/fix/ux/spike/test/infra | all |
+| Estimate | S/M/L or numeric | all |
+| Source | Internal/downstream/Other | all; downstream required during triage |
+
+### Transition table
+| From | To | Entry condition | Exit evidence |
+|---|---|---|---|
+| Todo | In Progress | DoR passes, owner/branch | check-in comment |
+| In Progress | In Review | implementation ready | PR/evidence |
+| In Review | In Progress | changes requested | review comment |
+| In Progress | Blocked | concrete blocker | blocker comment/dependency |
+| Blocked | In Progress | unblocked | unblock note |
+| In Review | Done | accepted + evidence | check-out comment |
+| In Progress | Done | small/docs-only + evidence | check-out comment |
+| Done | (reopen) | regression/follow-up | plan-change/comment |
+
+Rules: one In Progress per owner; Blocked requires reason + dependency; Done requires acceptance/evidence; no silent WIP.
+
+## 8. Labels
+
+| Label | Meaning |
+|---|---|
+| `risk:low|medium|high` | risk/impact |
+| `plan-change` | dated scope/estimate/gate change |
+| `source:downstream` | downstream-origin issue |
+| `status:needs-triage` | downstream intake not triaged (Status field is authoritative for work state) |
+
+Do not add `area:*`, `release:*`, `sprint:*`, `type:*` labels when the field/type/milestone exists. If a canonical surface is unavailable, document the fallback; it becomes authoritative for that project.
+
+## 9. Issue types and fallback
+
+- Native types: Task, Bug, Feature.
+- Fallback if unavailable: use project Kind + documented note; avoid type labels if native types exist.
+- Audit exempts only documented fallbacks.
+
+## 10. Issue/PR templates
+
+| File | Use |
+|---|---|
+| `.github/ISSUE_TEMPLATE/task.yml` | task DoR/acceptance/test/evidence/estimate |
+| `.github/ISSUE_TEMPLATE/sprint.yml` | goal/scope/exit criteria |
+| `.github/ISSUE_TEMPLATE/release.yml` | objective/sprints/gates/risks/artifacts |
+| `.github/ISSUE_TEMPLATE/spike.yml` | timeboxed question/decision |
+| `.github/ISSUE_TEMPLATE/downstream-{bug,feature}.yml` | downstream reports; auto labels |
+| `.github/ISSUE_TEMPLATE/config.yml` | chooser/contact links |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist/evidence |
+
+## 11. Comment templates
+
+`docs/comment-templates/`: check-in, update, check-out, blocker, plan-change, sprint-close, release-close. One check-in and one check-out per task; dated plan changes; evidence links, not claims.
+
+## 12. Audit invariants
+
+Manual now; `audit.mjs` planned. Invariants:
+
+1. Open release work has milestone + native type.
+2. Project fields complete (Release/Sprint for release work; Area/Kind/Estimate; Source downstream).
+3. No Done parent with open children unless deferral.
+4. No In Progress without assignee + check-in.
+5. WIP ≤ 1 In Progress per owner (or documented exception).
+6. Blocked has reason + dependency.
+7. No duplicate/retired labels.
+8. Sprint/release Done has exit evidence.
+9. Pinned `trackerTemplateVersion`; downstream context complete.
+10. No secrets in issues/comments/artifacts.
+
+Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
+
+## 13. Workflow catalog (planned 1.0.0.2+)
+
+| Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
+|---|---|---|---|---|---|---|
+| CI (lint/format/unit) | push/PR | required | Linux | contents:read | none | block merge |
+| Web/E2E | push/PR/nightly | required/advisory | Linux | contents:read | none | required on main/release |
+| Desktop smoke | main/tags/path/label PR | advisory PR; required release | macOS | contents:read | none | release gate |
+| Tracker audit | schedule/dispatch/advisory PR | advisory first; release gate later | Linux | contents:read + project token | `TRACKER_TOKEN`/App | advisory/release fail |
+| Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
+| Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
+
+### Trigger matrix
+| Trigger | CI | Audit | Desktop | Release |
+|---|---|---|---|---|
+| push main | ✓ | advisory | — | — |
+| pull_request | ✓ | advisory | path/label | — |
+| tag `v*` | required | advisory | required | required |
+| schedule | — | ✓ | optional | — |
+| workflow_dispatch | optional | ✓ | optional | dry-run |
+
+### Required-check contract
+- Required: deterministic Linux lint/format/unit/e2e/verify jobs.
+- Desktop smoke: path/label on PR; required on main/tags/release.
+- Audit: advisory initially; required only after stable release-gate policy.
+- Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
+
+## 14. Token / secret matrix
+
+| Need | Source | Scope | Rules |
+|---|---|---|---|
+| Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
+| Tracker audit | PAT or GitHub App installation token | project read/write (or read advisory) | store as secret; never print; project-scoped |
+| Release publish | `GITHUB_TOKEN`/environment secrets | contents:write | protected tag/environment |
+| Package/cloud publish | OIDC or environment secrets | least privilege | prefer short-lived |
+| Signing/notarization/container | project secrets/OIDC | minimal | skip cleanly if absent |
+
+Never store tokens/cookies/private keys in repo, config, issue, comment, artifact, or log. No `pull_request_target` with untrusted code + secrets.
+
+## 15. Runner / cost guidance
+
+| Runner | Cost | Use |
+|---|---|---|
+| Linux | baseline | lint/unit/e2e/audit |
+| macOS | ~10× | desktop smoke/release only |
+| Windows/self-hosted | variable | only when required; document |
+
+- Path/label gate expensive jobs.
+- Concurrency cancellation; cache deps; short artifact retention.
+- Local parity command for every workflow (`npm run lint`, `npm test`, etc.); see config `profiles.node.commands`.
+
+## 16. Release profiles
+
+| Profile | Artifacts | Default gating |
+|---|---|---|
+| generic GitHub Release | files/archives + sha256 | dry-run; publish on tag/dispatch |
+| macOS signed/notarized | dmg/zip + signatures | skip signing when secrets absent; ad-hoc documented |
+| container/GHCR | image digest | build/push guarded by auth/dry-run |
+| package registry | npm/PyPI package | OIDC/provenance guarded |
+
+Projects adopt only needed profiles; all profiles are implemented in template but not validated by every adopting project.
+
+## 17. Shell notes
+
+**macOS/Linux**
+```bash
+PROJECT_NUMBER=1
+gh project item-list "$PROJECT_NUMBER" --owner @me --format json | jq .
+```
+
+**Windows PowerShell**
+```powershell
+$PROJECT_NUMBER = 1
+gh project item-list $PROJECT_NUMBER --owner @me --format json
+# pipe to ConvertFrom-Json instead of jq if jq is absent
+```
+
+**Windows Git Bash/WSL:** macOS/Linux snippets work. Avoid backtick line continuations in PowerShell; use backticks only in PowerShell.
+
+## 18. Environment variables
+
+| Variable | Use |
+|---|---|
+| `GH_TOKEN` / `GITHUB_TOKEN` | auth in CI; never commit |
+| `TRACKER_TOKEN` | planned audit workflow secret name |
+| `NO_COLOR` | plain output |
+| `GH_REPO` | default repo for some `gh` commands (optional) |
+
+## 19. Expected outputs and diagrams
+
+Canonical expected outputs:
+
+```
+$ node scripts/github/validate-config.mjs tracker.config.json
+OK   tracker.config.json
+
+$ gh auth status
+✓ Logged in to github.com account <you>
+- Token scopes: 'repo', 'project', ...
+
+$ gh pr merge 45 --squash --delete-branch
+✓ Merged pull request #45
+```
+
+Board text snapshot:
+
+```
+Status      Release  Sprint   Title
+In Progress v1.0.0   1.0.0.2  [Task] Implement audit
+Blocked     v1.0.0   1.0.0.2  [Task] Token setup
+Done        v1.0.0   1.0.0.1  [Task] Add playbook
+```
+
+Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/status) and are reproducible from source. No real-user screenshots/secrets are committed. When real screenshots are added, redact org/user/token data.
+
+## 20. Versioning
+
+- Docs version: `v1.0.0-docs.1` for this target; update with each template release.
+- Template/config: exact `vX.Y.Z`; patch/minor/major meanings in [UPGRADING](./UPGRADING.md).
+- Reference is normative for commands; handbook is task-oriented; playbook is conceptual; T12 validates the docs set before release.

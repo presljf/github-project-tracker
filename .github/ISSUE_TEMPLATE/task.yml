@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form for a task that belongs to a sprint. The playbook requires a DoR, acceptance criteria, a test/evidence plan, and a clear owner at check-in.
+        Use this form for a task that belongs to a sprint. The playbook requires a DoR, acceptance criteria, a test/evidence plan, and a clear owner at check-in. Read [HOW TO USE](https://github.com/presljf/github-project-tracker/blob/main/docs/HOW_TO_USE.md) for the lifecycle and [REFERENCE](https://github.com/presljf/github-project-tracker/blob/main/docs/REFERENCE.md) for fields/commands.
   - type: textarea
     id: context
     attributes:

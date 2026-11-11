@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: How to use the tracker
+    url: https://github.com/presljf/github-project-tracker/blob/main/docs/HOW_TO_USE.md
+    about: Step-by-step setup, lifecycle, check-in/out, sprint/release, agents, and troubleshooting.
   - name: Read the Project Tracker Playbook
     url: https://github.com/presljf/github-project-tracker/blob/main/docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md
     about: Setup, lifecycle, statuses, check-in/out, audit, and porting rules.
