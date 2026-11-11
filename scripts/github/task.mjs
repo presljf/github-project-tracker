@@ -28,8 +28,14 @@ async function readContext({ config, github, issueNumber }) {
   const projects = await github.listProjects(owner);
   const project = projects.find((entry) => entry.number === config.project.number || entry.title === config.project.title);
   const fields = await github.listFields(owner, config.project.number);
-  const items = await github.listProjectItems(owner, config.project.number);
-  const item = items.find((entry) => entry.content?.number === issueNumber);
+  let item;
+  if (typeof github.getProjectItemForIssue === 'function') {
+    item = await github.getProjectItemForIssue(owner, config.project.number, repoOwner, repoName, issueNumber);
+  } else {
+    const items = await github.listProjectItems(owner, config.project.number);
+    item = items.find((entry) => entry.content?.number === issueNumber);
+  }
+  const items = item ? [item] : [];
   const field = (name) => fields.find((entry) => entry.name === name);
   const option = (name, value) => field(name)?.options?.find((entry) => entry.name === value);
   return { config, github, repoOwner, repoName, owner, issue, fields, items, item, field, option, projectId: project?.id };
@@ -70,8 +76,14 @@ function uncheckedAcceptance(body) {
 async function checkWip({ ctx, owner, dryRun }) {
   const { repoOwner, repoName } = ctx;
   const issues = await ctx.github.listIssues(repoOwner, repoName, 'open');
-  const items = await ctx.github.listProjectItems(ctx.owner, ctx.config.project.number);
-  const itemByNumber = new Map(items.map((item) => [item.content?.number, item]));
+  let itemByNumber;
+  if (typeof ctx.github.batchProjectItems === 'function') {
+    const byNumber = await ctx.github.batchProjectItems(ctx.owner, ctx.config.project.number, repoOwner, repoName, issues.map((issue) => issue.number));
+    itemByNumber = new Map(Object.entries(byNumber).map(([number, item]) => [Number(number), item]));
+  } else {
+    const items = await ctx.github.listProjectItems(ctx.owner, ctx.config.project.number);
+    itemByNumber = new Map(items.map((item) => [item.content?.number, item]));
+  }
   const active = [];
   for (const issue of issues) {
     if (issue.number === ctx.issue.number) continue;

@@ -361,6 +361,8 @@ Never store tokens/cookies/private keys in repo, config, issue, comment, artifac
 
 Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (default `~/.cache/tracker-os/rate-limit.json`) so separate processes do not each rediscover the same exhausted budget. `npm run rate-limit` refreshes headers and prints the shared state plus top estimated command costs. The state stores only rate/cost metadata, never tokens or issue content.
 
+Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
+
 ### Docs coverage guard
 
 `npm run guard:docs -- --base origin/main` fails when a changed source area mapped in `docs/DOCS_COVERAGE.json` has no mapped docs change. `docs-guard` CI includes it; branch protection requires the check. See [DOCS COVERAGE](./DOCS_COVERAGE.md).
