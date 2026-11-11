@@ -9,8 +9,8 @@
 #     2. dispatching this workflow with enable-codeql=true (single run).
 #   Languages come from the repository variable CODEQL_LANGUAGES (default
 #   javascript-typescript); compiled languages need build steps added in the project copy.
-# - Check contexts: security / dependency-review and security / codeql. Never make the opt-in
-#   CodeQL job a required check.
+# - Check contexts: `security / dependency-review` (called workflow) and `codeql` (plain job).
+#   Never make the opt-in CodeQL job a required check.
 name: Security
 
 on:
@@ -35,8 +35,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  dependency-review:
-    name: dependency-review
+  # Job name is part of the delivered check context: `security / dependency-review`.
+  security:
+    name: security
     if: ${{ github.event_name == 'pull_request' }}
     permissions:
       contents: read

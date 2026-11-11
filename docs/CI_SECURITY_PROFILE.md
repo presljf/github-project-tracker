@@ -75,9 +75,10 @@ A called workflow job reports as `<caller job> / <called job>`. Through the bund
 | `ci / format` | yes once configured |
 | `ci / test` | yes |
 | `ci / build` | per project (required for build/verify outputs) |
+| `ci / prepare` | no (pre-flight command/lockfile resolution; do not require) |
 | `ci / ci-gate` | recommended single aggregate gate (fails if any CI job did not succeed) |
 
-`ci / ci-gate` is the summary job (`name: ci-gate`, id `summary`) that `needs` the four check jobs. T09's catalog recommends requiring this one aggregate check; the individual contexts remain available for projects that prefer granular required checks. The workflow also exposes `result` and `checks-passed` workflow-call outputs.
+`ci / ci-gate` is the summary job (`name: ci-gate`, id `summary`) that `needs` the four check jobs. T09's catalog recommends requiring this one aggregate check; the individual contexts remain available for projects that prefer granular required checks. The workflow also exposes `result` and `checks-passed` workflow-call outputs. Security contexts are `security / dependency-review` (PR dependency review) and `codeql` (the plain opt-in CodeQL job).
 
 Renaming the caller job (`ci`) or any called job changes these exact strings and silently breaks existing branch protection/rulesets. Capture the names from a real run before requiring them:
 
@@ -167,7 +168,7 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
 - Default required set: `ci / lint`, `ci / format`, `ci / test`; add `ci / build` when the project builds or verifies an artifact.
 - Advisory initially: `security / dependency-review` (until the platform feature is enabled and stable) and any expensive platform job.
 - Aggregate gate: `ci / ci-gate` fails when lint, format, test, or build did not succeed. T09's catalog recommends requiring this single aggregate check instead of the four individual jobs, which keeps protection stable when internal job names change. Choose one approach per repository; do not require both the aggregate and its constituents unless intentional.
-- **Never required:** `security / codeql` while it is opt-in, plus macOS/desktop smoke until the release-gate policy is proven.
+- **Never required:** `codeql` while it is opt-in, plus macOS/desktop smoke until the release-gate policy is proven.
 - Branch protection/rulesets and `tracker.config.json` `workflows.ci.requiredChecks` are the two records of required checks. The config currently stores short names (`lint`, `format`, `test`); platform protection stores full contexts (`ci / lint`, ...). Keep them in sync by convention; reconciling the short-name mapping is a T09/T12 follow-up (this profile does not edit the config).
 
 ### 3.2 Current platform state (verified 2026-11-11)
@@ -473,6 +474,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Local parity | `npm run validate:config` | `OK tracker.config.example.json`, `OK examples/castdeck.config.json` |
 | Action pins | `gh api repos/<action>/commits/<tag> --jq .sha` | pins in section 8 match tags |
 | Secret scan | provider-token grep (section 10); no real credentials in the new files | no matches |
+| Live PR checks (PR #32, final head) | `gh pr checks 32` after the naming-alignment push | `ci / prepare`, `ci / lint`, `ci / format`, `ci / test`, `ci / build`, `ci / ci-gate` all pass; `security / dependency-review` passes via clean platform-guard skip; `codeql` skipped (opt-in off) |
 | Docs links | relative Markdown links resolved against the repo | all targets exist |
 | Platform settings | `gh api repos/presljf/github-project-tracker/actions/permissions/workflow` | default token permission `read` |
 | Branch protection/rulesets availability | `gh api .../branches/main/protection`, `.../rulesets` | 403 (private personal repo; documented limitation) |
