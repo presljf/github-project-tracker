@@ -12,6 +12,8 @@
     "task": "node scripts/github/task.mjs",
     "validate:config": "node scripts/github/validate-config.mjs",
     "docs:check": "node scripts/docs/check-docs.mjs",
-    "rate-limit": "node scripts/github/rate-limit.mjs"
+    "rate-limit": "node scripts/github/rate-limit.mjs",
+    "guard:gh": "node scripts/github/guard-gh-transport.mjs",
+    "guard:scope": "node scripts/github/guard-scope.mjs"
   }
 }

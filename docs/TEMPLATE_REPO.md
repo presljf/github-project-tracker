@@ -33,7 +33,8 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 | `profiles/node/` | generic lint/format profile |
 | `profiles/release/`, `.github/workflows/release*` | release profile examples (T10) |
 | `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md` | intake/PR forms |
-| `.github/workflows/` | CI, security, audit, reusable contracts, release profiles |
+| `.github/workflows/` | CI, security, audit, reusable contracts, release profiles, no-copy guard |
+| `docs/GUARD_DISTRIBUTION.md` | adoption: transport guard + teammate scope guard |
 | `tests/` | dependency-free Node test suite (`npm test`) |
 | `tracker.config.json` | this repo's self-config for audit/CI |
 

@@ -170,5 +170,12 @@
       "contact": "GitHub private vulnerability reporting when available; otherwise SECURITY.md private channel",
       "privateVulnerabilityReporting": false
     }
+  },
+  "guard": {
+    "transportOnly": true,
+    "allow": [
+      ".github/workflows/reusable-release.yml",
+      ".github/workflows/reusable-security.yml"
+    ]
   }
 }

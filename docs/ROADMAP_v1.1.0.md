@@ -224,7 +224,7 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 
 - [x] T07 rate-limit-aware transport — **COMPLETED 2026-11-11** (PR #52; tests 41/41; rate diagnostic)
 - [x] T08 cache/batching — **COMPLETED 2026-11-11** (PR #53; tests 43/43; batched audit 34/34 clean)
-- [ ] T09 transport guard + no-copy adoption
+- [x] T09 transport guard + no-copy adoption — **COMPLETED 2026-11-11** (guard tests 47/47; reusable workflow; local pre-commit deferred)
 - [x] T06 audit section/hierarchy enforcement — **COMPLETED 2026-11-11** (PR #54; tests 44/44; strict audit 34/34)
 - [x] T01 cross-repo reusable/public decision — **COMPLETED 2026-11-11** (PR #55; private access blocked; public fallback validated)
 - [ ] T02 live release profiles/CI queue

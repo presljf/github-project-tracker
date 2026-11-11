@@ -26,6 +26,7 @@ Read in this order depending on your goal:
 | Security | [SECURITY.md](../SECURITY.md) |
 | Docs QA evidence | [DOCS VALIDATION](./DOCS_VALIDATION.md) |
 | v1.1.0 execution plan | [ROADMAP v1.1.0](./ROADMAP_v1.1.0.md) |
+| Guard adoption | [GUARD DISTRIBUTION](./GUARD_DISTRIBUTION.md) |
 
 **Automation availability:** bootstrap, audit, task CLI, reusable CI/security, and release profiles are implemented. Planned contracts are labeled; manual fallbacks remain documented.
 
