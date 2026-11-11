@@ -343,7 +343,7 @@ export class GitHubCli {
   listIssues(owner, repo, state = 'all') {
     const result = this.run([
       'issue', 'list', '--repo', `${owner}/${repo}`, '--state', state,
-      '--json', 'number,title,state,assignees,labels,milestone,issueType,url',
+      '--json', 'number,title,body,state,assignees,labels,milestone,issueType,url',
       '--limit', '100',
     ], { json: true });
     return result || [];

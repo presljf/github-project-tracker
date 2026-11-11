@@ -35,6 +35,7 @@ function issue(number, title, state = 'OPEN', extra = {}) {
     milestone: { title: 'v1.0.0' },
     labels: [],
     assignees: [],
+    body: '## Why / context\nFixture\n\n## Current behavior\nFixture\n\n## Goal\nFixture\n\n## Non-goals\nFixture\n\n## Acceptance criteria\n- [x] Fixture\n\n## Test plan\nFixture\n\n## Verification evidence required\nFixture\n\n## Dependencies / blockers\nNone\n\n## Risks / rollback\nLow\n\n## Estimate\nS',
     ...extra,
   };
 }
@@ -47,6 +48,7 @@ function baseData() {
       issue(3, '[Sprint] 1.0.0.1 — Foundation', 'CLOSED'),
       issue(4, '[Task] Closed task', 'CLOSED'),
       issue(5, '[Task] Open todo'),
+      issue(6, '[Sprint] 1.0.0.2 — Active sprint'),
     ],
     projectItems: [
       item(1, { release: '', sprint: '', area: 'docs', kind: 'infra', estimate: 'L' }),
@@ -54,11 +56,12 @@ function baseData() {
       item(3, { status: 'Done' }),
       item(4, { status: 'Done' }),
       item(5),
+      item(6),
     ],
     comments: {
       3: [{ body: '### Sprint demo / exit\n- Outcome: done' }],
     },
-    subIssues: { 3: [4] },
+    subIssues: { 1: [2], 2: [6], 6: [5], 3: [4] },
     dependencies: {},
   };
 }
@@ -67,8 +70,8 @@ test('clean tracker data passes', () => {
   const result = auditTracker({ config: config(), data: baseData() });
   assert.equal(result.ok, true);
   assert.deepEqual(result.violations, []);
-  assert.equal(result.checked.issues, 5);
-  assert.equal(result.checked.projectItems, 5);
+  assert.equal(result.checked.issues, 6);
+  assert.equal(result.checked.projectItems, 6);
 });
 
 test('issueKind identifies trackers vs tasks', () => {
@@ -101,15 +104,15 @@ test('detects missing type, milestone, project item, and fields', () => {
 
 test('detects WIP limit, missing check-in, and blocked without dependency', () => {
   const data = baseData();
-  data.issues.push(issue(6, '[Task] Second active', 'OPEN', { assignees: [{ login: 'owner' }] }));
+  data.issues.push(issue(7, '[Task] Second active', 'OPEN', { assignees: [{ login: 'owner' }] }));
   data.issues[4].assignees = [{ login: 'owner' }];
   data.projectItems.push(item(4, { status: 'In Progress' }));
   // make #5 and #6 In Progress, both owned by owner, only #5 checked in
-  data.projectItems = data.projectItems.filter((entry) => entry.content.number !== 5).concat([item(5, { status: 'In Progress' }), item(6, { status: 'In Progress' })]);
+  data.projectItems = data.projectItems.filter((entry) => entry.content.number !== 5).concat([item(5, { status: 'In Progress' }), item(7, { status: 'In Progress' })]);
   data.comments[5] = [{ body: '### Check-in\n- Owner: owner' }];
   data.issues[4].assignees = [{ login: 'owner' }];
-  data.issues.push(issue(7, '[Task] Blocked task', 'OPEN', { assignees: [] }));
-  data.projectItems.push(item(7, { status: 'Blocked' }));
+  data.issues.push(issue(8, '[Task] Blocked task', 'OPEN', { assignees: [] }));
+  data.projectItems.push(item(8, { status: 'Blocked' }));
   const result = auditTracker({ config: config(), data });
   const codes = result.violations.map((violation) => violation.code);
   assert.ok(codes.includes('WIP_LIMIT_EXCEEDED'));
@@ -136,4 +139,17 @@ test('detects missing template version and strict flag', () => {
   const result = auditTracker({ config: cfg, data, strict: true });
   assert.ok(result.violations.some((violation) => violation.code === 'TEMPLATE_VERSION_MISSING'));
   assert.equal(result.strict, true);
+});
+
+
+test('detects missing required task sections and release/sprint ancestry', () => {
+  const missing = baseData();
+  missing.issues[4].body = missing.issues[4].body.replace(/## Test plan[\s\S]*?(?=## Verification)/, '');
+  const missingResult = auditTracker({ config: config(), data: missing });
+  assert.ok(missingResult.violations.some((v) => v.code === 'TASK_SECTION_MISSING' && /test plan/i.test(v.message)));
+
+  const noHierarchy = baseData();
+  delete noHierarchy.subIssues[6];
+  const hierarchyResult = auditTracker({ config: config(), data: noHierarchy });
+  assert.ok(hierarchyResult.violations.some((v) => v.code === 'TASK_HIERARCHY_MISSING_SPRINT'));
 });

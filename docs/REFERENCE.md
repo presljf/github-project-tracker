@@ -312,6 +312,8 @@ Run `audit.mjs` advisory first; `--strict` for release gates. Invariants:
 8. Sprint/release Done has exit evidence.
 9. Pinned `automation.templateVersion`; downstream context complete.
 10. No secrets in config/artifacts — **manual review; the audit does not scan issue bodies/comments for secrets**.
+11. Open tasks contain required issue-template/DoR sections.
+12. Open tasks have both a release tracker and sprint tracker ancestor.
 
 Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
 
