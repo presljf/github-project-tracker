@@ -1,0 +1,46 @@
+# Dependabot version updates for Project Tracker OS adopters (T15 security defaults).
+#
+# - `github-actions` keeps SHA-pinned workflow actions current; grouped weekly to limit PR noise.
+# - `npm` groups minor/patch updates; major updates arrive as individual PRs for review.
+# - No labels are configured here on purpose: Dependabot only applies labels that already exist,
+#   and this template cannot assume a downstream repository's label set. Create `dependencies`
+#   (and optionally `ci`) in the downstream repo and add a `labels:` entry if wanted.
+# - No credentials belong in this file. Private registries must use Dependabot secrets
+#   (Settings -> Secrets and variables -> Dependabot), never inline tokens.
+# - This repository has no package-lock.json; the npm entry is a template for adopters and
+#   produces no PRs until a lockfile/package.json dependency set exists.
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '16:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '16:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 5
+    versioning-strategy: 'increase'
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      npm-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'

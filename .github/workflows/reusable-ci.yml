@@ -1,0 +1,423 @@
+# Reusable Node CI for Project Tracker OS adopters (T15 profile).
+#
+# Contract:
+# - Callers pass the Node version, working directory, and commands. This workflow hardcodes
+#   no product commands and needs no secrets.
+# - Command resolution order: caller input -> tracker config mapping -> package.json script
+#   -> documented no-op success (so required checks stay resolvable).
+# - Least privilege: contents:read; Linux-only deterministic jobs.
+# - Job/check names are part of the branch-protection contract. Through the bundled caller
+#   (caller job id `ci`) the contexts are: ci / lint, ci / format, ci / test, ci / build,
+#   ci / ci-gate. `ci-gate` is the single aggregate check recommended for branch protection.
+name: Reusable Node CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version passed to actions/setup-node (for example '22' or '22.x')."
+        type: string
+        required: false
+        default: '22'
+      working-directory:
+        description: "Directory containing package.json, relative to the repository root."
+        type: string
+        required: false
+        default: '.'
+      tracker-config:
+        description: "Optional tracker config path used for profiles.node.commands / workflows.ci.commands mappings."
+        type: string
+        required: false
+        default: ''
+      install-command:
+        description: "Dependency install command. Empty auto-detects npm lockfiles; 'none' always skips install."
+        type: string
+        required: false
+        default: ''
+      lint-command:
+        description: "Lint command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        type: string
+        required: false
+        default: ''
+      format-command:
+        description: "Format-check command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        type: string
+        required: false
+        default: ''
+      test-command:
+        description: "Test command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        type: string
+        required: false
+        default: ''
+      build-command:
+        description: "Build or verification command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        type: string
+        required: false
+        default: ''
+    outputs:
+      result:
+        description: "'success' when lint, format, test, and build all succeed; otherwise 'failure'."
+        value: ${{ jobs.summary.outputs.result }}
+      checks-passed:
+        description: "'true' when lint, format, test, and build all succeed (aggregate gate convenience output)."
+        value: ${{ jobs.summary.outputs.checksPassed }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      lockfileKind: ${{ steps.lockfile.outputs.kind }}
+      lockfilePath: ${{ steps.lockfile.outputs.path }}
+      installCommand: ${{ steps.resolve.outputs.installCommand }}
+      lintCommand: ${{ steps.resolve.outputs.lintCommand }}
+      formatCommand: ${{ steps.resolve.outputs.formatCommand }}
+      testCommand: ${{ steps.resolve.outputs.testCommand }}
+      buildCommand: ${{ steps.resolve.outputs.buildCommand }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Detect lockfile
+        id: lockfile
+        env:
+          WORKDIR: ${{ inputs.working-directory }}
+        run: |
+          set -euo pipefail
+          root="${WORKDIR:-.}"
+          kind="none"
+          path=""
+          if [ -f "$root/package-lock.json" ]; then
+            kind="npm"
+            path="$root/package-lock.json"
+          elif [ -f "$root/npm-shrinkwrap.json" ]; then
+            kind="npm"
+            path="$root/npm-shrinkwrap.json"
+          elif [ -f "$root/pnpm-lock.yaml" ]; then
+            kind="pnpm"
+            path="$root/pnpm-lock.yaml"
+          elif [ -f "$root/yarn.lock" ]; then
+            kind="yarn"
+            path="$root/yarn.lock"
+          fi
+          echo "Detected lockfile kind: ${kind}; path: ${path:-<none>}"
+          echo "kind=${kind}" >> "$GITHUB_OUTPUT"
+          echo "path=${path}" >> "$GITHUB_OUTPUT"
+      - name: Resolve commands
+        id: resolve
+        env:
+          WORKDIR: ${{ inputs.working-directory }}
+          TRACKER_CONFIG: ${{ inputs.tracker-config }}
+          INSTALL_INPUT: ${{ inputs.install-command }}
+          LINT_INPUT: ${{ inputs.lint-command }}
+          FORMAT_INPUT: ${{ inputs.format-command }}
+          TEST_INPUT: ${{ inputs.test-command }}
+          BUILD_INPUT: ${{ inputs.build-command }}
+          LOCKFILE_KIND: ${{ steps.lockfile.outputs.kind }}
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const workdir = process.env.WORKDIR || '.';
+
+          let scripts = {};
+          const packageJsonPath = path.join(workdir, 'package.json');
+          if (fs.existsSync(packageJsonPath)) {
+            try {
+              scripts = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')).scripts || {};
+            } catch (error) {
+              console.error(`::warning::Could not parse ${packageJsonPath}: ${error.message}`);
+            }
+          }
+
+          let config = null;
+          const configPath = (process.env.TRACKER_CONFIG || '').trim();
+          if (configPath) {
+            try {
+              config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            } catch (error) {
+              console.error(`::warning::Tracker config '${configPath}' could not be read or parsed: ${error.message}. Falling back to package.json scripts.`);
+            }
+          }
+
+          const configCommand = (name) => {
+            if (!config) return '';
+            const candidates = [
+              config.profiles && config.profiles.node && config.profiles.node.commands,
+              config.workflows && config.workflows.ci && config.workflows.ci.commands,
+            ];
+            for (const candidate of candidates) {
+              if (candidate && typeof candidate[name] === 'string' && candidate[name].trim()) {
+                return candidate[name].trim();
+              }
+            }
+            return '';
+          };
+
+          const spec = {
+            lint: { input: process.env.LINT_INPUT, script: 'lint' },
+            format: { input: process.env.FORMAT_INPUT, script: 'format:check' },
+            test: { input: process.env.TEST_INPUT, script: 'test' },
+            build: { input: process.env.BUILD_INPUT, script: 'build' },
+          };
+
+          const resolved = new Map();
+          for (const [name, entry] of Object.entries(spec)) {
+            const explicit = (entry.input || '').trim();
+            if (explicit) {
+              resolved.set(name, { command: explicit, source: 'caller input' });
+            } else {
+              const fromConfig = configCommand(name);
+              if (fromConfig) {
+                resolved.set(name, { command: fromConfig, source: 'tracker config' });
+              } else if (Object.prototype.hasOwnProperty.call(scripts, entry.script)) {
+                resolved.set(name, {
+                  command: `npm run ${entry.script}`,
+                  source: `package.json scripts.${entry.script}`,
+                });
+              } else {
+                resolved.set(name, { command: '', source: 'none (no-op success)' });
+              }
+            }
+          }
+
+          let install = (process.env.INSTALL_INPUT || '').trim();
+          let installSource = 'caller input';
+          if (!install) {
+            const kind = process.env.LOCKFILE_KIND || 'none';
+            if (kind === 'npm') {
+              install = 'npm ci';
+              installSource = 'auto-detected npm lockfile';
+            } else if (kind === 'pnpm' || kind === 'yarn') {
+              install = 'none';
+              installSource = `auto-detected ${kind} lockfile; this reusable workflow only auto-installs npm. Pass install-command (for example "corepack enable && pnpm install --frozen-lockfile") or use copy mode.`;
+              console.error(`::notice::${installSource}`);
+            } else {
+              install = 'none';
+              installSource = 'no lockfile detected';
+            }
+          }
+
+          const lines = [];
+          for (const [name, entry] of resolved.entries()) {
+            lines.push(`${name}Command=${entry.command}`);
+            console.log(`${name}: ${entry.command || '<no-op>'} (source: ${entry.source})`);
+          }
+          lines.push(`installCommand=${install}`);
+          console.log(`install: ${install} (source: ${installSource})`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `${lines.join('\n')}\n`);
+          NODE
+
+  lint:
+    name: lint
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
+      - name: Install dependencies
+        env:
+          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
+        run: |
+          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
+            echo "::notice::Skipping dependency install (no install command resolved)."
+            exit 0
+          fi
+          echo "+ ${INSTALL_COMMAND}"
+          bash -euo pipefail -c "${INSTALL_COMMAND}"
+      - name: Run lint
+        env:
+          COMMAND: ${{ needs.prepare.outputs.lintCommand }}
+        run: |
+          if [ -z "${COMMAND:-}" ]; then
+            echo "::notice::No lint command resolved from caller input, tracker config, or package.json scripts. This job is a no-op success so required checks stay resolvable; configure lint-command to make the gate real."
+            exit 0
+          fi
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+
+  format:
+    name: format
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
+      - name: Install dependencies
+        env:
+          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
+        run: |
+          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
+            echo "::notice::Skipping dependency install (no install command resolved)."
+            exit 0
+          fi
+          echo "+ ${INSTALL_COMMAND}"
+          bash -euo pipefail -c "${INSTALL_COMMAND}"
+      - name: Run format check
+        env:
+          COMMAND: ${{ needs.prepare.outputs.formatCommand }}
+        run: |
+          if [ -z "${COMMAND:-}" ]; then
+            echo "::notice::No format command resolved from caller input, tracker config, or package.json scripts. This job is a no-op success so required checks stay resolvable; configure format-command to make the gate real."
+            exit 0
+          fi
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+
+  test:
+    name: test
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
+      - name: Install dependencies
+        env:
+          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
+        run: |
+          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
+            echo "::notice::Skipping dependency install (no install command resolved)."
+            exit 0
+          fi
+          echo "+ ${INSTALL_COMMAND}"
+          bash -euo pipefail -c "${INSTALL_COMMAND}"
+      - name: Run tests
+        env:
+          COMMAND: ${{ needs.prepare.outputs.testCommand }}
+        run: |
+          if [ -z "${COMMAND:-}" ]; then
+            echo "::notice::No test command resolved from caller input, tracker config, or package.json scripts. This job is a no-op success so required checks stay resolvable; configure test-command to make the gate real."
+            exit 0
+          fi
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+
+  build:
+    name: build
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
+      - name: Install dependencies
+        env:
+          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
+        run: |
+          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
+            echo "::notice::Skipping dependency install (no install command resolved)."
+            exit 0
+          fi
+          echo "+ ${INSTALL_COMMAND}"
+          bash -euo pipefail -c "${INSTALL_COMMAND}"
+      - name: Run build or verification
+        env:
+          COMMAND: ${{ needs.prepare.outputs.buildCommand }}
+        run: |
+          if [ -z "${COMMAND:-}" ]; then
+            echo "::notice::No build command resolved from caller input, tracker config, or package.json scripts. This job is a no-op success so required checks stay resolvable; configure build-command to make the gate real."
+            exit 0
+          fi
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+
+  summary:
+    # Display name is part of the delivered contract: through a caller job named `ci`, the
+    # aggregate check context is `ci / ci-gate`. Keep it stable if branch protection requires it.
+    name: ci-gate
+    needs: [lint, format, test, build]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      result: ${{ steps.aggregate.outputs.result }}
+      checksPassed: ${{ steps.aggregate.outputs.checksPassed }}
+    steps:
+      - name: Aggregate job results
+        id: aggregate
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          FORMAT_RESULT: ${{ needs.format.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          set -euo pipefail
+          echo "lint=${LINT_RESULT} format=${FORMAT_RESULT} test=${TEST_RESULT} build=${BUILD_RESULT}"
+          for result in "${LINT_RESULT}" "${FORMAT_RESULT}" "${TEST_RESULT}" "${BUILD_RESULT}"; do
+            if [ "${result}" != "success" ]; then
+              echo "result=failure" >> "$GITHUB_OUTPUT"
+              echo "checksPassed=false" >> "$GITHUB_OUTPUT"
+              echo "::error::One or more CI jobs did not succeed; see the individual job logs."
+              exit 1
+            fi
+          done
+          echo "result=success" >> "$GITHUB_OUTPUT"
+          echo "checksPassed=true" >> "$GITHUB_OUTPUT"

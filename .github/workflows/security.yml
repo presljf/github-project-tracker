@@ -1,0 +1,67 @@
+# Security defaults caller (T15 profile).
+#
+# - Dependency review (via the reusable security workflow) runs on pull requests and skips
+#   cleanly where the platform feature is unavailable (private repos without GHAS). See
+#   docs/CI_SECURITY_PROFILE.md.
+# - CodeQL is opt-in because private repositories need GitHub Code Security/Advanced Security
+#   and because language/build setup is project-specific. Enable it either by:
+#     1. setting repository variable ENABLE_CODEQL=true (all events), or
+#     2. dispatching this workflow with enable-codeql=true (single run).
+#   Languages come from the repository variable CODEQL_LANGUAGES (default
+#   javascript-typescript); compiled languages need build steps added in the project copy.
+# - Check contexts: security / dependency-review and security / codeql. Never make the opt-in
+#   CodeQL job a required check.
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 16 * * 1'
+  workflow_dispatch:
+    inputs:
+      enable-codeql:
+        description: "Run CodeQL for this manual dispatch (requires CodeQL/Code Security availability)."
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: dependency-review
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      fail-on-severity: high
+      warn-only: false
+
+  codeql:
+    name: codeql
+    if: ${{ (vars.ENABLE_CODEQL == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.enable-codeql == 'true')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+        with:
+          languages: ${{ vars.CODEQL_LANGUAGES || 'javascript-typescript' }}
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3

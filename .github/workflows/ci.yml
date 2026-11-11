@@ -1,0 +1,46 @@
+# Thin CI caller (project tracker template repository).
+#
+# The reusable workflow owns the contract; this caller supplies only project values. Copy this
+# file into an adopting repository (or call the reusable workflow by reference once the template
+# repository is public/accessible) and adjust the inputs.
+#
+# Required-check note: through this caller, check contexts are ci / lint, ci / format, ci / test,
+# ci / build, and ci / ci-gate (the aggregate gate T09's catalog recommends). Keep the caller job
+# name (`ci`) stable if those checks are required by branch protection/rulesets.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Needed when a merge queue is enabled; harmless otherwise.
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      node-version: '22'
+      working-directory: '.'
+      tracker-config: 'tracker.config.json'
+      # This template repository ships no ESLint/Prettier devDependencies (the T08 node profile
+      # is for adopting projects), so lint/format are explicit no-op successes here. Adopters
+      # should pass real commands, for example:
+      #   lint-command: 'npm run lint'
+      #   format-command: 'npm run format:check'
+      lint-command: ''
+      format-command: ''
+      test-command: 'npm test'
+      # `build` is the generic build/verification slot; for this docs/config template it
+      # validates the example tracker configs.
+      build-command: 'npm run validate:config'
