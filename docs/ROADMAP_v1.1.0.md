@@ -248,7 +248,9 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 
 ## 14. v1.1.0 closure
 
-**Closed 2026-11-11.** Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. Explicit deferrals: T03 owner token, T10 owner retention. Branch protection + docs coverage + transport guards are enforced. Adoption gate #77 unblocked.
+**Closed 2026-11-11.** CastDeck adoption closed: gate #77 and adoption issues #78–#81 complete (config v1.0.1, operator guide, advisory audit workflow; owner token deferred). v0.4.6 quality #2 unblocked.
+
+Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. Explicit deferrals: T03 owner token, T10 owner retention. Branch protection + docs coverage + transport guards are enforced. Adoption gate #77 unblocked.
 
 ## 15. Progress log
 
