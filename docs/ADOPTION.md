@@ -83,6 +83,10 @@ Pin the template version exactly and record the feedback channel:
 "feedback": { "upstreamRepo": "presljf/github-project-tracker", "issueForm": "downstream-bug.yml", "pinnedVersion": "1.0.0" }
 ```
 
+## 3.5 No-copy guard installation
+
+Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION.md); do not copy the guard implementation. Add `guard.allow` only for explicit migration exceptions. If the project carries `scripts/github/**` in copy mode, wire `npm run guard:gh` into its test/CI task.
+
 ## 4. Create the plan skeleton
 
 1. Program roadmap issue (or a `docs/ROADMAP.md` plus roadmap issue) — decisions, releases, operating model.

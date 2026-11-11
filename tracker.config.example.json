@@ -166,5 +166,9 @@
       "contact": "security@example.com",
       "privateVulnerabilityReporting": false
     }
+  },
+  "guard": {
+    "transportOnly": true,
+    "allow": []
   }
 }
