@@ -1,21 +1,29 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+The template/Project Tracker OS is supported at the latest released v1.0.x line. Downstream projects are responsible for their own product security policies and dependency updates.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Version | Supported |
+|---|---|
+| v1.0.x (latest patch) | :white_check_mark: |
+| earlier/untagged snapshots | :x: |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Use this section to tell people how to report a vulnerability.
+**Do not open a public issue, discussion, or PR containing vulnerability details, secrets, or exploit steps.**
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Use one of these private channels:
+
+1. GitHub's **private vulnerability reporting** on this repository, when available.
+2. If private reporting is unavailable, contact the maintainer through a private channel established for the project.
+
+Include affected version/commit, environment, reproduction, impact, and any suggested mitigation. Do not include live secrets or personal data.
+
+## What to expect
+
+Best-effort acknowledgement and triage; no SLA. Accepted reports are fixed on a supported line with coordinated disclosure as appropriate. Reports about a downstream product's vulnerabilities should go to that product's own security policy, not this tracker template.
+
+## Scope
+
+This policy covers the tracker template, reusable workflows/actions, scripts, config schema, and documentation in this repository. It does not cover third-party services or downstream project code.
