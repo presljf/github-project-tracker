@@ -255,7 +255,7 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [x] T01 cross-repo reusable/public decision — **COMPLETED 2026-11-11** (PR #55; private access blocked; public fallback validated)
 - [x] T02 live release profiles/CI queue — **COMPLETED 2026-11-11** (PR #61; generic/container/package dry-runs verified; macOS runner-plan blocked; 14 stale queued runs need owner cancellation)
 - [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
-- [ ] T04 downstream/security/publication
+- [x] T04 downstream/security/publication — **COMPLETED 2026-11-11** (PR #64; private vulnerability reporting enabled; publication checklist)
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [ ] T12 shared rate-limit state/targeted queries/cost instrumentation — #60 (P0)
 - [ ] T11 docs coverage guard — #58 (P1)
