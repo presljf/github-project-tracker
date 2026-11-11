@@ -20,6 +20,7 @@ Related planned artifacts (not all present yet):
 | `scripts/github/task.mjs` | check-in/update/review/block/done CLI | planned (T05) |
 | `.github/ISSUE_TEMPLATE/{task,sprint,release,spike}.yml` | issue intake forms | existing (T02); PR template + downstream forms planned (T07/T16) |
 | `docs/comment-templates/` | copy-paste lifecycle comments | existing (T02) |
+| `profiles/node/` | generic Node lint/format profile (ESLint/Prettier/editorconfig/ignore) | existing (T14) |
 | `presljf/github-project-tracker` | reusable template repository | existing (private) |
 
 ---
