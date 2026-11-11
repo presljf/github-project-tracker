@@ -43,6 +43,10 @@ No violations.
 
 Full adoption path: [docs/ADOPTION.md](docs/ADOPTION.md) · Template structure/versioning: [docs/TEMPLATE_REPO.md](docs/TEMPLATE_REPO.md).
 
+## v1.1.0 tracker hardening plan
+
+See [docs/ROADMAP_v1.1.0.md](docs/ROADMAP_v1.1.0.md): P0 rate-limit hardening, automated audit enforcement, existing follow-ups, and the CastDeck adoption gate.
+
 ## Documentation
 
 - [Documentation index](docs/README.md)

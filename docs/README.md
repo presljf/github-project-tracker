@@ -25,6 +25,7 @@ Read in this order depending on your goal:
 | Report a bug/feature upstream | [Downstream feedback](./DOWNSTREAM_FEEDBACK.md) · [reporting card](./reference-cards/reporting-upstream.md) |
 | Security | [SECURITY.md](../SECURITY.md) |
 | Docs QA evidence | [DOCS VALIDATION](./DOCS_VALIDATION.md) |
+| v1.1.0 execution plan | [ROADMAP v1.1.0](./ROADMAP_v1.1.0.md) |
 
 **Automation availability:** bootstrap, audit, task CLI, reusable CI/security, and release profiles are implemented. Planned contracts are labeled; manual fallbacks remain documented.
 
