@@ -10,7 +10,7 @@ Related planned artifacts (not all present yet):
 
 | Artifact | Purpose | Status |
 |---|---|---|
-| `docs/HOW_TO_USE.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, `docs/ADOPTION.md`, `docs/UPGRADING.md` | task-oriented usage docs, reference, troubleshooting, adoption/upgrade guidance | planned (T11/T12) |
+| `docs/HOW_TO_USE.md`, `docs/QUICKSTART.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, `docs/ADOPTION.md`, `docs/UPGRADING.md`, `docs/AGENT_GUIDE.md`, `docs/MULTI_PROJECT.md` | exhaustive task-oriented usage docs/reference/adoption/upgrade/agent/multi-project | existing (T11); T12 validation pending |
 | `docs/DOCS_STYLE_GUIDE.md`, `docs/reference-cards/` | doc standards and printable one-page cards | planned (T13) |
 | `docs/ACTIONS_CATALOG.md` | Actions/workflow catalog + token/runner matrices | planned (T09/T15) |
 | `tracker.config.example.json`, `schemas/tracker.config.schema.json`, `scripts/github/validate-config.mjs` | config contract/validation/examples | existing (T02) |
