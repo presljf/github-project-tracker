@@ -246,7 +246,11 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - Scratch repo archived; delete later by owner if desired.
 - Unreleased GitHub Release: none published; release workflow disabled.
 
-## 14. Progress log
+## 14. v1.1.0 closure
+
+**Closed 2026-11-11.** Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. Explicit deferrals: T03 owner token, T10 owner retention. Branch protection + docs coverage + transport guards are enforced. Adoption gate #77 unblocked.
+
+## 15. Progress log
 
 - [x] T07 rate-limit-aware transport — **COMPLETED 2026-11-11** (PR #52; tests 41/41; rate diagnostic)
 - [x] T08 cache/batching — **COMPLETED 2026-11-11** (PR #53; tests 43/43; batched audit 34/34 clean)
@@ -254,9 +258,9 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [x] T06 audit section/hierarchy enforcement — **COMPLETED 2026-11-11** (PR #54; tests 44/44; strict audit 34/34)
 - [x] T01 cross-repo reusable/public decision — **COMPLETED 2026-11-11** (PR #55; private access blocked; public fallback validated)
 - [x] T02 live release profiles/CI queue — **COMPLETED 2026-11-11** (PR #61; generic/container/package dry-runs verified; macOS runner-plan blocked; 14 stale queued runs need owner cancellation)
-- [~] T03 audit CI/branch protection — **PARTIAL 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); audit token secret pending owner-created project-scoped PAT
+- [x] T03 audit CI/branch protection — **DEFERRED 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); owner-created audit token explicit deferral
 - [x] T04 downstream/security/publication — **COMPLETED 2026-11-11** (PR #64; private vulnerability reporting enabled; publication checklist)
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [x] T12 shared rate-limit state/targeted queries/cost instrumentation — **COMPLETED 2026-11-11** (PR #67; shared state+cost report; targeted item lookups; batched dependencies/mutations; tests 58/58) — #60
 - [x] T11 docs coverage guard — **COMPLETED 2026-11-11** (PR #65; CI docs coverage; tests 53/53; issue-type CI wiring follow-up) — #58
-- [ ] T10 scratch cleanup — #51 (P3)
+- [x] T10 scratch cleanup — **DEFERRED 2026-11-11** (owner retention; archived/no deletion) — #51
