@@ -11,6 +11,7 @@
     "audit": "node scripts/github/audit.mjs",
     "task": "node scripts/github/task.mjs",
     "validate:config": "node scripts/github/validate-config.mjs",
-    "docs:check": "node scripts/docs/check-docs.mjs"
+    "docs:check": "node scripts/docs/check-docs.mjs",
+    "rate-limit": "node scripts/github/rate-limit.mjs"
   }
 }

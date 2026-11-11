@@ -355,6 +355,22 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 
 Never store tokens/cookies/private keys in repo, config, issue, comment, artifact, or log. No `pull_request_target` with untrusted code + secrets.
 
+### Rate-limit behavior
+
+`scripts/github/lib/github.mjs` is the transport for tracker automation. It:
+- reads `x-ratelimit-*` / `retry-after` where available and tracks remaining/reset;
+- preflights mutations against a budget floor;
+- serializes mutations with ≥1s spacing;
+- fails with reset guidance instead of blindly retrying primary/secondary limits.
+
+Check the budget:
+```bash
+npm run rate-limit
+# GitHub graphql budget: N/5000 remaining, M used; resets <ISO>
+```
+
+GraphQL is 5,000 points/hour per user; REST is 5,000 requests/hour. **GitHub Pro does not raise either.** Secondary limits include 2,000 GraphQL points/minute, 900 REST points/minute per endpoint, and content-generation limits. The `/rate_limit` endpoint can misreport the burst position; prefer response headers.
+
 ## 15. Runner / cost guidance
 
 | Runner | Cost | Use |

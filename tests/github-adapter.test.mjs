@@ -7,6 +7,9 @@ test('updateFieldOptions sends a variables object, not an array', async () => {
   const calls = [];
   const exec = (args) => {
     calls.push(args);
+    if (args[0] === 'api' && args[1] === '--include') {
+      return `HTTP/2.0 200 OK\nx-ratelimit-limit: 5000\nx-ratelimit-remaining: 4000\nx-ratelimit-used: 1000\nx-ratelimit-reset: ${Math.floor(Date.now()/1000)+3600}\nx-ratelimit-resource: graphql\n\n{"data":{"rateLimit":{"limit":5000,"remaining":4000,"used":1000,"resetAt":"2099-01-01T00:00:00Z","cost":1}}}`;
+    }
     if (args[0] === 'api' && args[1] === 'graphql') {
       const input = JSON.parse(fs.readFileSync(args[3], 'utf8'));
       if (input.query.includes('node(id: $id)')) {
@@ -19,6 +22,6 @@ test('updateFieldOptions sends a variables object, not an array', async () => {
   };
   const gh = new GitHubCli({ exec, retries: 0, sleep: () => {} });
   await gh.updateFieldOptions('FIELD', ['Todo', 'In Progress']);
-  const queryInput = JSON.parse(fs.readFileSync(calls[0][3], 'utf8'));
+  const queryInput = JSON.parse(fs.readFileSync(calls.find((args) => args[0] === 'api' && args[1] === 'graphql')[3], 'utf8'));
   assert.deepEqual(queryInput.variables, { id: 'FIELD' });
 });
