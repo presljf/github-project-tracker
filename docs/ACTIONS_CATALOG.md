@@ -580,7 +580,9 @@ The config keys come from `schemas/tracker.config.schema.json` and `tracker.conf
 5. Run local parity (§6), then one advisory PR run before promoting/requiring anything.
 6. On upgrade: re-copy fresh files, re-apply the documented overrides, diff-review, and run the same validation; never hand-merge silently.
 
-### 8.5 Private cross-repo reuse validation (before choosing reusable mode)
+### 8.5 Private/public cross-repo reuse validation (before choosing reusable mode)
+
+**Result recorded 2026-11-11:** a private downstream repo could not resolve `presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.0.1`; GitHub failed with “workflow was not found.” The template was then made **public**; the same downstream test resolved and ran both the reusable CI workflow and the remote `checksum` composite action successfully. Public access is the validated no-copy path. Copy-mode remains documented as fallback; branch protection/private vulnerability reporting remain T03/T04.
 
 Run these on a scratch private repo with read access to the template that pins the release; record commands/results in the release or adoption tracker:
 

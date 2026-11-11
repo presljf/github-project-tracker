@@ -2,7 +2,7 @@
 
 A portable, auditable GitHub project-tracker operating system: playbook, exhaustive docs, versioned config, bootstrap/audit/task CLIs, reusable CI/security workflows, release profiles, and downstream feedback intake.
 
-**Status:** v1.0.0 release candidate (tag pending T08 live validation + release close) · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
+**Status:** v1.0.1 validated; public template repository · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
 
 ## Use this template
 
