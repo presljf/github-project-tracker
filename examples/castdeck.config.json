@@ -7,9 +7,27 @@
     "title": "CastDeck Roadmap",
     "number": 1
   },
-  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
+  "roadmap": {
+    "title": "Program roadmap",
+    "body": "# Program roadmap\n\n- Release and sprint plan of record.\n"
+  },
+  "statuses": [
+    "Todo",
+    "In Progress",
+    "In Review",
+    "Blocked",
+    "Done"
+  ],
   "fields": {
-    "Release": { "options": ["v0.4.6", "v0.5.0", "v0.6.0", "v0.7.0", "v0.8.0"] },
+    "Release": {
+      "options": [
+        "v0.4.6",
+        "v0.5.0",
+        "v0.6.0",
+        "v0.7.0",
+        "v0.8.0"
+      ]
+    },
     "Sprint": {
       "options": [
         "0.4.6.1",
@@ -32,10 +50,41 @@
         "0.8.3"
       ]
     },
-    "Area": { "options": ["web", "desktop", "api", "data", "ci", "docs", "cross"] },
-    "Kind": { "options": ["feature", "fix", "ux", "spike", "test", "infra"] },
-    "Estimate": { "options": ["S", "M", "L"] },
-    "Source": { "options": ["Internal", "CastDeck", "Other"] }
+    "Area": {
+      "options": [
+        "web",
+        "desktop",
+        "api",
+        "data",
+        "ci",
+        "docs",
+        "cross"
+      ]
+    },
+    "Kind": {
+      "options": [
+        "feature",
+        "fix",
+        "ux",
+        "spike",
+        "test",
+        "infra"
+      ]
+    },
+    "Estimate": {
+      "options": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    "Source": {
+      "options": [
+        "Internal",
+        "CastDeck",
+        "Other"
+      ]
+    }
   },
   "issueTypes": {
     "task": "Task",
@@ -44,56 +93,136 @@
     "fallback": "Use project Kind if native issue types are unavailable."
   },
   "labels": {
-    "risk": ["risk:low", "risk:medium", "risk:high"],
-    "process": ["plan-change", "source:downstream", "status:needs-triage"]
+    "risk": [
+      "risk:low",
+      "risk:medium",
+      "risk:high"
+    ],
+    "process": [
+      "plan-change",
+      "source:downstream",
+      "status:needs-triage"
+    ]
   },
   "releases": [
     {
       "key": "v0.4.6",
-      "milestone": "v0.4.6 — Quality & automation",
+      "milestone": "v0.4.6 \u2014 Quality & automation",
       "sprints": [
-        { "key": "0.4.6.1", "title": "Formatting/lint profile implementation", "estimate": "M" },
-        { "key": "0.4.6.2", "title": "CI, templates, security, branch protection implementation", "estimate": "M" },
-        { "key": "0.4.6.3", "title": "Desktop smoke + release profile implementation", "estimate": "M" },
-        { "key": "0.4.6.4", "title": "Validation & release readiness", "estimate": "S" }
+        {
+          "key": "0.4.6.1",
+          "title": "Formatting/lint profile implementation",
+          "estimate": "M"
+        },
+        {
+          "key": "0.4.6.2",
+          "title": "CI, templates, security, branch protection implementation",
+          "estimate": "M"
+        },
+        {
+          "key": "0.4.6.3",
+          "title": "Desktop smoke + release profile implementation",
+          "estimate": "M"
+        },
+        {
+          "key": "0.4.6.4",
+          "title": "Validation & release readiness",
+          "estimate": "S"
+        }
       ]
     },
     {
       "key": "v0.5.0",
-      "milestone": "v0.5.0 — Quick wins",
+      "milestone": "v0.5.0 \u2014 Quick wins",
       "sprints": [
-        { "key": "0.5.1", "title": "Publisher: libraryV3 + A fallback", "estimate": "M" },
-        { "key": "0.5.2", "title": "Sidebar scroll + section collapse", "estimate": "M" },
-        { "key": "0.5.3", "title": "Sidebar icon rail", "estimate": "M" },
-        { "key": "0.5.4", "title": "Version consistency + Unplayed phase-1 copy", "estimate": "M" },
-        { "key": "0.5.5", "title": "Jobs clarity quick pass", "estimate": "M" }
+        {
+          "key": "0.5.1",
+          "title": "Publisher: libraryV3 + A fallback",
+          "estimate": "M"
+        },
+        {
+          "key": "0.5.2",
+          "title": "Sidebar scroll + section collapse",
+          "estimate": "M"
+        },
+        {
+          "key": "0.5.3",
+          "title": "Sidebar icon rail",
+          "estimate": "M"
+        },
+        {
+          "key": "0.5.4",
+          "title": "Version consistency + Unplayed phase-1 copy",
+          "estimate": "M"
+        },
+        {
+          "key": "0.5.5",
+          "title": "Jobs clarity quick pass",
+          "estimate": "M"
+        }
       ]
     },
     {
       "key": "v0.6.0",
-      "milestone": "v0.6.0 — Lists & sorting",
+      "milestone": "v0.6.0 \u2014 Lists & sorting",
       "sprints": [
-        { "key": "0.6.1", "title": "Shared sort framework", "estimate": "M" },
-        { "key": "0.6.2", "title": "Server-side sort for paginated endpoints", "estimate": "M" },
-        { "key": "0.6.3", "title": "Adopt sorting: Unplayed + Show episodes", "estimate": "M" },
-        { "key": "0.6.4", "title": "Adopt sorting: Your Episodes, Saved shows, Dashboard", "estimate": "M" }
+        {
+          "key": "0.6.1",
+          "title": "Shared sort framework",
+          "estimate": "M"
+        },
+        {
+          "key": "0.6.2",
+          "title": "Server-side sort for paginated endpoints",
+          "estimate": "M"
+        },
+        {
+          "key": "0.6.3",
+          "title": "Adopt sorting: Unplayed + Show episodes",
+          "estimate": "M"
+        },
+        {
+          "key": "0.6.4",
+          "title": "Adopt sorting: Your Episodes, Saved shows, Dashboard",
+          "estimate": "M"
+        }
       ]
     },
     {
       "key": "v0.7.0",
-      "milestone": "v0.7.0 — Unplayed coverage",
+      "milestone": "v0.7.0 \u2014 Unplayed coverage",
       "sprints": [
-        { "key": "0.7.1", "title": "Coverage metadata + API", "estimate": "M" },
-        { "key": "0.7.2", "title": "Window prompt + full-history flow", "estimate": "M" }
+        {
+          "key": "0.7.1",
+          "title": "Coverage metadata + API",
+          "estimate": "M"
+        },
+        {
+          "key": "0.7.2",
+          "title": "Window prompt + full-history flow",
+          "estimate": "M"
+        }
       ]
     },
     {
       "key": "v0.8.0",
-      "milestone": "v0.8.0 — Jobs deep redesign",
+      "milestone": "v0.8.0 \u2014 Jobs deep redesign",
       "sprints": [
-        { "key": "0.8.1", "title": "Job data model + API enrichment", "estimate": "M" },
-        { "key": "0.8.2", "title": "Job history table redesign", "estimate": "M" },
-        { "key": "0.8.3", "title": "Job detail modal + per-item results", "estimate": "L" }
+        {
+          "key": "0.8.1",
+          "title": "Job data model + API enrichment",
+          "estimate": "M"
+        },
+        {
+          "key": "0.8.2",
+          "title": "Job history table redesign",
+          "estimate": "M"
+        },
+        {
+          "key": "0.8.3",
+          "title": "Job detail modal + per-item results",
+          "estimate": "L"
+        }
       ]
     }
   ],
@@ -106,7 +235,9 @@
     "inReviewMode": "manual",
     "autoAddIssues": true,
     "closeToDone": true,
-    "bot": { "enabled": false }
+    "bot": {
+      "enabled": false
+    }
   },
   "profiles": {
     "node": {
@@ -122,7 +253,13 @@
   "workflows": {
     "ci": {
       "mode": "copy",
-      "requiredChecks": ["lint", "format", "unit", "web-e2e", "verify"]
+      "requiredChecks": [
+        "lint",
+        "format",
+        "unit",
+        "web-e2e",
+        "verify"
+      ]
     },
     "audit": {
       "mode": "advisory",

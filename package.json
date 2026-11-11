@@ -1,0 +1,15 @@
+{
+  "name": "@project-tracker/template",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "bootstrap": "node scripts/github/bootstrap.mjs",
+    "audit": "node scripts/github/audit.mjs",
+    "task": "node scripts/github/task.mjs",
+    "validate:config": "node scripts/github/validate-config.mjs"
+  }
+}

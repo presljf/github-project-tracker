@@ -15,7 +15,7 @@ Related planned artifacts (not all present yet):
 | `docs/ACTIONS_CATALOG.md` | Actions/workflow catalog + token/runner matrices | planned (T09/T15) |
 | `tracker.config.example.json`, `schemas/tracker.config.schema.json`, `scripts/github/validate-config.mjs` | config contract/validation/examples | existing (T02) |
 | `tracker.config.json` | adopting project's own pinned config | created per project at adoption |
-| `scripts/github/bootstrap.mjs` | idempotent setup from config | planned (T03) |
+| `scripts/github/bootstrap.mjs` | idempotent setup from config | existing (T03) |
 | `scripts/github/audit.mjs` | invariant audit | planned (T04) |
 | `scripts/github/task.mjs` | check-in/update/review/block/done CLI | planned (T05) |
 | `.github/ISSUE_TEMPLATE/{task,sprint,release,spike}.yml` | issue intake forms | existing (T02); PR template + downstream forms planned (T07/T16) |
