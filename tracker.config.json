@@ -30,7 +30,8 @@
         "1.0.0.1",
         "1.0.0.2",
         "1.0.0.3",
-        "backlog"
+        "backlog",
+        "1.1.0.1"
       ]
     },
     "Area": {
@@ -103,6 +104,17 @@
         {
           "key": "1.0.0.3",
           "title": "Template repo + release profiles + docs QA",
+          "estimate": "M"
+        }
+      ]
+    },
+    {
+      "key": "v1.1.0",
+      "milestone": "v1.1.0 \u2014 Tracker follow-ups",
+      "sprints": [
+        {
+          "key": "1.1.0.1",
+          "title": "Tracker follow-ups",
           "estimate": "M"
         }
       ]
