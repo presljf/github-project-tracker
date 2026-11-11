@@ -197,7 +197,6 @@ permissions: {}
 
 jobs:
   prepare:
-  prepare:
     name: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -378,7 +377,6 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   build:
-  build:
     name: build
     needs: prepare
     runs-on: ${{ needs.prepare.outputs.runner }}
@@ -540,7 +538,6 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ inputs.retention-days }}
 
-  sign:
   sign:
     name: sign-macos
     needs: [prepare, build]
