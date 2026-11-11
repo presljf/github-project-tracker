@@ -1,6 +1,6 @@
 # Template repository guide
 
-**Docs version:** v1.0.0-docs.1 · Template target: v1.0.0
+**Docs version:** v1.0.1-docs.1 · Template target: v1.0.1
 
 This repository is the **source of truth** for Project Tracker OS. It is a public GitHub template repository (published after private reusable access was validated as blocked) containing the playbook, docs, scripts, workflows, config schema, profiles, and validation.
 

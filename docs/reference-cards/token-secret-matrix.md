@@ -1,6 +1,6 @@
 # Token & secret matrix
 
-<!-- Docs version: v1.0.0-docs.1 · Target template: v1.0.0 · print formats: A4, Letter -->
+<!-- Docs version: v1.0.1-docs.1 · Target template: v1.0.1 · print formats: A4, Letter -->
 
 > Least-privilege tokens and secrets by job. Full model: [REFERENCE §14](../REFERENCE.md#14-token-and-secret-matrix) · [ACTIONS CATALOG §4](../ACTIONS_CATALOG.md#4-token-and-secret-matrix).
 

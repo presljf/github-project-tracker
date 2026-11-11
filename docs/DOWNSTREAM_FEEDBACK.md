@@ -1,6 +1,6 @@
 # Downstream feedback
 
-**Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
+**Docs version:** v1.0.1-docs.1 · Target template: v1.0.1
 
 This repository is the **upstream source of truth** for the Project Tracker OS. If your project adopts the tracker template, you are a **downstream project**. Report bugs and feature requests here — do not fork the template or keep fixes only in your project.
 

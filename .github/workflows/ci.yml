@@ -44,3 +44,21 @@ jobs:
       # `build` is the generic build/verification slot; for this docs/config template it
       # validates the example tracker configs.
       build-command: 'npm run validate:config'
+
+  docs_guard:
+    name: docs-guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Docs, config, and guard checks
+        run: |
+          npm run docs:check
+          npm run guard:gh
+          node scripts/github/validate-config.mjs

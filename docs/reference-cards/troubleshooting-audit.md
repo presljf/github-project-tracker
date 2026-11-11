@@ -1,6 +1,6 @@
 # Troubleshooting & audit
 
-<!-- Docs version: v1.0.0-docs.1 · Target template: v1.0.0 · print formats: A4, Letter -->
+<!-- Docs version: v1.0.1-docs.1 · Target template: v1.0.1 · print formats: A4, Letter -->
 
 > First-response fixes and the audit checklist. Full catalog: [TROUBLESHOOTING](../TROUBLESHOOTING.md) · [HOW TO USE §13](../HOW_TO_USE.md#13-audit).
 
