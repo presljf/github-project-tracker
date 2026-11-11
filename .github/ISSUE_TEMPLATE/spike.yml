@@ -1,0 +1,67 @@
+name: Spike
+description: A timeboxed research task with a clear decision
+title: "[Spike] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A spike answers a question, not ships a feature. Timebox it, record findings, and make the decision explicit. If implementation is needed, create follow-up task issues.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question / hypothesis
+      description: What are we trying to learn or decide?
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Timebox
+      placeholder: "2h"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Current knowledge / constraints
+      description: What we know already; relevant code/docs/links.
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Approach
+      description: Experiments, sources, or validation method.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision criteria
+      description: What evidence would make this a go/no-go or choose A/B?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must the findings/decision artifact contain?
+      placeholder: "- [ ] ...\n- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: followups
+    attributes:
+      label: Expected follow-ups
+      description: Likely implementation/issues if the answer is yes.
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This spike is timeboxed and will end with a documented decision.
+          required: true
+        - label: No secrets or private vulnerability details are included.
+          required: true

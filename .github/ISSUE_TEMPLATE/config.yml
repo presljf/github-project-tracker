@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the Project Tracker Playbook
+    url: https://github.com/presljf/github-project-tracker/blob/main/docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md
+    about: Setup, lifecycle, statuses, check-in/out, audit, and porting rules.
+  - name: Report a security vulnerability
+    url: https://github.com/presljf/github-project-tracker/security/policy
+    about: Do not report vulnerabilities in public issues; use the private channel described in SECURITY.md.

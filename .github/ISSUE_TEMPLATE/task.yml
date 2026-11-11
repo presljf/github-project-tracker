@@ -1,0 +1,92 @@
+name: Task
+description: A single verifiable unit of work in a tracker sprint
+title: "[Task] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a task that belongs to a sprint. The playbook requires a DoR, acceptance criteria, a test/evidence plan, and a clear owner at check-in.
+  - type: textarea
+    id: context
+    attributes:
+      label: Why / context
+      description: What problem or outcome motivates this task? Link the sprint/release.
+      placeholder: "Context, links to sprint/release issues..."
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: What happens today? Include reproduction/evidence where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this task is done?
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What is explicitly out of scope?
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: One testable criterion per line. Do not leave this implicit.
+      placeholder: "- [ ] ...\n- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: Commands/checks, automated and manual, including negative/edge cases.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Verification evidence required
+      description: Artifacts/logs/screenshots/checksums expected at check-out.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / blockers
+      description: Linked issues/PRs/decisions, or "none".
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / rollback
+      description: What could go wrong and how to back out.
+    validations:
+      required: false
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate
+      description: S / M / L or a time range.
+      placeholder: "M"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This task belongs to a release/sprint and will follow check-in/check-out.
+          required: true
+        - label: No secrets, tokens, cookies, or private vulnerability details are included.
+          required: true
+        - label: Acceptance criteria are testable and evidence will be attached.
+          required: true

@@ -1,0 +1,67 @@
+name: Release
+description: A versioned milestone with a release tracker
+title: "[Release] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One release tracker per milestone. Define gates, risks, artifacts, and rollback before work starts; close only when every gate is checked with evidence.
+  - type: input
+    id: release_key
+    attributes:
+      label: Release key / milestone
+      description: Version and milestone name.
+      placeholder: "v1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Release objective
+      description: What outcome does this release deliver?
+    validations:
+      required: true
+  - type: textarea
+    id: sprints
+    attributes:
+      label: Sprint scope
+      description: Linked sprint tracker issues and estimate.
+    validations:
+      required: true
+  - type: textarea
+    id: gates
+    attributes:
+      label: Release gates
+      description: Required checks/evidence before publish (CI, E2E, smoke, docs, audit, artifacts/checksums).
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / rollback
+      description: What could go wrong and how to back out.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Artifacts / versioning
+      description: What will be built/published; naming/checksum/signing expectations.
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate
+      placeholder: "10–16h"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: Release gates and rollback are explicit.
+          required: true
+        - label: No secrets, signing keys, or private vulnerability details are included.
+          required: true
