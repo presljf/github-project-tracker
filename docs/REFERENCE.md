@@ -357,6 +357,10 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 
 Never store tokens/cookies/private keys in repo, config, issue, comment, artifact, or log. No `pull_request_target` with untrusted code + secrets.
 
+### Shared rate-limit state and cost report
+
+Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (default `~/.cache/tracker-os/rate-limit.json`) so separate processes do not each rediscover the same exhausted budget. `npm run rate-limit` refreshes headers and prints the shared state plus top estimated command costs. The state stores only rate/cost metadata, never tokens or issue content.
+
 ### Docs coverage guard
 
 `npm run guard:docs -- --base origin/main` fails when a changed source area mapped in `docs/DOCS_COVERAGE.json` has no mapped docs change. `docs-guard` CI includes it; branch protection requires the check. See [DOCS COVERAGE](./DOCS_COVERAGE.md).

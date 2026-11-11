@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { issueKind } from './audit.mjs';
-import { GitHubCli } from './lib/github.mjs';
+import { createGitHub } from './lib/github.mjs';
 import { parseArgs, UsageError } from './lib/cli.mjs';
 
 const STATUSES = ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'];
@@ -301,7 +301,7 @@ if (isMain) {
       const owner = args.owner || config.automation?.defaultAssignee || '@me';
       const executor = args.executor || process.env.TRACKER_EXECUTOR || 'agent:session';
       const dryRun = Boolean(args['dry-run']);
-      const github = new GitHubCli();
+      const github = createGitHub();
       let result;
       if (command === 'start') result = await startTask({ config, github, issueNumber, owner, executor, branch: args.branch, dryRun });
       else if (command === 'checkpoint') result = await checkpointTask({ config, github, issueNumber, message: messageFrom(args), dryRun });
