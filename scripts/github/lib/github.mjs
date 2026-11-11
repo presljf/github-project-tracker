@@ -146,6 +146,37 @@ export class GitHubCli {
     return matches.find((issue) => issue.state === 'OPEN') || matches[0] || null;
   }
 
+
+  getIssueView(owner, repo, number) {
+    return this.run([
+      'issue', 'view', String(number), '--repo', `${owner}/${repo}`,
+      '--json', 'number,title,state,assignees,milestone,issueType,body,url,labels',
+    ], { json: true });
+  }
+
+  addAssignee(owner, repo, number, login) {
+    return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-assignee', login]);
+  }
+
+  addComment(owner, repo, number, body) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-comment-'));
+    const file = path.join(dir, 'comment.md');
+    fs.writeFileSync(file, body || '');
+    try {
+      return this.run(['issue', 'comment', String(number), '--repo', `${owner}/${repo}`, '--body-file', file]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  closeIssue(owner, repo, number) {
+    return this.run(['issue', 'close', String(number), '--repo', `${owner}/${repo}`, '--reason', 'completed']);
+  }
+
+  addBlockedBy(owner, repo, number, blockedByUrl) {
+    return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-blocked-by', blockedByUrl]);
+  }
+
   getIssue(owner, repo, number) {
     return this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'], { json: true });
   }
