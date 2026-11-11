@@ -294,76 +294,11 @@ jobs:
           retention-days: ${{ inputs.retention-days }}
 
   release:
-    name: publish-github-release
-    needs: [prepare, checksum]
-    if: ${{ always() && needs.prepare.outputs.should-publish == 'true' && needs.checksum.result == 'success' && (needs.prepare.outputs.profile == 'generic' || needs.prepare.outputs.profile == 'macos') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: release
-    permissions:
-      contents: write
     outputs:
-      release-url: ${{ steps.create.outputs.release-url }}
+      release-url: stub
     steps:
-      - name: Download release bundle
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: release-bundle
-          path: release
-
-      - name: Verify checksums before publishing
-        env:
-          CHECKSUMS_FILE: ${{ needs.prepare.outputs.checksums-file }}
-        run: |
-          set -euo pipefail
-          cd release
-          case "$CHECKSUMS_FILE" in
-            SHA256SUMS) sha256sum -c "$CHECKSUMS_FILE" ;;
-            SHA512SUMS) sha512sum -c "$CHECKSUMS_FILE" ;;
-            *) echo "::error::Unexpected checksum file '${CHECKSUMS_FILE}'."; exit 1 ;;
-          esac
-
-      - name: Create GitHub Release and upload assets
-        id: create
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
-          TAG: ${{ needs.prepare.outputs.tag }}
-          RELEASE_NAME: ${{ needs.prepare.outputs.release-name }}
-          DRAFT_INPUT: ${{ inputs.draft }}
-          PRERELEASE_INPUT: ${{ inputs.prerelease }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "pull_request_target" ]]; then
-            echo "::error::Publishing is never allowed from pull_request events."
-            exit 1
-          fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "::error::Release ${TAG} already exists. Releases are immutable by policy; create a new version instead of overwriting."
-            exit 1
-          fi
-          args=(release create "$TAG" release/* --verify-tag --title "$RELEASE_NAME" --generate-notes)
-          if [[ "$DRAFT_INPUT" == "true" ]]; then args+=(--draft); fi
-          if [[ "$PRERELEASE_INPUT" == "true" ]]; then args+=(--prerelease); fi
-          echo "::group::gh ${args[*]}"
-          gh "${args[@]}"
-          echo "::endgroup::"
-          url="$(gh release view "$TAG" --json url --jq .url)"
-          echo "::notice::GitHub Release: ${url}"
-          echo "release-url=${url}" >> "$GITHUB_OUTPUT"
-
-      - name: Write publish summary
-        env:
-          RELEASE_URL: ${{ steps.create.outputs.release-url }}
-          DRAFT_INPUT: ${{ inputs.draft }}
-        run: |
-          {
-            echo "## Published GitHub Release"
-            echo ""
-            echo "- URL: ${RELEASE_URL}"
-            echo "- Draft: \`${DRAFT_INPUT}\` (a human publishes drafts after review)"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+      - run: echo release
   container-publish:
     runs-on: ubuntu-latest
     steps:
