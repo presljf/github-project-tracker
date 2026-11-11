@@ -10,7 +10,7 @@
     {
       "id": "docs-tooling",
       "paths": ["scripts/docs/"],
-      "docs": ["docs/DOCS_VALIDATION.md", "docs/DOCS_STYLE_GUIDE.md", "docs/GUARD_DISTRIBUTION.md"]
+      "docs": ["docs/DOCS_VALIDATION.md", "docs/DOCS_STYLE_GUIDE.md", "docs/GUARD_DISTRIBUTION.md", "docs/DOCS_COVERAGE.md"]
     },
     {
       "id": "all-scripts",
