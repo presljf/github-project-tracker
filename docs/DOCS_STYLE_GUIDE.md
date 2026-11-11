@@ -8,6 +8,23 @@ Documentation is a hard `v1.0.0` gate: exhaustive is not enough — it must be c
 
 ---
 
+## Contents
+
+- [1. Authority and document roles](#1-authority-and-document-roles)
+- [2. Audience and voice](#2-audience-and-voice)
+- [3. Page types and required structure](#3-page-types-and-required-structure)
+- [4. Commands and expected output](#4-commands-and-expected-output)
+- [5. Terminology and glossary](#5-terminology-and-glossary)
+- [6. Links and cross-references](#6-links-and-cross-references)
+- [7. Screenshots, diagrams, and assets](#7-screenshots-diagrams-and-assets)
+- [8. Reference-card standard](#8-reference-card-standard)
+- [9. Versioning and deprecation](#9-versioning-and-deprecation)
+- [10. Docs-in-the-same-PR rule](#10-docs-in-the-same-pr-rule)
+- [11. Review checklist (T12)](#11-review-checklist-t12)
+- [12. Editing workflow and tools](#12-editing-workflow-and-tools)
+- [13. Quick decisions](#13-quick-decisions)
+- [Related](#related)
+
 ## 1. Authority and document roles
 
 Each document has one job. Do not duplicate another document's job; link to it.

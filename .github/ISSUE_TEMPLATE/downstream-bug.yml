@@ -19,7 +19,7 @@ body:
     id: tracker_version
     attributes:
       label: Pinned tracker version
-      description: Exact `trackerTemplateVersion` in use.
+      description: Exact `automation.templateVersion` in use.
       placeholder: "1.0.0"
     validations:
       required: true

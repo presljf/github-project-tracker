@@ -2,9 +2,9 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
-## v1.0.0 — release candidate (tag pending validation)
+## v1.0.0 — 2026-11-11 (release candidate; tag pending T08 live validation + release close)
 
-> The `v1.0.0` tag is created only after T08 replication/upgrade validation and T12 fresh-eyes docs QA pass. This section is the release-candidate record.
+> The `v1.0.0` tag is created only after T08 replication/upgrade validation and T12 fresh-eyes docs QA pass. This section is the release-candidate record; the tag/date are finalized at release close.
 
 ### Added
 

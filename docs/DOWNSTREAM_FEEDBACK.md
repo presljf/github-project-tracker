@@ -1,5 +1,7 @@
 # Downstream feedback
 
+**Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
+
 This repository is the **upstream source of truth** for the Project Tracker OS. If your project adopts the tracker template, you are a **downstream project**. Report bugs and feature requests here — do not fork the template or keep fixes only in your project.
 
 ## Before reporting
@@ -13,7 +15,7 @@ This repository is the **upstream source of truth** for the Project Tracker OS. 
 Open a **[downstream bug report](https://github.com/presljf/github-project-tracker/issues/new?template=downstream-bug.yml)** and include:
 
 - originating project/program and repository
-- pinned `trackerTemplateVersion` (exact, e.g. `1.0.0`)
+- pinned `automation.templateVersion` (exact, e.g. `1.0.0`)
 - environment/runtime versions (`gh`, Node, OS, shell)
 - what you did, expected vs actual behavior
 - reproduction steps or minimal example
@@ -47,7 +49,7 @@ Downstream issues are triaged by a maintainer:
 - **Patch** (`v1.0.x`): compatible fixes.
 - **Minor** (`v1.1.0`): compatible features.
 - **Major** (`v2.0.0`): breaking changes with migration notes.
-- Downstream projects pin an **exact** version (`trackerTemplateVersion`) and upgrade explicitly with the changelog/migration guide.
+- Downstream projects pin an **exact** version (`automation.templateVersion`) and upgrade explicitly with the changelog/migration guide.
 - No forks. Temporary local workarounds must be documented with an upstream issue link.
 - When a fix ships, open/complete a downstream upgrade issue; it may be blocked by the upstream release/tag.
 

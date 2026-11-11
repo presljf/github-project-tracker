@@ -2,7 +2,7 @@
 
 A portable, auditable GitHub project-tracker operating system: playbook, exhaustive docs, versioned config, bootstrap/audit/task CLIs, reusable CI/security workflows, release profiles, and downstream feedback intake.
 
-**Status:** v1.0.0 release candidate (tag pending T08/T12 validation) · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
+**Status:** v1.0.0 release candidate (tag pending T08 live validation + release close) · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
 
 ## Use this template
 
@@ -18,6 +18,7 @@ A portable, auditable GitHub project-tracker operating system: playbook, exhaust
    node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
    node scripts/github/bootstrap.mjs --config tracker.config.json --apply
    ```
+   Bootstrap seeds valid default Area/Kind/Estimate (and Status/Release/Sprint/Source) so generated tasks pass DoR/audit; adjust any defaults for your project before check-in.
 5. **Run one task through the lifecycle** with the task CLI or manual docs:
    ```bash
    node scripts/github/task.mjs start --issue 123 --owner YOUR_LOGIN
@@ -42,7 +43,8 @@ Full adoption path: [docs/ADOPTION.md](docs/ADOPTION.md) · Template structure/v
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Adoption](docs/ADOPTION.md) · [Upgrading](docs/UPGRADING.md)
 - [Agent guide](docs/AGENT_GUIDE.md) · [Multi-project](docs/MULTI_PROJECT.md)
-- [Actions catalog](docs/ACTIONS_CATALOG.md) · [CI/security profile](docs/CI_SECURITY_PROFILE.md)
+- [Actions catalog](docs/ACTIONS_CATALOG.md) · [CI/security profile](docs/CI_SECURITY_PROFILE.md) · [Release profiles](docs/RELEASE_PROFILES.md)
+- [Docs style guide](docs/DOCS_STYLE_GUIDE.md) · [Reference cards](docs/reference-cards/README.md) · [Template repo guide](docs/TEMPLATE_REPO.md)
 - [Downstream feedback](docs/DOWNSTREAM_FEEDBACK.md) · [Support](SUPPORT.md) · [Security](SECURITY.md)
 - [Changelog](CHANGELOG.md) · [License](LICENSE)
 

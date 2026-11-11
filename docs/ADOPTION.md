@@ -3,7 +3,7 @@
 **Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
 This guide onboards a **new project** onto the tracker. The CastDeck pilot is only an example; do not copy its product-specific plan.
 
-> **Automation note:** bootstrap is planned for 1.0.0.2. Until then, use this manual path. The same inputs become `tracker.config.json` for bootstrap later.
+> **Automation note:** bootstrap/audit/task CLI are available now. This manual path explains the steps; the same config drives `bootstrap.mjs`, and the CLIs automate the lifecycle.
 
 ## 0. Choose the adoption shape
 
@@ -67,7 +67,7 @@ Copy from the tracker template:
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `docs/comment-templates/*` (or link the upstream docs)
 - `tracker.config.example.json` → `tracker.config.json`
-- `.github/workflows/*` caller workflows (when available; otherwise mark planned)
+- `.github/workflows/*` caller workflows (CI/security/audit are shipped; release profile callers are shipped; contract-only workflows are labeled)
 
 Edit config for your repo/project/releases/sprints/commands. Validate:
 ```bash
@@ -87,19 +87,19 @@ Pin the template version exactly and record the feedback channel:
 2. Release tracker per milestone — objective, sprints, gates, artifacts, rollback.
 3. Sprint tracker(s) — goal, task list, exit criteria.
 4. Task issues — DoR/acceptance/test/evidence; link sub-issues.
-5. Set Project fields on every item; add to board (auto-add should do it).
+5. Set Project fields on every item: Status=Todo, Release, Sprint, Area, Kind, Estimate, Source; add to board (auto-add should do it). `bootstrap.mjs` seeds valid defaults for Area/Kind/Estimate; manually created issues need explicit values or `task.mjs start` fails DoR and audit flags empty fields.
 
 Pilot example (clearly marked): `examples/castdeck.config.json` shows a real project config; do not copy its release content.
 
 ## 5. Audit, CI, protection
 
 - Configure the tracker audit token as a secret (project-scoped).
-- Add CI/audit caller workflows when delivered (1.0.0.2+); keep audit **advisory** first.
+- Add CI/audit caller workflows (shipped CI/security/audit; release profiles shipped); keep audit **advisory** first.
 - Configure branch protection/rulesets:
   - required: deterministic Linux CI checks.
   - advisory first: desktop smoke/audit.
   - protect release tags/environments.
-- Run manual audit checklist from [HOW TO USE](./HOW_TO_USE.md#13-audit) until `audit.mjs` exists.
+- Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
 
 ## 6. Adoption gate (for programs)

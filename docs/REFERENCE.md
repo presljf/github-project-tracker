@@ -3,9 +3,32 @@
 **Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
 **Scope:** commands, config, fields/statuses, labels, templates, audit rules, workflows, tokens, runners, release profiles, and expected outputs.
 
-> **Availability key:** **now** = works with current repo/UI/`gh`; **planned 1.0.0.2+** = tracker scripts/workflows delivered later in v1.0.0, with manual fallbacks. Planned items are not claimed as shipped.
+> **Availability key:** **now** = shipped and validated in this template; **planned** = contract/example only, not claimed as implemented. Manual fallbacks remain in [HOW TO USE](./HOW_TO_USE.md).
 
 ---
+
+## Contents
+
+- [1. Repository map](#1-repository-map)
+- [2. Command conventions](#2-command-conventions)
+- [3. Discover project IDs](#3-discover-project-ids)
+- [4. `gh` commands used in this tracker](#4-gh-commands-used-in-this-tracker)
+- [5. Tracker CLI](#5-tracker-cli)
+- [6. Config reference](#6-config-reference)
+- [7. Fields, statuses, transitions](#7-fields-statuses-transitions)
+- [8. Labels](#8-labels)
+- [9. Issue types and fallback](#9-issue-types-and-fallback)
+- [10. Issue/PR templates](#10-issuepr-templates)
+- [11. Comment templates](#11-comment-templates)
+- [12. Audit invariants](#12-audit-invariants)
+- [13. Workflow catalog](#13-workflow-catalog)
+- [14. Token and secret matrix](#14-token-and-secret-matrix)
+- [15. Runner / cost guidance](#15-runner-cost-guidance)
+- [16. Release profiles](#16-release-profiles)
+- [17. Shell notes](#17-shell-notes)
+- [18. Environment variables](#18-environment-variables)
+- [19. Expected outputs and diagrams](#19-expected-outputs-and-diagrams)
+- [20. Versioning](#20-versioning)
 
 ## 1. Repository map
 
@@ -22,17 +45,24 @@
 | `docs/MULTI_PROJECT.md` | program/multi-project model | now |
 | `docs/DOWNSTREAM_FEEDBACK.md` | upstream reporting/triage | now |
 | `docs/comment-templates/` | check-in/update/out/blocker/plan-change/sprint/release | now |
-| `docs/reference-cards/` | printable cards | now (reporting), T13 expands |
+| `docs/reference-cards/` | seven printable one-page cards + A4/Letter PDFs | now |
+| `docs/DOCS_STYLE_GUIDE.md` | documentation standards/review checklist | now |
+| `docs/ACTIONS_CATALOG.md` | Actions catalog/contracts | now |
+| `docs/CI_SECURITY_PROFILE.md` | CI/security runbook | now |
+| `docs/RELEASE_PROFILES.md` | release profiles/callers | now |
+| `docs/GITHUB_APP_SPIKE.md` | bot-identity spike (NO-GO) | now |
+| `docs/TEMPLATE_REPO.md` | template structure/versioning/tag policy | now |
 | `tracker.config.example.json` | generic config | now |
 | `schemas/tracker.config.schema.json` | config contract | now |
 | `scripts/github/validate-config.mjs` | config validation | now |
-| `scripts/github/bootstrap.mjs` | idempotent repo/project setup | planned 1.0.0.2 |
-| `scripts/github/audit.mjs` | tracker audit | planned 1.0.0.2 |
-| `scripts/github/task.mjs` | check-in/update/review/block/done | planned 1.0.0.2 |
+| `scripts/github/bootstrap.mjs` | idempotent repo/project setup | now |
+| `scripts/github/audit.mjs` | tracker audit (advisory/strict/JSON) | now |
+| `scripts/github/task.mjs` | start/checkpoint/review/block/done/status | now |
 | `profiles/node/` | generic lint/format profile | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
-| `.github/workflows/`, `.github/actions/` | reusable/CI/release workflows | planned 1.0.0.2+ |
+| `.github/workflows/`, `.github/actions/` | reusable CI/release/security/audit workflows + composite actions | now |
+| `profiles/release/` | release profile examples/copy callers | now |
 
 ## 2. Command conventions
 
@@ -147,23 +177,39 @@ gh api graphql --input view-query.json
 ```
 UI: Project → view tabs → New view → set layout/filter/group.
 
-## 5. Planned tracker CLI (1.0.0.2+)
+## 5. Tracker CLI
 
-**Not shipped yet.** Intended contract (flags may be finalized in 1.0.0.2):
+All three CLIs are available now. They read `tracker.config.json`; `--help` describes current flags.
 
-| Command | Flags | Purpose |
-|---|---|---|
-| `node scripts/github/bootstrap.mjs --config tracker.config.json [--dry-run] [--yes] [--json]` | config path, dry-run, non-interactive, JSON | idempotent repo/project/fields/labels/views/sample issues |
-| `node scripts/github/audit.mjs --config tracker.config.json [--advisory] [--json] [--format json]` | advisory mode, machine output | invariants; exit 1 on violations |
-| `node scripts/github/task.mjs check-in --issue 123 --branch task/123-slug [--json]` | issue/branch; optional owner/executor | status In Progress + comment |
-| `node scripts/github/task.mjs update --issue 123 --message-file update.md` | message | update comment |
-| `node scripts/github/task.mjs review --issue 123 [--pr 45]` | issue/PR | status In Review + evidence note |
-| `node scripts/github/task.mjs block --issue 123 --blocked-by 99 --reason "..."` | dependency/reason | status Blocked |
-| `node scripts/github/task.mjs unblock --issue 123` | issue | status In Progress |
-| `node scripts/github/task.mjs done --issue 123 --evidence evidence.md` | evidence | status Done + check-out |
-| `node scripts/github/task.mjs status --issue 123` | issue | show current state |
+### 5.1 bootstrap
 
-Manual fallbacks are in [HOW TO USE](./HOW_TO_USE.md) and [Troubleshooting](./TROUBLESHOOTING.md). No command is considered shipped until 1.0.0.2 acceptance passes.
+```bash
+node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
+node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+node scripts/github/bootstrap.mjs --config tracker.config.json --json
+```
+Default dry-run. Creates/updates project, fields/statuses/options, milestones, labels, roadmap/release/sprint/task skeletons, native types, project items/fields, sub-issues. Never deletes user data; re-runs are idempotent. Manual checklist for UI-only views/workflows at end.
+
+### 5.2 audit
+
+```bash
+node scripts/github/audit.mjs --config tracker.config.json --advisory
+node scripts/github/audit.mjs --config tracker.config.json --strict
+node scripts/github/audit.mjs --config tracker.config.json --json
+```
+Advisory default: prints violations, exit 0. `--strict` exits 1 on violations for release gates. Workflow: `.github/workflows/tracker-audit.yml` (scheduled/dispatch), skips safely without `TRACKER_TOKEN`.
+
+### 5.3 task
+
+```bash
+node scripts/github/task.mjs start --issue 123 [--owner LOGIN] [--executor TEXT] [--branch NAME] [--dry-run]
+node scripts/github/task.mjs checkpoint --issue 123 (--message TEXT | --message-file FILE)
+node scripts/github/task.mjs review --issue 123 [--pr URL] [--evidence TEXT]
+node scripts/github/task.mjs block --issue 123 --reason TEXT [--blocked-by URL]
+node scripts/github/task.mjs done --issue 123 (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]
+node scripts/github/task.mjs status --issue 123
+```
+Enforces DoR/WIP on start and evidence/acceptance on done; `--dry-run` makes no mutations. Full behavior: [TASK CLI](./TASK_CLI.md).
 
 ## 6. Config reference
 
@@ -186,7 +232,7 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `releases` | yes | key, milestone, sprints (key/title/estimate/tasks) |
 | `automation` | no | defaultAssignee, branchPrefix, tagPattern, templateRepo/version, inReviewMode, autoAddIssues, closeToDone, bot |
 | `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
-| `workflows` | no | ci mode/ref/requiredChecks; audit mode/tokenSecret; release profile/ref/dryRun |
+| `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode/tokenSecret; release profile/ref/dryRun |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
@@ -254,7 +300,7 @@ Do not add `area:*`, `release:*`, `sprint:*`, `type:*` labels when the field/typ
 
 ## 12. Audit invariants
 
-Manual now; `audit.mjs` planned. Invariants:
+Run `audit.mjs` advisory first; `--strict` for release gates. Invariants:
 
 1. Open release work has milestone + native type.
 2. Project fields complete (Release/Sprint for release work; Area/Kind/Estimate; Source downstream).
@@ -264,12 +310,14 @@ Manual now; `audit.mjs` planned. Invariants:
 6. Blocked has reason + dependency.
 7. No duplicate/retired labels.
 8. Sprint/release Done has exit evidence.
-9. Pinned `trackerTemplateVersion`; downstream context complete.
+9. Pinned `automation.templateVersion`; downstream context complete.
 10. No secrets in issues/comments/artifacts.
 
 Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
 
-## 13. Workflow catalog (planned 1.0.0.2+)
+## 13. Workflow catalog
+
+**Availability:** CI, release, tracker audit, and security are shipped. Web/E2E, desktop smoke, and docs are **contract-only** (not yet implemented).
 
 | Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
 |---|---|---|---|---|---|---|
@@ -295,7 +343,7 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 - Audit: advisory initially; required only after stable release-gate policy.
 - Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
 
-## 14. Token / secret matrix
+## 14. Token and secret matrix
 
 | Need | Source | Scope | Rules |
 |---|---|---|---|
@@ -328,7 +376,7 @@ Never store tokens/cookies/private keys in repo, config, issue, comment, artifac
 | container/GHCR | image digest | build/push guarded by auth/dry-run |
 | package registry | npm/PyPI package | OIDC/provenance guarded |
 
-Projects adopt only needed profiles; all profiles are implemented in template but not validated by every adopting project.
+Projects adopt only needed profiles; see [RELEASE_PROFILES](./RELEASE_PROFILES.md) for the implemented reusable workflow/callers and guards. All profiles are implemented in the template; not every adopting project validates every profile.
 
 ## 17. Shell notes
 
@@ -352,7 +400,7 @@ gh project item-list $PROJECT_NUMBER --owner @me --format json
 | Variable | Use |
 |---|---|
 | `GH_TOKEN` / `GITHUB_TOKEN` | auth in CI; never commit |
-| `TRACKER_TOKEN` | planned audit workflow secret name |
+| `TRACKER_TOKEN` | advisory tracker-audit workflow secret name |
 | `NO_COLOR` | plain output |
 | `GH_REPO` | default repo for some `gh` commands (optional) |
 

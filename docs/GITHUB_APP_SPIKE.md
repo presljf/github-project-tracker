@@ -8,6 +8,20 @@
 
 Answers [issue #11](https://github.com/presljf/github-project-tracker/issues/11) (`1.0.0.2-T06`): can a GitHub App bot identity own/assign tracker issues, and what should the tracker do about it?
 
+## Contents
+
+- [Decision summary (go/no-go)](#decision-summary-gono-go)
+- [Non-goals and scope boundaries](#non-goals-and-scope-boundaries)
+- [1. Method and evidence classes](#1-method-and-evidence-classes)
+- [2. Assignment feasibility on a personal repo](#2-assignment-feasibility-on-a-personal-repo)
+- [3. Least-privilege permissions (if a bot identity is ever adopted)](#3-least-privilege-permissions-if-a-bot-identity-is-ever-adopted)
+- [4. Token acquisition and expiry (Documented)](#4-token-acquisition-and-expiry-documented)
+- [5. Security handling (no secrets in the repo)](#5-security-handling-no-secrets-in-the-repo)
+- [6. Option A fallback (adopted default)](#6-option-a-fallback-adopted-default)
+- [7. Limitations and follow-ups](#7-limitations-and-follow-ups)
+- [8. Reproducible sanitized commands](#8-reproducible-sanitized-commands)
+- [Sources](#sources)
+
 ## Decision summary (go/no-go)
 
 | Question | Decision | Basis |

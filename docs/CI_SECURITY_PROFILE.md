@@ -1,10 +1,27 @@
 # CI, required-check, and security profile
 
 **Profile version:** `v1.0.0` (T15)
-**Status:** shipped for sprint `1.0.0.2`; T12 fresh-eyes validation is required before the `v1.0.0` tag. T09 action-catalog cross-links are pending; this file is the source of truth for the CI/security profile until the catalog lists these workflows.
+**Status:** shipped; T12 docs QA applied; v1.0.0 tag follows T08/T12 validation. T09 catalog is merged and its `reusable-ci.yml` interface was reconciled in T12.
 **Applies to:** Node >= 22 projects adopting the Project Tracker OS. The template repository uses the same callers, so the profile is exercised on every PR to this repo.
 
 This profile centralizes CI and security logic once, in reusable workflows, and keeps project-specific values in thin callers. It does not hardcode product commands, does not require secrets, and does not publish anything.
+
+## Contents
+
+- [1. What ships](#1-what-ships)
+- [2. CI contract (`reusable-ci.yml`)](#2-ci-contract-reusable-ciyml)
+- [3. Required-check and branch-protection contract](#3-required-check-and-branch-protection-contract)
+- [4. Security defaults](#4-security-defaults)
+- [5. Token and secret matrix](#5-token-and-secret-matrix)
+- [6. Runner and cost guidance](#6-runner-and-cost-guidance)
+- [7. Selective path and label gating](#7-selective-path-and-label-gating)
+- [8. Action SHA pinning](#8-action-sha-pinning)
+- [9. Local parity](#9-local-parity)
+- [10. Dry-run and secret rules](#10-dry-run-and-secret-rules)
+- [11. Rollout and rollback](#11-rollout-and-rollback)
+- [12. Troubleshooting](#12-troubleshooting)
+- [13. Interface assumptions and hand-offs](#13-interface-assumptions-and-hand-offs)
+- [14. Verification evidence (2026-11-11)](#14-verification-evidence-2026-11-11)
 
 ## 1. What ships
 
@@ -287,7 +304,7 @@ CodeQL is a job in [security.yml](../.github/workflows/security.yml), deliberate
 
 Secret scanning and push protection are GitHub repository settings, not workflow files. Enable them in Settings -> Code security where the plan allows; no template secret is required. Follow [SECURITY.md](../SECURITY.md) for private vulnerability reporting.
 
-## 5. Token / secret matrix (CI + security profile)
+## 5. Token and secret matrix
 
 | Need | Token | Permissions | Stored | Rules |
 | --- | --- | --- | --- | --- |
@@ -455,10 +472,10 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 
 ## 13. Interface assumptions and hand-offs
 
-- **T09 action catalog (PR open at T15 completion, not merged):** this profile is the authoritative CI/security workflow source until the catalog lands. T09 should link to these files; T15 does not edit the catalog. T15 adopted the catalog's aggregate-gate name (`ci / ci-gate`), its `checks-passed` output, and the `merge_group` CI trigger. Known interface divergence to reconcile at merge: the catalog's §7.2 draft lists boolean `run-lint`/`run-format`/`run-test`, a `package-manager` input, and a `cache` input, while the delivered v1.0.0 contract (per this issue) uses explicit command inputs (`lint-command`/`format-command`/`test-command`/`build-command`), npm-first auto-install, and no per-check booleans. Empty commands are the delivered no-op-success mechanism; the catalog should be updated by T09/T12 to match the shipped interface (or a follow-up task can add compatibility inputs).
+- **T09 action catalog (merged):** the catalog now documents the delivered `reusable-ci.yml` interface (`node-version`, `working-directory`, `tracker-config`, `install-command`, `lint-command`, `format-command`, `test-command`, `build-command`; outputs `result`/`checks-passed`), aggregate `ci / ci-gate`, and `merge_group` trigger. This profile remains the CI/security operational runbook.
 - **T07 template repo:** caller examples assume `presljf/github-project-tracker` is private at v1.0.0 (copy mode default). The reusable-reference caller is documented with the private-access caveat.
 - **T08 Node profile:** the canonical package-script fallbacks (`lint`, `format:check`, `test`, `build`) align with [profiles/node/README.md](../profiles/node/README.md)'s command mapping.
-- **Tracker config command mapping:** the reusable workflow reads optional `profiles.node.commands.<name>` (referenced as planned in [REFERENCE](./REFERENCE.md)) then `workflows.ci.commands.<name>`. These keys are not yet in the config schema; the workflow fails soft (warns and falls back). Formalizing them is a T07 follow-up.
+- **Tracker config command mapping:** the reusable workflow reads optional `profiles.node.commands.<name>` then `workflows.ci.commands.<name>`. Both are now in the config schema; the workflow still fails soft (warns/falls back) when a mapping is absent.
 - **Required-check names in config:** `tracker.config.json` `workflows.ci.requiredChecks` holds short names (`lint`, `format`, `test`); platform protection uses full contexts (`ci / lint`, ...). T09/T12 reconcile the mapping; T15 documents both without editing the config.
 - **T12 fresh-eyes validation:** verify check contexts on a live PR, action pins, and protection settings once the platform allows them; capture evidence on the release tracker. Docs index link to this profile is owned by T11/T12 (T15 scope excludes the docs index).
 - **This repository's current platform limits:** private personal repo without GitHub Pro -> classic branch protection/rulesets API returns 403 (documented in section 3.2).
@@ -468,9 +485,9 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Check | Command | Result |
 | --- | --- | --- |
 | YAML parse (all new files) | `ruby -e 'require "yaml"; ...'` | `OK` for reusable-ci, ci, reusable-security, security, dependabot |
-| GitHub Actions lint | `actionlint` 1.7.12 on all four workflows | exit 0, no findings |
+| GitHub Actions lint | `actionlint` 1.7.12 reported by T15 on four workflows | exit 0 at T15 time; **not reproducible in this T12 environment (binary unavailable)** — T08 must rerun when available |
 | Command resolver unit checks | extracted prepare script run against (a) this repo + caller inputs, (b) temp project with package scripts + pnpm lockfile, (c) config mapping + explicit install | resolved as documented in section 2.2 |
-| Local parity | `npm test` | 11 tests pass, 0 fail |
+| Local parity | `npm test` | 35 tests pass, 0 fail (T12) |
 | Local parity | `npm run validate:config` | `OK tracker.config.example.json`, `OK examples/castdeck.config.json` |
 | Action pins | `gh api repos/<action>/commits/<tag> --jq .sha` | pins in section 8 match tags |
 | Secret scan | provider-token grep (section 10); no real credentials in the new files | no matches |

@@ -3,6 +3,20 @@
 **Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
 Symptom → cause → fix. Run `gh --version` and `gh auth status` first; many failures are auth/scope/ID issues.
 
+## Contents
+
+- [Auth and project scope](#auth-and-project-scope)
+- [Issues, types, and hierarchy](#issues-types-and-hierarchy)
+- [Project fields/views](#project-fieldsviews)
+- [Issue forms / templates](#issue-forms-templates)
+- [Labels and single-source](#labels-and-single-source)
+- [Tokens / CI / Actions](#tokens-ci-actions)
+- [Audit / WIP / process](#audit-wip-process)
+- [Bootstrap / scripts / upgrades](#bootstrap-scripts-upgrades)
+- [Network / limits / platform](#network-limits-platform)
+- [Downstream feedback](#downstream-feedback)
+- [Quick diagnostics](#quick-diagnostics)
+
 ## Auth and project scope
 
 ### `your authentication token is missing required scopes`
@@ -137,7 +151,7 @@ Org repos may also require SSO authorization in the browser.
 
 ## Bootstrap / scripts / upgrades
 
-### `bootstrap.mjs` fails midway (planned)
+### `bootstrap.mjs` fails midway
 **Cause:** partial resources, permission, duplicate names, or invalid config.
 **Fix:** run with `--dry-run`; read the error path; rerun idempotently; never delete user data to force it. Manual fallback: create missing fields/views/labels by UI.
 
@@ -174,7 +188,7 @@ Fix the `$path`; re-run until `OK`.
 
 ### Docs link broken
 **Cause:** path renamed or planned doc not created.
-**Fix:** update link; mark planned docs in index/table; run the link checker before merging docs.
+**Fix:** update link; mark planned docs in index/table; run `npm run docs:check` before merging docs.
 
 ## Downstream feedback
 

@@ -197,6 +197,11 @@ export async function runBootstrap({ config, github, apply = false, logger = con
   // Fields. Status comes from config.statuses; the rest from config.fields.
   let fields = project?.number ? await github.listFields(owner, project.number) : [];
   const fieldMap = () => new Map(fields.map((f) => [f.name, f]));
+  const defaultOption = (fieldName, preferred) => {
+    const field = fieldMap().get(fieldName);
+    if (!field?.options?.length) return null;
+    return field.options.find((option) => option.name === preferred)?.name || field.options[0].name;
+  };
   const configuredFields = {
     Status: { options: config.statuses || [] },
     ...(config.fields || {}),
@@ -222,6 +227,13 @@ export async function runBootstrap({ config, github, apply = false, logger = con
       }
     }
   }
+
+  // Skeleton issues must satisfy DoR/audit: seed valid defaults for required fields.
+  const issueDefaults = {
+    Area: defaultOption('Area'),
+    Kind: defaultOption('Kind'),
+    Estimate: defaultOption('Estimate', 'M'),
+  };
 
   // Milestones.
   const milestones = (await github.listMilestones(repoOwner, repoName)) || [];
@@ -281,6 +293,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
           Release: spec.release,
           Sprint: spec.sprint,
           Source: 'Internal',
+          ...issueDefaults,
         };
         let item = itemsByIssue.get(issue.number);
         if (!item) {
@@ -324,7 +337,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
     'Enable project workflows: auto-add repo issues; issue closed → Done. Do not auto-start work.',
     'Configure branch protection/required checks and protect release tags/environments.',
     'Create the GitHub App/project token for audit (keep it as a secret; never in config).',
-    'Run the audit manually (audit CLI planned) and record accepted exceptions.',
+    'Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (strict for release gates) and record accepted exceptions.',
   ];
   const result = {
     ok: true,

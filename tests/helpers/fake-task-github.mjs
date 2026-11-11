@@ -4,7 +4,7 @@ import { FakeGitHub } from './fake-github.mjs';
 export class FakeTaskGitHub extends FakeGitHub {
   constructor(options = {}) {
     super(options);
-    this.issueComments = options.issueComments || {};
+    this.commentsByIssue = options.issueComments || {};
     this.issueDeps = options.issueDeps || {};
   }
 
@@ -24,6 +24,10 @@ export class FakeTaskGitHub extends FakeGitHub {
     };
   }
 
+  async issueComments(owner, repo, number) {
+    return this.commentsByIssue[number] || [];
+  }
+
   async addAssignee(owner, repo, number, login) {
     this.mutations.push(['addAssignee', number, login]);
     const issue = this.issues.find((entry) => entry.number === number);
@@ -33,7 +37,7 @@ export class FakeTaskGitHub extends FakeGitHub {
 
   async addComment(owner, repo, number, body) {
     this.mutations.push(['addComment', number]);
-    this.issueComments[number] = [...(this.issueComments[number] || []), body];
+    this.commentsByIssue[number] = [...(this.commentsByIssue[number] || []), body];
     return {};
   }
 

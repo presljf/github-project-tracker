@@ -2,10 +2,10 @@
 
 **Docs version:** v1.0.0-docs.1 · Target template: v1.0.0
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
-**Status:** T09 defines this catalog and the interfaces; T15 implements the workflow/action YAML; T12 validates the docs set before the v1.0.0 tag.
-**Availability key:** **now** = exists in this repo today. **planned** = contract defined here, YAML delivered by T15 (sprint 1.0.0.2+). Planned items are never claimed as shipped.
+**Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
+**Availability key:** **shipped** = YAML exists in this repo; **contract-only** = interface documented here but not yet implemented. Contract-only items are never claimed as shipped.
 
-This page is the single source of truth for the Actions layer. The [playbook §10](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md#10-actions--ci-cd-contract) keeps the conceptual model, [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog-planned-1002) keeps the quick lookup tables, and this catalog keeps the full catalog and stable interfaces. All three must stay consistent.
+This page is the single source of truth for the Actions layer. The [playbook §10](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md#10-actions-and-ci-cd-contract) keeps the conceptual model, [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog) keeps the quick lookup tables, and this catalog keeps the full catalog and stable interfaces. All three must stay consistent.
 
 **Hard rules (apply to every workflow in this catalog):**
 
@@ -16,6 +16,20 @@ This page is the single source of truth for the Actions layer. The [playbook §1
 - Third-party actions and reusable workflows are pinned by SHA or exact template release tag — never `@main` or a floating major tag.
 
 ---
+
+## Contents
+
+- [1. How to read this catalog](#1-how-to-read-this-catalog)
+- [2. Workflow catalog](#2-workflow-catalog)
+- [3. Trigger and required-check contract](#3-trigger-and-required-check-contract)
+- [4. Token and secret matrix](#4-token-and-secret-matrix)
+- [5. Runner, cost, and caching guidance](#5-runner-cost-and-caching-guidance)
+- [6. Local-parity commands](#6-local-parity-commands)
+- [7. Reusable workflow and composite action contracts](#7-reusable-workflow-and-composite-action-contracts)
+- [8. Hybrid D adoption model](#8-hybrid-d-adoption-model)
+- [9. Guardrails: no secrets, no live calls, guarded publishing](#9-guardrails-no-secrets-no-live-calls-guarded-publishing)
+- [10. Validation, T15 handoff, and change protocol](#10-validation-t15-handoff-and-change-protocol)
+- [11. Related documents](#11-related-documents)
 
 ## 1. How to read this catalog
 
@@ -48,7 +62,7 @@ Three invariants follow from the definitions:
 | Security — `security.yml` (Dependabot + dependency review + optional CodeQL) | PR dependency review; weekly/monthly `schedule`; CodeQL opt-in | Dependabot default; dependency review advisory then required; CodeQL opt-in advisory | `ubuntu-latest` | Dependency/supply-chain/code scanning | `contents: read`; `security-events: write` (CodeQL job only); `pull-requests: write` only if commenting | none | CodeQL SARIF → code scanning; summary otherwise | Dependency-review policy failure when required; CodeQL advisory until stable |
 | Docs — `docs.yml` → `reusable-docs.yml` | PR/push paths `docs/**`, `**/*.md`; `workflow_dispatch` | optional advisory; can be required for docs-only repos | `ubuntu-latest` | Markdown fence/link/consistency checks | `contents: read` | none | report summary, 7d | Advisory by default; broken fences/relative links fail |
 
-**Now vs planned:** only `.github/workflows/tracker-audit.yml` exists today (**now**, advisory baseline: weekly cron `0 15 * * 1`, `workflow_dispatch`, `contents: read`, `TRACKER_TOKEN` with clean skip when unset). The remaining callers/reusable workflows/composite actions in this catalog are **planned (T15)**. T15 must preserve the audit workflow's skip semantics when converting it to a thin caller.
+**Shipped vs contract-only:** shipped: `ci.yml`/`reusable-ci.yml`, `security.yml`/`reusable-security.yml`, `release.yml`+macOS/container/package callers/`reusable-release.yml`, checksum/sign-notarize composite actions, and the advisory `tracker-audit.yml`. Contract-only: `e2e.yml`/`reusable-e2e.yml`, `desktop-smoke.yml`/`reusable-desktop-smoke.yml`, `docs.yml`/`reusable-docs.yml`, `reusable-audit.yml`, and `setup-node-cache` (CI setup/cache is inlined in `reusable-ci.yml`).
 
 ### 2.1 CI (required)
 
@@ -313,7 +327,7 @@ Additional notes:
 
 ## 7. Reusable workflow and composite action contracts
 
-All contracts below are **documentation** until T15 lands the YAML files. Nothing in this section is a shipped workflow.
+Contracts for CI/security/release are implemented as shipped YAML; contracts for E2E/desktop/docs/audit-wrapper/setup-node-cache remain **contract-only** until implemented. Each contract states its status where relevant.
 
 ### 7.1 Naming and ref conventions
 
@@ -333,83 +347,54 @@ Called workflows run in the caller repository's context, with caller-provided in
 
 | Interface | Definition |
 |---|---|
-| Inputs | `node-version` string default `'22'`; `package-manager` string default `npm`; `working-directory` string default `.`; `run-lint` boolean default `true`; `run-format` boolean default `true`; `run-test` boolean default `true`; `cache` boolean default `true` |
-| Outputs | `checks-passed` — `'true'` when every enabled check succeeded |
-| Secrets | none (`secrets: {}`) |
-| Permissions | caller grants `contents: read`; called workflow declares `contents: read` |
-| Runner | `ubuntu-latest`, timeout 15 min |
+| Inputs | `node-version` string default `'22'`; `working-directory` string default `.`; `tracker-config` string default `''`; `install-command` string default `''` (auto-detect lockfile); `lint-command`, `format-command`, `test-command`, `build-command` strings default `''` (resolve from tracker config/package scripts, then documented no-op success) |
+| Outputs | `result` (`success`/`failure`), `checks-passed` (`'true'`/`'false'`) |
+| Secrets | none |
+| Permissions | `contents: read` |
+| Runner | `ubuntu-latest` |
 | Artifacts | none by default |
-| Stability | adding an optional input/output is minor; adding a required input or renaming/removing one is major |
+| Stability | adding an optional input/output is minor; adding a required input or renaming/removing an input/output is major |
 
 ```yaml
-# Contract: .github/workflows/reusable-ci.yml (T15 authors the file)
+# Implemented contract: .github/workflows/reusable-ci.yml (T15)
 on:
   workflow_call:
     inputs:
-      node-version:
-        description: Node.js version; template default is 22
-        type: string
-        required: false
-        default: '22'
-      package-manager:
-        description: Package manager used for install, cache, and scripts
-        type: string
-        required: false
-        default: npm
-      working-directory:
-        description: Directory containing package.json
-        type: string
-        required: false
-        default: .
-      run-lint:
-        description: Run the lint command
-        type: boolean
-        required: false
-        default: true
-      run-format:
-        description: Run the formatting check
-        type: boolean
-        required: false
-        default: true
-      run-test:
-        description: Run the unit test command
-        type: boolean
-        required: false
-        default: true
-      cache:
-        description: Enable dependency caching
-        type: boolean
-        required: false
-        default: true
+      node-version: { type: string, required: false, default: '22' }
+      working-directory: { type: string, required: false, default: '.' }
+      tracker-config: { type: string, required: false, default: '' }
+      install-command: { type: string, required: false, default: '' }
+      lint-command: { type: string, required: false, default: '' }
+      format-command: { type: string, required: false, default: '' }
+      test-command: { type: string, required: false, default: '' }
+      build-command: { type: string, required: false, default: '' }
     outputs:
-      checks-passed:
-        description: Set to true when all enabled checks passed
-        value: ${{ jobs.ci-gate.outputs.passed }}
-    secrets: {}
+      result: { value: "${{ jobs.summary.outputs.result }}" }
+      checks-passed: { value: "${{ jobs.summary.outputs.checksPassed }}" }
 permissions:
   contents: read
 ```
 
-Caller snippet:
+Caller snippet (implemented `.github/workflows/ci.yml`):
 
 ```yaml
-# Thin caller in the adopting repo: .github/workflows/ci.yml
 name: CI
 on:
   pull_request:
   push:
     branches: [main]
+  merge_group:
 permissions:
   contents: read
 jobs:
   ci:
-    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.0.0
+    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@<exact-tag-or-sha>
     with:
       node-version: '22'
-      package-manager: npm
+      # Omit commands to resolve from tracker config/package.json, or pass explicit commands.
 ```
 
-Required-check mapping: T15 should expose a stable gate job name (`ci-gate`) and document the exact protection string; downstream projects keep the same check names in `workflows.ci.requiredChecks`.
+Required-check mapping: the implementation exposes `ci / prepare`, `ci / lint`, `ci / format`, `ci / test`, `ci / build`, and the aggregate `ci / ci-gate` through the caller job id `ci`. Require the aggregate `ci / ci-gate` (recommended) or the individual deterministic jobs; never require CodeQL while opt-in. Capture contexts from a green run before enabling protection. `tracker.config.json` `workflows.ci.requiredChecks` stores short names; T12 documents the mapping.
 
 ### 7.3 `reusable-e2e.yml` — E2E contract (optional profile)
 
@@ -435,11 +420,11 @@ Required-check mapping: T15 should expose a stable gate job name (`ci-gate`) and
 | Artifacts | smoke logs + summary |
 | Stability | command inputs are required strings; changing their semantics is major; runner-label default changes are minor |
 
-### 7.5 `reusable-release.yml` — release contract
+### 7.5 Release workflow contract
 
 | Interface | Definition |
 |---|---|
-| Inputs | `profile` string default `generic` (mirrors `workflows.release.profile`); `tag-pattern` string default `^v\d+\.\d+\.\d+$`; `dry-run` boolean default `true`; `artifact-globs` string (multiline) default `dist/**`; `checksum-algorithm` string default `sha256`; `publish` boolean default `false` |
+| Inputs | `profile` (generic/macos/container/package) default `generic`; `version`; `tag-pattern` default `^v\d+\.\d+\.\d+$`; `dry-run` default `true`; `publish` default `false`; `artifact-globs` default `dist/**`; `checksum-algorithm` default `sha256`; `build-command`; `working-directory`; `node-version`; `macos-runner`; `macos-team-id`; `macos-signing-identity`; `image-name`; `package-registries`; `artifact-name`; `retention-days`; release metadata inputs (`release-name`, `draft`, `prerelease`) |
 | Outputs | `version`, `artifacts`, `checksums-file`, `release-url` (empty on dry-run), `dry-run` |
 | Secrets | `RELEASE_TOKEN` (optional, only when org policy forbids the default token for publishing); `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD` (optional, desktop profile); `NPM_TOKEN` (optional, package profile when OIDC trusted publishing is unavailable) — all `required: false`; team ID / signing identity are non-secret inputs |
 | Permissions | caller grants `contents: write`; `id-token: write` only for OIDC publish jobs; `packages: write` only for container profile |
@@ -540,7 +525,7 @@ Composite action rules:
 
 - Callers pin an exact template release tag or full commit SHA. `@main` and floating major refs are prohibited.
 - Tags are protected by a repo tag ruleset (when the plan allows), so a pinned tag cannot move silently. If tag immutability cannot be guaranteed, pin the SHA.
-- This catalog's docs version moves with the template release; a contract change must update this page, the [REFERENCE](./REFERENCE.md#13-workflow-catalog-planned-1002) summary, and the changelog in the same release.
+- This catalog's docs version moves with the template release; a contract change must update this page, the [REFERENCE](./REFERENCE.md#13-workflow-catalog) summary, and the changelog in the same release.
 - Deprecations: announce in the release notes, keep the old interface one minor release with a warning in the job summary, then remove in the next major.
 
 ---
@@ -709,14 +694,17 @@ Never write `run: echo "${{ github.event.pull_request.title }}"`. The same rule 
 
 ## 10. Validation, T15 handoff, and change protocol
 
-### 10.1 What T15 implements from this contract
+### 10.1 Implementation status
 
-| Deliverable | Expected path(s) |
+| Deliverable | Status |
 |---|---|
-| Reusable workflows | `.github/workflows/reusable-ci.yml`, `reusable-e2e.yml`, `reusable-desktop-smoke.yml`, `reusable-release.yml`, `reusable-audit.yml`, `reusable-security.yml`, `reusable-docs.yml` |
-| Thin callers | `.github/workflows/ci.yml`, `e2e.yml`, `desktop-smoke.yml`, `release.yml`, `security.yml`, `docs.yml`; audit converted to a thin caller while preserving skip semantics |
-| Composite actions | `.github/actions/setup-node-cache/action.yml`, `.github/actions/checksum/action.yml`, `.github/actions/sign-notarize-macos/action.yml` |
-| Supporting config (sibling workflow/release-profile tasks as scoped) | `.github/dependabot.yml`, release-profile templates/callers |
+| `reusable-ci.yml` + `ci.yml` caller | implemented (T15) |
+| `reusable-security.yml` + `security.yml`, Dependabot | implemented (T15) |
+| `reusable-release.yml` + `release.yml`, macOS/container/package callers, checksum/sign actions | implemented (T10) |
+| `tracker-audit.yml` advisory workflow | implemented (T04); reusable audit wrapper remains a contract |
+| `reusable-e2e.yml`, `reusable-desktop-smoke.yml`, `reusable-docs.yml` | contract only — not yet implemented |
+| composite `setup-node-cache` | contract only; T15 inlines setup/cache in `reusable-ci.yml` |
+| composite `checksum`, `sign-notarize-macos` | implemented (T10) |
 
 ### 10.2 Validation gates for T15 and release
 
@@ -755,8 +743,8 @@ Performed for this catalog:
 
 | Document | Why it matters here |
 |---|---|
-| [Playbook §10 — Actions / CI-CD contract](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md#10-actions--ci-cd-contract) | Conceptual model and portfolio-level decisions |
-| [REFERENCE §13–16 — workflow, token, runner, release profiles](./REFERENCE.md#13-workflow-catalog-planned-1002) | Quick lookup tables |
+| [Playbook §10 — Actions / CI-CD contract](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md#10-actions-and-ci-cd-contract) | Conceptual model and portfolio-level decisions |
+| [REFERENCE §13–16 — workflow, token, runner, release profiles](./REFERENCE.md#13-workflow-catalog) | Quick lookup tables |
 | [UPGRADING — version semantics, copy vs reusable, rollback](./UPGRADING.md#copy-vs-reusable) | How pins, copied files, and contract upgrades move |
 | [ADOPTION §5 — audit, CI, protection](./ADOPTION.md#5-audit-ci-protection) | Where CI/audit/token decisions fit adoption |
 | [HOW TO USE §13 — audit](./HOW_TO_USE.md#13-audit) | Manual audit checklist until automation is stable |

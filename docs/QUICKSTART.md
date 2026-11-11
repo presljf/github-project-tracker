@@ -2,7 +2,7 @@
 
 **Docs version:** v1.0.0-docs.1 · Full handbook: [HOW TO USE](./HOW_TO_USE.md) · Reference: [REFERENCE](./REFERENCE.md)
 
-> Automation note: `bootstrap.mjs` is **planned (1.0.0.2)**. This quickstart uses the GitHub UI and `gh` commands available now. Use the same steps later with bootstrap as a shortcut.
+> Automation note: `bootstrap.mjs` is available now and defaults to dry-run. This quickstart uses the GitHub UI and `gh` commands so every step is visible; use bootstrap as a shortcut once you have a config.
 
 ## 0. Prerequisites
 
@@ -22,7 +22,7 @@
   ```bash
   gh auth refresh -s project
   ```
-- Node >=22 if you plan to use the planned CLI/scripts; not required for the UI/`gh` path.
+- Node >=22 is required for the CLI/automation path (`package.json` engines); it is optional only for the pure UI/`gh` manual path.
 - A scratch repository for your first practice run (recommended).
 
 macOS/Linux: use bash/zsh. Windows: use Git Bash or WSL; PowerShell equivalents are noted in [Reference](./REFERENCE.md).
@@ -75,7 +75,7 @@ UI: project **Settings → Custom fields**:
 | Release | single select | v0.1.0 |
 | Sprint | single select | 0.1.0.1 |
 | Area | single select | docs, code, ci |
-| Kind | single select | feature, fix, infra |
+| Kind | single select | feature, fix, ux, spike, test, infra |
 | Estimate | single select | S, M, L |
 | Source | single select | Internal, Downstream |
 
@@ -97,13 +97,14 @@ gh issue create --repo OWNER/REPO --title "[Task] Create tracker config" \
 # https://github.com/OWNER/REPO/issues/2
 ```
 
-Set project fields (UI: open item → fields; CLI below discovers IDs first):
+Set project fields on the task. The task CLI/audit require Area/Kind/Estimate plus Release/Sprint; use `docs`/`feature`/`S` for this sample (UI: open item → fields; CLI below discovers IDs first):
 ```bash
 gh project field-list PROJECT_NUMBER --owner @me --format json > /tmp/fields.json
 # inspect IDs/options, then:
 gh project item-list PROJECT_NUMBER --owner @me --format json > /tmp/items.json
 gh project item-edit --id ITEM_ID --project-id PROJECT_ID \
   --field-id STATUS_FIELD_ID --single-select-option-id TODO_OPTION_ID
+# repeat for Release=v0.1.0, Sprint=0.1.0.1, Area=docs, Kind=feature, Estimate=S, Source=Internal
 ```
 
 Link the task as a sub-issue of the sprint (UI: task → **Sub-issues** → add parent; or API):

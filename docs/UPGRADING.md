@@ -11,7 +11,7 @@ The tracker is versioned; downstream projects pin an exact version and upgrade d
 | Compatible feature | **minor** `vX.Y+1.0` | new profile, new optional config field, new caller |
 | Breaking change | **major** `vX+1.0.0` | config key removal/rename, status/field contract change, required workflow change |
 
-- Downstream config records `trackerTemplateVersion` (exact, e.g. `1.0.0`).
+- Downstream config records `automation.templateVersion` (exact, e.g. `1.0.0`).
 - No `main` tracking; no silent sync.
 - Patch/minor upgrades should be low-risk; major upgrades require a migration plan.
 
