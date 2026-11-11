@@ -1,0 +1,73 @@
+# Reusable security defaults for Project Tracker OS adopters (T15 profile).
+#
+# Default: dependency review on pull requests (no secrets, contents:read only).
+# Platform guard: dependency review is free on public repositories; private/internal
+# repositories need GitHub Advanced Security/dependency review availability. Instead of
+# failing every PR on repositories where the platform feature is unavailable, this workflow
+# skips cleanly with an actionable notice. Private adopters enable it by setting the
+# repository variable ENABLE_DEPENDENCY_REVIEW=true once the feature is available.
+#
+# CodeQL is deliberately NOT part of this reusable workflow: it needs job-level
+# security-events:write and is opt-in in the caller (see security.yml and
+# docs/CI_SECURITY_PROFILE.md).
+name: Reusable security defaults
+
+on:
+  workflow_call:
+    inputs:
+      fail-on-severity:
+        description: "Dependency review failure threshold: low, moderate, high, or critical."
+        type: string
+        required: false
+        default: high
+      warn-only:
+        description: "Advisory mode: report dependency review findings without failing the check."
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: dependency-review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check dependency review availability
+        id: availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENABLE_DEPENDENCY_REVIEW: ${{ vars.ENABLE_DEPENDENCY_REVIEW }}
+        run: |
+          set -euo pipefail
+          if [ "${ENABLE_DEPENDENCY_REVIEW:-}" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency review explicitly enabled via repository variable ENABLE_DEPENDENCY_REVIEW=true."
+            exit 0
+          fi
+          visibility=""
+          if command -v gh >/dev/null 2>&1; then
+            visibility="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.visibility' 2>/dev/null || true)"
+          fi
+          echo "Repository visibility: ${visibility:-unknown}"
+          if [ "${visibility}" = "public" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency review runs by default on public repositories."
+            exit 0
+          fi
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::Dependency review needs GitHub Advanced Security on private repositories. Set repository variable ENABLE_DEPENDENCY_REVIEW=true after enabling it; this job skipped without opening a red check. See docs/CI_SECURITY_PROFILE.md."
+      - name: Dependency review
+        if: ${{ steps.availability.outputs.run == 'true' }}
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: ${{ inputs.fail-on-severity }}
+          warn-only: ${{ inputs.warn-only }}
