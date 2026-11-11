@@ -258,5 +258,5 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 - [x] T04 downstream/security/publication — **COMPLETED 2026-11-11** (PR #64; private vulnerability reporting enabled; publication checklist)
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [ ] T12 shared rate-limit state/targeted queries/cost instrumentation — #60 (P0)
-- [ ] T11 docs coverage guard — #58 (P1)
+- [x] T11 docs coverage guard — **COMPLETED 2026-11-11** (PR #65; CI docs coverage; tests 53/53; issue-type CI wiring follow-up) — #58
 - [ ] T10 scratch cleanup — #51 (P3)
