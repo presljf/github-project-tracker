@@ -1,6 +1,6 @@
 # GitHub Project Tracker Playbook
 
-**Docs version:** v1.0.0-docs.1 · **Status:** Project Tracker OS v1.0.0 playbook  
+**Docs version:** v1.0.1-docs.1 · **Status:** Project Tracker OS v1.0.0 playbook  
 **Audience:** maintainers, contributors, and agents operating a GitHub-based project tracker  
 **Scope:** portable, project-agnostic operating procedure. Project-specific commands/artifacts belong in the adopting project's config and docs.
 
