@@ -401,7 +401,7 @@ Enforcement:
 - Audit/security findings may contain sensitive data; store as job summaries/artifacts, not public comments.
 
 ### 10.6 Local parity
-Every workflow must have a documented local equivalent (`npm test`, `npm run lint`, etc.) so projects can verify without Actions. Planned `docs/ACTIONS_CATALOG.md` records these.
+Every workflow must have a documented local equivalent (`npm test`, `npm run lint`, etc.) so projects can verify without Actions. `docs/ACTIONS_CATALOG.md` records these.
 
 ### 10.7 Hybrid D reuse model
 - Tracker owns reusable workflow/composite-action contracts and templates.

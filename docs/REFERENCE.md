@@ -188,7 +188,7 @@ node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
 node scripts/github/bootstrap.mjs --config tracker.config.json --apply
 node scripts/github/bootstrap.mjs --config tracker.config.json --json
 ```
-Default dry-run. Creates/updates project, fields/statuses/options, milestones, labels, roadmap/release/sprint/task skeletons, native types, project items/fields, sub-issues. Never deletes user data; re-runs are idempotent. Manual checklist for UI-only views/workflows at end.
+Default dry-run. Creates/updates project, fields/statuses/options, milestones, labels, roadmap/release/sprint/task skeletons, native types, project items/fields, sub-issues. Never deletes user data; resource matching is by **exact generated title**, so mismatched existing titles create new resources — reuse generated titles or update the config before re-running. Manual checklist for UI-only views/workflows at end.
 
 ### 5.2 audit
 
@@ -224,7 +224,7 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `$schema` | no | path/URL to schema |
 | `trackerVersion` | yes | `1`; bump only with migration |
 | `repository` | yes | `owner/repo` |
-| `project` | yes | `owner`, `title`, optional `number` |
+| `project` | yes | `owner`, `title`, `number` (required by audit/task CLI) |
 | `statuses` | yes | 5+ unique, standard set recommended |
 | `fields` | yes | Release/Sprint/Area/Kind/Estimate required; Source recommended |
 | `issueTypes` | no | task/bug/feature + fallback notes |
@@ -232,7 +232,7 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `releases` | yes | key, milestone, sprints (key/title/estimate/tasks) |
 | `automation` | no | defaultAssignee, branchPrefix, tagPattern, templateRepo/version, inReviewMode, autoAddIssues, closeToDone, bot |
 | `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
-| `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode/tokenSecret; release profile/ref/dryRun |
+| `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode (secret name fixed `TRACKER_TOKEN`); release profile/ref/dryRun |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
@@ -308,10 +308,10 @@ Run `audit.mjs` advisory first; `--strict` for release gates. Invariants:
 4. No In Progress without assignee + check-in.
 5. WIP ≤ 1 In Progress per owner (or documented exception).
 6. Blocked has reason + dependency.
-7. No duplicate/retired labels.
+7. No duplicate dimension labels (retired-label cleanup is manual).
 8. Sprint/release Done has exit evidence.
 9. Pinned `automation.templateVersion`; downstream context complete.
-10. No secrets in issues/comments/artifacts.
+10. No secrets in config/artifacts — **manual review; the audit does not scan issue bodies/comments for secrets**.
 
 Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
 

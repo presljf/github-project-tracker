@@ -4,12 +4,12 @@
 **Reviewer:** independent uninvolved agent session (`app-layer`; no tracker implementation context)
 **Mode:** read-only; no repository/GitHub mutations; temp validation files removed
 **Snapshot:** HEAD `35a0800` + T12 working-tree fixes
-**Verdict:** after the fixes below, the manual UI/`gh` and learned bootstrap → task CLI → audit paths are documented and tested with the in-memory adapter; live scratch apply/lifecycle evidence remains T08.
+**Verdict:** after the fixes below, the manual UI/`gh` and bootstrap → task CLI → audit paths are documented and tested end-to-end in the T08 scratch project; template patch v1.0.1 carries the GraphQL adapter fix found by T08.
 
 ## Checks run
 
 - config validation (`validate-config.mjs`) OK
-- `npm test` 36/36
+- `npm test` 37/37
 - cards `--check` 7/7 current; A4+Letter one-page
 - independent Markdown scan: 0 broken links/anchors, balanced fences
 - bootstrap dry-run: 11 actions / 0 mutations
@@ -40,6 +40,15 @@
 | Bootstrap runtime “audit planned” | now points to `audit.mjs` advisory/strict |
 | Quickstart Kind options drift | aligned to feature/fix/ux/spike/test/infra |
 | Node prerequisite wording | Node >=22 required for CLI/automation, optional for pure UI path |
+
+## Second fresh-eyes round (additional fixes)
+
+- Copy-into-existing-repo docs now list `scripts/github/**`, `schemas/`, `package.json`, `profiles/`, `tests/`.
+- `project.number` is now required by the schema/docs; examples show it.
+- Quickstart sets native issue type + milestone; README tells users to replace/check the bootstrap acceptance placeholder before `done`.
+- Audit docs no longer overclaim native-type fallback, duplicate/retired labels, or secret scanning.
+- Checksum examples use repo-root working directory; audit actions pinned by SHA; `TRACKER_TOKEN` fixed-name documented.
+- T08 live scratch: bootstrap apply 51 actions; re-run 1 action/no creates; task lifecycle complete; strict audit 0 violations. v1.0.0 GraphQL options defect fixed in v1.0.1.
 
 ## Deferred nits / limitations
 

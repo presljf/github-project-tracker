@@ -6,7 +6,7 @@ This repository is the **source of truth** for Project Tracker OS. It is a GitHu
 
 ## Use this template
 
-1. Create a new repository from the template (GitHub **Use this template**), or copy the required files into an existing repo.
+1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/github/`, `schemas/`, `profiles/`, `tests/`, `.github/`, `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
 2. Follow [docs/ADOPTION.md](./ADOPTION.md) / [QUICKSTART](./QUICKSTART.md).
 3. Copy `tracker.config.example.json` to `tracker.config.json`, edit for your project, validate:
    ```bash

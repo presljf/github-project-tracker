@@ -62,7 +62,9 @@ Create only `risk:low|medium|high`, `plan-change`, `source:downstream`, `status:
 
 ## 3. Install template/config
 
-Copy from the tracker template:
+Copy from the tracker template (copy mode requires the full set):
+- `scripts/github/**`, `schemas/tracker.config.schema.json`, `package.json`
+- `profiles/node/`, `profiles/release/**` (if used), `tests/**` (optional but recommended)
 - `.github/ISSUE_TEMPLATE/*`
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `docs/comment-templates/*` (or link the upstream docs)

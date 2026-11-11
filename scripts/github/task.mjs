@@ -315,11 +315,13 @@ if (isMain) {
       } else if (command === 'status') result = await statusTask({ config, github, issueNumber });
       else throw new UsageError(`unknown command: ${command}`);
       if (args.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-      else {
+      else if (result.action === 'status') {
+        console.log(`status #${issueNumber}: ${result.state}; project status=${result.status || '(not on project)'}; assignee=${result.assignees?.join(', ') || '(none)'}`);
+        if (result.fields) console.log(`fields: ${JSON.stringify(result.fields)}`);
+      } else {
         console.log(`${result.action} #${issueNumber}: ${dryRun ? 'DRY-RUN (no mutations)' : 'applied'}`);
         if (result.comment) console.log(`\n${result.comment}`);
         if (result.warning) console.log(`warning: ${result.warning}`);
-        if (result.status) console.log(`status: ${result.status}`);
       }
     } catch (err) {
       console.error(`error: ${err.message}`);

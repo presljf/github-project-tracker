@@ -31,7 +31,8 @@
       "type": "object",
       "required": [
         "owner",
-        "title"
+        "title",
+        "number"
       ],
       "additionalProperties": false,
       "properties": {

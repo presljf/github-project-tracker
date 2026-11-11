@@ -223,8 +223,8 @@ Outputs: `checksums-file`, `digest-count`. Behavior: deterministic sorted `<hash
     paths: |
       dist/**
     algorithm: sha256
-    working-directory: dist
-- run: ( cd dist && sha256sum -c "${{ steps.checksum.outputs.checksums-file }}" )
+    working-directory: .
+- run: sha256sum -c SHA256SUMS
 ```
 
 ### 6.2 `sign-notarize-macos`

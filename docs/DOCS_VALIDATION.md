@@ -9,7 +9,7 @@
 | Check | Command | Result |
 |---|---|---|
 | Config contract/examples | `node scripts/github/validate-config.mjs` | OK (generic + pilot examples) |
-| Full test suite | `npm test` | 36/36 pass |
+| Full test suite | `npm test` | 37/37 pass |
 | Bootstrap (read-only) | `node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run` | plan printed; **0 mutations** |
 | Tracker audit | `node scripts/github/audit.mjs --config tracker.config.json --strict` | 0 violations, 21 issues / 21 project items |
 | Task CLI status | `node scripts/github/task.mjs status --issue 17 --config tracker.config.json` | reads title/state/assignee/status/fields |
@@ -36,8 +36,8 @@ Coverage is tracked in the docs index and these docs:
 
 ## Fresh-eyes review
 
-- A fresh, uninvolved agent session reviewed the docs-only path (see [fresh-eyes report](./FRESH_EYES_T12.md)). Findings: wrong pin key, stale planned wording, workflow-catalog/implemented status drift, schema/command mapping mismatch, and unverifiable claims. All blockers/should-fix items were addressed in T12; nits are recorded as deferred.
-- The live scratch project setup → bootstrap → task lifecycle → audit is executed by **T08** against this template; that transcript is the live end-to-end evidence and is **not yet recorded** in this file.
+- Two independent uninvolved agent reviews (see [fresh-eyes report](./FRESH_EYES_T12.md)) found and T12 fixed: wrong pin key, stale planned wording, workflow-catalog/implemented status drift, schema/command mapping mismatch, bootstrap field defaults/DoR blocker, copy-path omissions, project.number optionality, quickstart type/milestone gaps, audit overclaims, checksum path errors, action-pin exception, status-output wording, and unverifiable claims.
+- **Live T08 scratch validation completed:** private scratch repo `presljf/tracker-smoke-20261111-123300` (archived), project #3; bootstrap apply 51 actions, second apply 1 action/no creates, task lifecycle check-in→checkout, strict audit 0 violations (4 issues / 4 items). Tag v1.0.0 exposed a GraphQL field-options defect; fix is in T08 and is released as template patch **v1.0.1** (v1.0.0 tag remains immutable).
 - Human final review is recorded at release close before tagging.
 
 ## Release gate

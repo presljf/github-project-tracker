@@ -150,7 +150,7 @@ Expected UI: task appears under parent; parent progress shows `1/1`.
 
 ### 4.4 Install templates/config
 
-- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md` from the tracker template.
+- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md`, plus `scripts/github/**`, `schemas/tracker.config.schema.json`, and `package.json` from the tracker template (copy mode requires the full set).
 - Copy `tracker.config.example.json` to `tracker.config.json`; edit values.
 - Validate:
   ```bash

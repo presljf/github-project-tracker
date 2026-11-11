@@ -19,7 +19,7 @@ Default: mutates. `--dry-run` validates and prints the planned result with no Gi
 | `review` | `--issue`, `--pr URL`, `--evidence TEXT` | Sets **In Review**, posts review/evidence comment |
 | `block` | `--issue`, `--reason`, `--blocked-by URL` | Sets **Blocked**, optionally adds native blocked-by, posts blocker note |
 | `done` | `--issue`, `--evidence` or `--evidence-file`, `--pr URL`, `--force` | Verifies unchecked acceptance (unless `--force`), sets **Done**, closes issue, posts check-out |
-| `status` | `--issue` | Read-only status/fields/assignees |
+| `status` | `--issue` | Read-only status/fields/assignees; use `--json` for machine-readable fields |
 
 ## Examples
 
@@ -63,6 +63,18 @@ node scripts/github/task.mjs status --issue 123
 - `--owner` overrides `automation.defaultAssignee`; `--executor` overrides `TRACKER_EXECUTOR`/default.
 - `start` posts the check-in template; `done` posts the check-out template; `block` posts the blocker template.
 - Status field is authoritative; comments are the audit trail.
+
+## Expected outputs
+
+```text
+$ node scripts/github/task.mjs status --issue 17
+status #17: In Progress; project status=In Progress; assignee=presljf
+fields: {"release":"v1.0.0",...}
+
+$ node scripts/github/task.mjs start --issue 123
+start #123: applied
+### Check-in ...
+```
 
 ## Errors / exit codes
 
