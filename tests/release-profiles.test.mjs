@@ -181,13 +181,26 @@ test('generic caller triggers on release tags and dispatch with dry-run default'
   assert.match(text, /dry-run: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.dry-run \|\| false \}\}/);
   assert.match(text, /publish: \$\{\{ github\.event_name == 'push' \|\| inputs\.publish \}\}/);
   assertNoPrTrigger(CALLERS[0]);
+  assertCallerPermissionUnion(CALLERS[0]);
 });
+
+const CALLER_PERMISSION_UNION = ['contents: write', 'packages: write', 'id-token: write'];
+
+function assertCallerPermissionUnion(file) {
+  const text = read(file);
+  for (const permission of CALLER_PERMISSION_UNION) {
+    assert.ok(
+      text.includes(permission),
+      `${file} must grant the reusable-workflow permission union (missing ${permission}); subsets cause startup_failure (T02 live finding)`,
+    );
+  }
+}
 
 test('profile example callers are dispatch-only, dry-run by default, correctly profiled', () => {
   const expectations = [
-    ['.github/workflows/release-macos.yml', 'macos', /packages: write|id-token: write/],
-    ['.github/workflows/release-container.yml', 'container', /packages: write/],
-    ['.github/workflows/release-package.yml', 'package', /id-token: write/],
+    ['.github/workflows/release-macos.yml', 'macos'],
+    ['.github/workflows/release-container.yml', 'container'],
+    ['.github/workflows/release-package.yml', 'package'],
   ];
   for (const [file, profile] of expectations) {
     const text = read(file);
@@ -199,6 +212,7 @@ test('profile example callers are dispatch-only, dry-run by default, correctly p
     assert.match(text, new RegExp(`profile: ${profile}`), `${file} uses profile ${profile}`);
     assert.match(text, /uses: \.\/\.github\/workflows\/reusable-release\.yml/, `${file} calls the reusable workflow`);
     assertNoPrTrigger(file);
+    assertCallerPermissionUnion(file);
   }
   const container = read('.github/workflows/release-container.yml');
   assert.match(container, /packages: write/);
@@ -207,6 +221,8 @@ test('profile example callers are dispatch-only, dry-run by default, correctly p
   const macos = read('.github/workflows/release-macos.yml');
   assert.match(macos, /MACOS_CERT_P12/);
   assert.match(macos, /APPLE_APP_PASSWORD/);
+  // The callers' build commands must stay runnable placeholders (T02 fixed the unversioned-package case).
+  assert.match(pkg, /project-tracker-os/, 'package caller stages a versioned placeholder package');
 });
 
 // ---------------------------------------------------------------------------
@@ -325,6 +341,10 @@ test('release-profiles doc covers every required profile topic', () => {
   const text = read(file);
   for (const phrase of [
     'dry-run is the default',
+    'permission-union requirement',
+    'startup_failure',
+    'macos-14-arm64-us-default',
+    'live validation evidence',
     'release` environment',
     'tag pattern',
     'no `pull_request`',

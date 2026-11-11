@@ -2,7 +2,7 @@
 
 **Docs version:** `v1.0.1-docs.1` · Target template: `v1.0.1`
 **Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and copy-mode examples under `profiles/release/`.
-**Status:** T10 implements this profile layer. Publishing is dry-run/skip guarded by default; no live release was published while authoring.
+**Status:** T10 implements this profile layer; T02 added live dry-run validation (generic/container/package pass, macOS blocked by runner-plan support) and fixed the caller permission-union startup failure. Publishing is dry-run/skip guarded by default; no live release was published.
 **Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
 
 ## Contents
@@ -17,7 +17,7 @@
 - [8. Validation checklist](#8-validation-checklist)
 - [9. Troubleshooting](#9-troubleshooting)
 - [10. Versioning and stability](#10-versioning-and-stability)
-- [11. What was and was not verified (T10)](#11-what-was-and-was-not-verified-t10)
+- [11. Live validation evidence (T02) and residual limitations](#11-live-validation-evidence-t02-and-residual-limitations)
 - [12. Related documents](#12-related-documents)
 
 ## 1. Safety model (read this first)
@@ -160,10 +160,12 @@ In-repo template callers (also the copyable contract examples):
 
 | Caller | Trigger | Profile | Caller permissions |
 |---|---|---|---|
-| `.github/workflows/release.yml` | push tags `v*`; dispatch (dry-run default) | generic | `contents: write` on the called job |
-| `.github/workflows/release-macos.yml` | dispatch only (example) | macos | `contents: write` |
-| `.github/workflows/release-container.yml` | dispatch only (example) | container | `contents: read`, `packages: write` |
-| `.github/workflows/release-package.yml` | dispatch only (example) | package | `contents: read`, `id-token: write` |
+| `.github/workflows/release.yml` | push tags `v*`; dispatch (dry-run default) | generic | `contents: write`, `packages: write`, `id-token: write` |
+| `.github/workflows/release-macos.yml` | dispatch only (example) | macos | `contents: write`, `packages: write`, `id-token: write` |
+| `.github/workflows/release-container.yml` | dispatch only (example) | container | `contents: write`, `packages: write`, `id-token: write` |
+| `.github/workflows/release-package.yml` | dispatch only (example) | package | `contents: write`, `packages: write`, `id-token: write` |
+
+**Permission-union requirement (found live in T02):** a caller job must grant at least the union of permissions declared by the called reusable workflow's jobs (`contents: write` for the release job, `packages: write` for the container job, `id-token: write` for OIDC package publishing). Granting only the current profile's subset made every dispatch fail with `startup_failure` at workflow validation. Jobs that do not apply to the active profile are skipped and never use the extra grant; each called job still declares its own reduced permission set. Copy-mode callers declare permissions directly and are unaffected.
 
 Generic caller expressions: on a tag push it passes `dry-run: false` and `publish: true`; on dispatch it passes the operator's `dry-run` (default `true`) and `publish` (default `false`). The reusable workflow still refuses to publish unless the ref is the matching tag and the environment approves. The profile example callers are dispatch-only in the template repository (no product build/secrets exist here); adopters add the tag trigger once their project commands/secrets are configured.
 
@@ -172,8 +174,12 @@ Downstream (pinned) form — never `@main`:
 ```yaml
 jobs:
   release:
+    # Caller grants the union of the called workflow's job permissions (required by GitHub);
+    # skipped profile jobs never use the extra grant.
     permissions:
       contents: write
+      packages: write
+      id-token: write
     uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.0.1
     with:
       profile: generic
@@ -187,7 +193,7 @@ jobs:
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}   # optional
 ```
 
-Pass signing/publishing secrets by name exactly as listed in §3.3; do not use `secrets: inherit` for third-party/workflow reuse unless the caller and called workflow are first-party and reviewed. Caller must grant at least the permissions the called jobs use (the called workflow can only reduce them).
+Pass signing/publishing secrets by name exactly as listed in §3.3; do not use `secrets: inherit` for third-party/workflow reuse unless the caller and called workflow are first-party and reviewed. Caller must grant the permission union described in the table above (the called workflow can only reduce it).
 
 ### 5.2 Copy mode
 
@@ -197,7 +203,7 @@ Pass signing/publishing secrets by name exactly as listed in §3.3; do not use `
 
 1. Create the `release` environment in the adopting repo. Add required reviewers; restrict deployment branches/tags to the release tag pattern. Put signing/publishing secrets there (environment secrets).
 2. Protect release tags: ruleset restricting tag creation/update/deletion for `v*` to maintainers; never move or delete a published tag.
-3. Grant Actions workflow permissions: the repo's default workflow token must be allowed to `contents: write` / `packages: write` where the profile needs it (or pass `RELEASE_TOKEN` per org policy).
+3. Grant Actions workflow permissions: the repo's default workflow token must be allowed to `contents: write` / `packages: write` where the profile needs it (or pass `RELEASE_TOKEN` per org policy), and the calling job must grant the permission union from §5.1.
 4. Add the dispatch trigger only after a green dry-run; keep `dry-run: true` as the dispatch default.
 5. Record the profile choice and template pin in `tracker.config.json` (`workflows.release.profile`, `workflows.release.ref`, `workflows.release.dryRun`) and in the project's adoption notes.
 
@@ -299,10 +305,27 @@ Run before enabling any publish path (T12 captures evidence for the template rel
 - When the contract changes, update this page, the catalog summary (§7.5), REFERENCE, and the changelog in the same release.
 - **Rollback:** remove/disable the caller trigger or environment approval to stop publishes; keep published tags/releases immutable (never delete or move a tag to "undo" a release — publish a new patch version instead); revert a bad pipeline change with a normal PR and re-run the dry-run validation before re-enabling publishing.
 
-## 11. What was and was not verified (T10)
+## 11. Live validation evidence (T02) and residual limitations
 
-- **Verified locally:** all release workflow/composite/caller YAML parses; `tests/release-profiles.test.mjs` (17 tests) and the rest of `npm test` (35 total) pass; `npm run validate:config` passes; no secrets or literal credentials in the added files; the checksum generator was exercised on a scratch tree (sorted recursive globs, self-verification with `shasum`/`sha256sum`, no-match fail-closed, overwrite refusal, sha512 selection); and the `prepare` guard script was exercised against tag-publish, tag-dry-run, dispatch-dry-run, publish-from-branch, contradictory dry-run+publish, non-release tag, tag/version mismatch, invalid semver, unsupported algorithm, container work-directory, and unknown-profile cases.
-- **Not executed:** no GitHub Actions run, dispatch, tag push, signing, image push, package publish, or release creation happened while authoring (workflows cannot be dispatched from an unmerged branch, and the issue forbids live publishing). `actionlint` is not installed in the authoring environment. T12/T15 must capture the dispatch dry-run and negative-guard evidence on a real workflow run before relying on publish paths.
+T02 dispatched the merged profiles on branch ref `task/40-release-validation` with `dry-run: true`/`publish: false`: **no secrets, no publish, no release assets created.** Workflow runs are on `presljf/github-project-tracker`.
+
+| Profile | Run | Result | Evidence |
+|---|---|---|---|
+| generic | [43116072920](https://github.com/presljf/github-project-tracker/actions/runs/43116072920) | **success** | prepare → build → checksum; sign/publish jobs `skipped`; downloaded `release-bundle/SHA256SUMS` verified locally with `shasum -a 256 -c` (tar.gz + manifest both OK) |
+| container | [43115918788](https://github.com/presljf/github-project-tracker/actions/runs/43115918788) | **success** | saved image tar + `container-metadata.json` artifact; `publish-container` skipped; no GHCR login/push |
+| package | [43115911314](https://github.com/presljf/github-project-tracker/actions/runs/43115911314) | **success** | `project-tracker-os-0.0.0-dryrun.tgz` + `SHA256SUMS` verified locally; `publish-package` skipped; no registry publish |
+| macos | [43116256069](https://github.com/presljf/github-project-tracker/actions/runs/43116256069) (and 43115926883) | **cancelled by platform** | `prepare` passed; `build` on `macos-14` was cancelled with the annotation "The configuration 'macos-14-arm64-us-default' is not supported" — macOS hosted runners are unavailable on this private personal-repo plan. No signing/publish attempted (dry-run). Adopters with macOS-runner support must re-run this row. |
+
+Live findings fixed in this change:
+
+1. **Caller permission-union startup failure (fixed).** Initial dispatches of all profiles returned `startup_failure` with zero jobs. Cause: callers granted only the current profile's permission subset while `reusable-release.yml` declares `contents: write` (release job), `packages: write` (container job), and `id-token: write` (package job); GitHub validates the caller grant against the union of called-job declarations. All four callers now grant `contents: write`, `packages: write`, `id-token: write` (§5.1), and the structural test guards it. A temporary branch-ref experiment (interface-only reusable-workflow stub, then real jobs added back) isolated the cause before the fix.
+2. **Package template build (fixed).** The template `package.json` is private and unversioned, so the original `npm pack` placeholder failed live (`npm error Invalid package, must have name and version`). The package caller now stages a versioned docs tarball for validation; real projects `npm pack` their versioned package.
+3. **No-publish checks.** `gh release list` was empty before and after all runs; every run's publish jobs show `skipped`; the `release` environment was never entered; no registry/image push or OIDC exchange occurred.
+4. **Actions queue diagnosis.** 14 runs were stuck `queued` with **zero job records** (created 2026-11-11 20:28–20:46 UTC, including two tag-triggered generic release runs on `v1.0.0`/`v1.0.1`), while runs after ~21:49 UTC completed. GitHub's status history for 2026-11-11 records a Git Operations/Pull Requests incident (20:22–20:26 UTC) and a multi-product incident "including Actions, Pages, and Copilot products" (20:48–21:21 UTC); the stranded entries fall in that degraded window and were never scheduled. Fresh dispatches execute normally, so the **queue issue is resolved for new runs** (operationally cleared). The 14 zombie entries persist in the queued list; this session's mutation policy rejected `gh run cancel` (approval prompts disabled), so the repository owner must cancel them — in particular the two stale tag-triggered `Release (generic)` runs — before treating the queue as clean. `release.yml` stays `disabled_manually`; it was enabled only for the generic dry-run dispatch and disabled again immediately after.
+5. **`actionlint` unavailable (documented).** Not installed in the authoring environment and tool installation/network download is blocked by this session's policy. Substitute validation: PyYAML parse + duplicate-key detection for every workflow/action, the structural `tests/release-profiles.test.mjs` suite, and live dispatch validation (the strongest validator). T12/T15 must run `actionlint .github/workflows/*.yml` where available.
+6. **T10 local verification retained:** checksum generator behaviour and `prepare` guard cases from §8 remain covered by the local harness and tests; the new permission-union test prevents this startup-failure regression.
+
+Residual follow-ups: adopters/pilot must confirm macOS runner availability and environment protection (`release` environment with required reviewers) before enabling publishing; the two stale tag-triggered queued runs and the remaining zombie queue entries need an owner cancellation (or GitHub support ticket) to fully close the queue item.
 
 ## 12. Related documents
 

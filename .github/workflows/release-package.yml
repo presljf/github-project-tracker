@@ -44,8 +44,13 @@ concurrency:
 jobs:
   release-package:
     name: release-package
+    # GitHub requires the caller job to grant at least the union of permissions declared by the
+    # called reusable workflow's jobs: contents: write (release job), packages: write (container
+    # job), id-token: write (package OIDC publishing). Profile jobs that do not apply are skipped
+    # and never use the extra grant; each called job still declares its own reduced permission set.
     permissions:
-      contents: read
+      contents: write
+      packages: write
       id-token: write
     uses: ./.github/workflows/reusable-release.yml
     with:
@@ -53,12 +58,17 @@ jobs:
       version: ${{ inputs.version }}
       dry-run: ${{ inputs.dry-run }}
       publish: ${{ inputs.publish }}
-      # Template placeholder: `npm pack` produces the package tarball for the dry-run path.
-      # For PyPI projects, build wheels/sdists into dist/ (for example `python -m build`).
+      # Template placeholder: the template package.json is private and unversioned, so this
+      # stages a versioned copy of the docs as a packable tarball to exercise the pipeline. For
+      # a real project `npm pack` against the project package.json is sufficient; PyPI projects
+      # should build wheels/sdists into dist/ (for example `python -m build`).
       build-command: |
         set -euo pipefail
-        mkdir -p dist
-        npm pack --pack-destination dist
+        mkdir -p dist .release-package
+        node -e 'const fs = require("node:fs"); const version = process.env.VERSION; fs.writeFileSync(".release-package/package.json", JSON.stringify({ name: "project-tracker-os", version, private: false, description: "Project Tracker OS template release bundle (validation artifact)", files: ["docs/**"] }, null, 2) + "\n");'
+        cp -R docs .release-package/docs
+        ( cd .release-package && npm pack --pack-destination ../dist )
+        rm -rf .release-package
       artifact-globs: |
         dist/*.tgz
       node-version: '22'
