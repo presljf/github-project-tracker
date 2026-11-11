@@ -223,7 +223,7 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 ## 14. Progress log
 
 - [x] T07 rate-limit-aware transport — **COMPLETED 2026-11-11** (PR #52; tests 41/41; rate diagnostic)
-- [ ] T08 cache/batching
+- [x] T08 cache/batching — **COMPLETED 2026-11-11** (in review/merge; tests 43/43; batched audit 34/34 clean)
 - [ ] T09 transport guard + no-copy adoption
 - [ ] T06 audit section/hierarchy enforcement
 - [ ] T01 cross-repo reusable/public decision
