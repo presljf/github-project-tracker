@@ -197,20 +197,501 @@ permissions: {}
 
 jobs:
   prepare:
+  prepare:
+    name: prepare
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     outputs:
-      version: 0.0.0-stub
-      dry-run: 'true'
+      profile: ${{ steps.resolve.outputs.profile }}
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      dry-run: ${{ steps.resolve.outputs.dry-run }}
+      should-publish: ${{ steps.resolve.outputs.should-publish }}
+      runner: ${{ steps.resolve.outputs.runner }}
+      artifact-globs: ${{ steps.resolve.outputs.artifact-globs }}
+      build-command: ${{ steps.resolve.outputs.build-command }}
+      working-directory: ${{ steps.resolve.outputs.working-directory }}
+      checksum-algorithm: ${{ steps.resolve.outputs.checksum-algorithm }}
+      checksums-file: ${{ steps.resolve.outputs.checksums-file }}
+      image-name: ${{ steps.resolve.outputs.image-name }}
+      release-name: ${{ steps.resolve.outputs.release-name }}
     steps:
-      - run: echo prepare
+      - name: Validate inputs and resolve version/tag
+        id: resolve
+        env:
+          PROFILE_INPUT: ${{ inputs.profile }}
+          VERSION_INPUT: ${{ inputs.version }}
+          TAG_PATTERN_INPUT: ${{ inputs.tag-pattern }}
+          DRY_RUN_INPUT: ${{ inputs.dry-run }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+          ARTIFACT_GLOBS_INPUT: ${{ inputs.artifact-globs }}
+          ALGORITHM_INPUT: ${{ inputs.checksum-algorithm }}
+          BUILD_COMMAND_INPUT: ${{ inputs.build-command }}
+          WORKDIR_INPUT: ${{ inputs.working-directory }}
+          MACOS_RUNNER_INPUT: ${{ inputs.macos-runner }}
+          IMAGE_NAME_INPUT: ${{ inputs.image-name }}
+          RELEASE_NAME_INPUT: ${{ inputs.release-name }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          fail() { echo "::error::$*"; exit 1; }
+          note() { echo "::notice::$*"; }
+
+          profile_raw="$(printf '%s' "${PROFILE_INPUT:-generic}" | tr '[:upper:]' '[:lower:]')"
+          case "$profile_raw" in
+            generic|github-release) profile="generic" ;;
+            macos|desktop|macos-app-github-release) profile="macos" ;;
+            container|ghcr|image) profile="container" ;;
+            package|npm|pypi|npm-pypi|packages) profile="package" ;;
+            *) fail "Unsupported profile '${PROFILE_INPUT}'. Use generic, macos, container, or package (see docs/RELEASE_PROFILES.md)." ;;
+          esac
+
+          workdir="${WORKDIR_INPUT:-.}"
+          [[ -n "$workdir" ]] || fail "working-directory must not be empty."
+          [[ "$workdir" != /* ]] || fail "working-directory must be repository-relative, got '${workdir}'."
+
+          algorithm="$(printf '%s' "${ALGORITHM_INPUT:-sha256}" | tr '[:upper:]' '[:lower:]')"
+          case "$algorithm" in
+            sha256) checksums_file="SHA256SUMS" ;;
+            sha512) checksums_file="SHA512SUMS" ;;
+            *) fail "Unsupported checksum-algorithm '${ALGORITHM_INPUT}'; use sha256 or sha512." ;;
+          esac
+
+          globs="${ARTIFACT_GLOBS_INPUT:-dist/**}"
+          [[ -n "$(printf '%s' "$globs" | tr -d '[:space:]')" ]] || fail "artifact-globs must contain at least one glob."
+
+          dry_run="$(printf '%s' "${DRY_RUN_INPUT:-true}" | tr '[:upper:]' '[:lower:]')"
+          publish="$(printf '%s' "${PUBLISH_INPUT:-false}" | tr '[:upper:]' '[:lower:]')"
+          case "$dry_run" in true|false) ;; *) fail "dry-run must be a boolean." ;; esac
+          case "$publish" in true|false) ;; *) fail "publish must be a boolean." ;; esac
+
+          ref_type="${REF_TYPE:-}"
+          ref_name="${REF_NAME:-}"
+
+          # Tag pattern is POSIX ERE; accept the documented `\d` shorthand by translating it.
+          pattern="${TAG_PATTERN_INPUT:-^v[0-9]+\.[0-9]+\.[0-9]+$}"
+          pattern="${pattern//\\d/[0-9]}"
+
+          if [[ -n "${VERSION_INPUT:-}" ]]; then
+            version="${VERSION_INPUT#v}"
+          elif [[ "$ref_type" == "tag" ]]; then
+            version="${ref_name#v}"
+          elif [[ "$dry_run" == "true" ]]; then
+            version="0.0.0-dryrun"
+            note "No version input on a dry-run dispatch; validating the pipeline with placeholder version ${version}."
+          else
+            fail "Publishing requires a tag ref, or an explicit version input when dispatching on a tag ref."
+          fi
+
+          semver_re='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+          [[ "$version" =~ $semver_re ]] || fail "Version '${version}' is not a valid semantic version (expected e.g. 1.2.3 or 1.2.3-rc.1)."
+
+          tag="v${version}"
+          tag_matches="false"
+          if [[ "$ref_type" == "tag" ]]; then
+            [[ "$ref_name" =~ $pattern ]] || fail "Tag '${ref_name}' does not match tag-pattern '${TAG_PATTERN_INPUT:-^v[0-9]+\.[0-9]+\.[0-9]+$}'. Release tags are authorization boundaries; refusing to continue."
+            [[ "$ref_name" == "$tag" ]] || fail "Tag '${ref_name}' does not match resolved version tag '${tag}'. Refusing to release a mislabelled tag."
+            tag_matches="true"
+          fi
+
+          if [[ "$publish" == "true" && "$dry_run" == "true" ]]; then
+            fail "publish: true with dry-run: true is contradictory. Set dry-run: false for a publish run, or publish: false for a dry-run."
+          fi
+          if [[ "$publish" == "true" && "$tag_matches" != "true" ]]; then
+            fail "publish: true requires a release tag ref matching the tag pattern (dispatch on the release tag, or push the tag). Refusing to publish from '${ref_name:-<none>}'."
+          fi
+          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "pull_request_target" ]]; then
+            fail "Publishing is never allowed from pull_request events."
+          fi
+
+          should_publish="false"
+          if [[ "$publish" == "true" && "$dry_run" == "false" && "$tag_matches" == "true" ]]; then
+            should_publish="true"
+          fi
+
+          case "$profile" in
+            macos) runner="${MACOS_RUNNER_INPUT:-macos-14}" ;;
+            *) runner="ubuntu-latest" ;;
+          esac
+
+          if [[ "$profile" == "container" && "$workdir" != "." ]]; then
+            fail "The container profile builds/saves from the repository root; set working-directory to '.' (got '${workdir}')."
+          fi
+
+          if [[ -n "${IMAGE_NAME_INPUT:-}" ]]; then
+            image_name="${IMAGE_NAME_INPUT}"
+          else
+            image_name="ghcr.io/$(printf '%s' "${REPOSITORY:-owner/repo}" | tr '[:upper:]' '[:lower:]')"
+          fi
+          [[ "$image_name" =~ ^[a-z0-9./_-]+$ ]] || fail "image-name '${image_name}' must be lowercase (registry/repository) without a tag."
+
+          release_name="${RELEASE_NAME_INPUT:-$tag}"
+
+          {
+            echo "profile=${profile}"
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "dry-run=${dry_run}"
+            echo "should-publish=${should_publish}"
+            echo "runner=${runner}"
+            echo "checksum-algorithm=${algorithm}"
+            echo "checksums-file=${checksums_file}"
+            echo "image-name=${image_name}"
+            echo "release-name=${release_name}"
+            echo "working-directory=${workdir}"
+            echo "artifact-globs<<__GLOBS__"
+            printf '%s\n' "$globs"
+            echo "__GLOBS__"
+            echo "build-command<<__BUILD__"
+            printf '%s\n' "${BUILD_COMMAND_INPUT:-}"
+            echo "__BUILD__"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "profile=${profile} version=${version} tag=${tag} dry-run=${dry_run} publish=${publish} should-publish=${should_publish} ref-type=${ref_type} ref=${ref_name}"
+
+      - name: Write release summary
+        env:
+          PROFILE: ${{ steps.resolve.outputs.profile }}
+          VERSION: ${{ steps.resolve.outputs.version }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          DRY_RUN: ${{ steps.resolve.outputs.dry-run }}
+          SHOULD_PUBLISH: ${{ steps.resolve.outputs.should-publish }}
+          CHECKSUM_ALGORITHM: ${{ steps.resolve.outputs.checksum-algorithm }}
+        run: |
+          {
+            echo "## Release validation"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Profile | \`${PROFILE}\` |"
+            echo "| Version | \`${VERSION}\` |"
+            echo "| Tag | \`${TAG}\` |"
+            echo "| Dry run | \`${DRY_RUN}\` |"
+            echo "| Publish requested (guarded) | \`${SHOULD_PUBLISH}\` |"
+            echo "| Checksum | \`${CHECKSUM_ALGORITHM}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   build:
-    runs-on: ubuntu-latest
+  build:
+    name: build
+    needs: prepare
+    runs-on: ${{ needs.prepare.outputs.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.build.outputs.artifact-name }}
+      package-kinds: ${{ steps.build.outputs.package-kinds }}
     steps:
-      - run: echo build
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify checkout matches the release tag
+        if: ${{ needs.prepare.outputs.should-publish == 'true' }}
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::Release tag ${TAG} is not present in the checkout."
+            exit 1
+          fi
+          head_sha="$(git rev-parse HEAD)"
+          tag_sha="$(git rev-parse "${TAG}^{commit}")"
+          if [[ "$head_sha" != "$tag_sha" ]]; then
+            echo "::error::HEAD (${head_sha}) does not match ${TAG} (${tag_sha}); refusing to build a release from a different commit."
+            exit 1
+          fi
+          echo "::notice::Building release ${TAG} at ${head_sha}."
+
+      - name: Set up Node.js
+        if: ${{ needs.prepare.outputs.profile != 'container' }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+
+      - name: Build release artifacts
+        id: build
+        env:
+          PROFILE: ${{ needs.prepare.outputs.profile }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          DRY_RUN: ${{ needs.prepare.outputs.dry-run }}
+          WORKDIR: ${{ needs.prepare.outputs.working-directory }}
+          BUILD_COMMAND: ${{ needs.prepare.outputs.build-command }}
+          ARTIFACT_GLOBS: ${{ needs.prepare.outputs.artifact-globs }}
+          IMAGE_NAME: ${{ needs.prepare.outputs.image-name }}
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        run: |
+          set -euo pipefail
+          cd "${WORKDIR:-.}"
+
+          if [[ -n "${BUILD_COMMAND:-}" ]]; then
+            echo "::group::build-command"
+            bash -euo pipefail -c "${BUILD_COMMAND}"
+            echo "::endgroup::"
+          else
+            case "$PROFILE" in
+              generic)
+                echo "::notice::No build-command supplied; expecting committed/checked-in artifacts matching artifact-globs."
+                ;;
+              macos)
+                echo "::notice::No build-command supplied; expecting dmg/zip artifacts matching artifact-globs. Supply a build-command to produce the app bundle."
+                ;;
+              container)
+                echo "::notice::No build-command supplied; building the image from the repository root Dockerfile."
+                docker build -t "${IMAGE_NAME}:${VERSION}" .
+                ;;
+              package)
+                if [[ -f package.json ]]; then
+                  mkdir -p dist
+                  npm pack --pack-destination dist
+                elif [[ -f pyproject.toml ]]; then
+                  mkdir -p dist
+                  python -m build --outdir dist
+                else
+                  echo "::error::package profile needs package.json or pyproject.toml, or an explicit build-command."
+                  exit 1
+                fi
+                ;;
+              *) echo "::error::Unknown profile '${PROFILE}'."; exit 1 ;;
+            esac
+          fi
+
+          mkdir -p dist
+
+          if [[ "$PROFILE" == "container" ]]; then
+            image_ref="${IMAGE_NAME}:${VERSION}"
+            if [[ -n "${BUILD_COMMAND:-}" ]]; then
+              docker image inspect "$image_ref" >/dev/null 2>&1 || {
+                echo "::error::Container build-command did not produce image ${image_ref}. Tag it with \$IMAGE_NAME:\$VERSION."
+                exit 1
+              }
+            fi
+            docker save "$image_ref" -o "dist/image-${VERSION}.tar"
+            printf '{"image":"%s","version":"%s","commit":"%s"}\n' "$image_ref" "$VERSION" "${GITHUB_SHA:-unknown}" > "dist/container-metadata.json"
+            echo "artifact-name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+            echo "package-kinds=" >> "$GITHUB_OUTPUT"
+            echo "::notice::Prepared container image ${image_ref} as a workflow artifact (no push in dry-run; publish is guarded)."
+            exit 0
+          fi
+
+          # Fail closed when nothing matches the artifact globs (a release without artifacts is a bug).
+          shopt -s globstar nullglob
+          files=()
+          while IFS= read -r pattern; do
+            [[ -z "$pattern" ]] && continue
+            expanded=( $pattern )
+            if [[ ${#expanded[@]} -gt 0 ]]; then
+              files+=("${expanded[@]}")
+            fi
+          done <<< "$ARTIFACT_GLOBS"
+          file_count=0
+          for f in "${files[@]}"; do
+            [[ -f "$f" ]] && file_count=$((file_count + 1))
+          done
+          if [[ "$file_count" -eq 0 ]]; then
+            echo "::error::No files matched artifact-globs '${ARTIFACT_GLOBS}'."
+            exit 1
+          fi
+          echo "::notice::Matched ${file_count} artifact file(s)."
+
+          package_kinds=""
+          if [[ "$PROFILE" == "package" ]]; then
+            if compgen -G "dist/*.tgz" >/dev/null; then package_kinds="npm"; fi
+            if compgen -G "dist/*.whl" >/dev/null || compgen -G "dist/*.tar.gz" >/dev/null; then
+              package_kinds="${package_kinds:+${package_kinds},}pypi"
+            fi
+            [[ -n "$package_kinds" ]] || { echo "::error::package profile built no npm tarball, wheel, or sdist in dist/."; exit 1; }
+            echo "::notice::Detected package registries: ${package_kinds}"
+          fi
+
+          {
+            echo "artifact-name=${ARTIFACT_NAME}"
+            echo "package-kinds=${package_kinds}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload release artifacts
+        if: ${{ needs.prepare.outputs.profile != 'container' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-globs }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}
+
+      - name: Upload container image artifact
+        if: ${{ needs.prepare.outputs.profile == 'container' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            dist/image-*.tar
+            dist/container-metadata.json
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}
+
   sign:
-    runs-on: ubuntu-latest
+  sign:
+    name: sign-macos
+    needs: [prepare, build]
+    if: ${{ needs.prepare.outputs.profile == 'macos' && needs.prepare.outputs.dry-run == 'false' && needs.prepare.outputs.should-publish == 'true' }}
+    runs-on: ${{ needs.prepare.outputs.runner }}
+    timeout-minutes: 45
+    environment: release
+    permissions:
+      contents: read
+    outputs:
+      signed-artifact-name: ${{ steps.record.outputs.signed-artifact-name }}
+      signing-mode: ${{ steps.sign.outputs.signing-mode }}
+      notarized: ${{ steps.sign.outputs.notarized }}
     steps:
-      - run: echo sign
+      - name: Download unsigned macOS artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: signed
+
+      - name: Sign and notarize (optional; ad-hoc fallback when credentials are absent)
+        id: sign
+        env:
+          CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          TEAM_ID: ${{ inputs.macos-team-id }}
+          SIGNING_IDENTITY: ${{ inputs.macos-signing-identity }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          [[ -n "${CERT_P12_BASE64:-}" ]] && echo "::add-mask::${CERT_P12_BASE64}"
+          [[ -n "${CERT_PASSWORD:-}" ]] && echo "::add-mask::${CERT_PASSWORD}"
+          [[ -n "${APPLE_APP_PASSWORD:-}" ]] && echo "::add-mask::${APPLE_APP_PASSWORD}"
+
+          # Downloaded artifacts are relative to the artifact-glob root (for example a single
+          # `App-1.2.3.dmg` or an `App.app/` bundle), so enumerate the top level as-is.
+          artifacts=()
+          while IFS= read -r entry; do
+            [[ -n "$entry" ]] && artifacts+=("$entry")
+          done < <(find signed -mindepth 1 -maxdepth 1 -print | LC_ALL=C sort)
+          if [[ ${#artifacts[@]} -eq 0 ]]; then
+            echo "::error::No artifacts were downloaded for signing."
+            exit 1
+          fi
+
+          signable=()
+          for f in "${artifacts[@]}"; do
+            if [[ -d "$f" ]]; then
+              case "$f" in
+                *.app) signable+=("$f") ;;
+                *) echo "::notice::Skipping directory $(basename "$f") (sign the .app bundle before packaging)." ;;
+              esac
+              continue
+            fi
+            case "$f" in
+              *.dmg) signable+=("$f") ;;
+              *)
+                if file "$f" 2>/dev/null | grep -q 'Mach-O'; then signable+=("$f"); fi
+                ;;
+            esac
+          done
+          if [[ ${#signable[@]} -eq 0 ]]; then
+            echo "::warning::No signable .app/.dmg/Mach-O artifact found; signing is skipped. Sign the app bundle before zipping when distribution requires a signature."
+          fi
+
+          keychain=""
+          cleanup() {
+            if [[ -n "$keychain" ]]; then
+              security delete-keychain "$keychain" >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          signing_mode="skipped"
+          notarized="false"
+
+          if [[ -n "${CERT_P12_BASE64:-}" ]]; then
+            signing_mode="developer-id"
+            keychain="$RUNNER_TEMP/release-signing.keychain-db"
+            keychain_password="$(openssl rand -hex 24)"
+            echo "::add-mask::${keychain_password}"
+            cert_path="$RUNNER_TEMP/release-signing.p12"
+            ( umask 077 && printf '%s' "$CERT_P12_BASE64" | base64 -D > "$cert_path" 2>/dev/null || printf '%s' "$CERT_P12_BASE64" | base64 --decode > "$cert_path" )
+            security create-keychain -p "$keychain_password" "$keychain"
+            security set-keychain-settings -lut 3600 "$keychain"
+            security unlock-keychain -p "$keychain_password" "$keychain"
+            security import "$cert_path" -k "$keychain" -P "${CERT_PASSWORD:-}" -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+            rm -f "$cert_path"
+            echo "::notice::Signing ${#signable[@]} artifact(s) with a Developer ID certificate."
+            for f in "${signable[@]}"; do
+              codesign --force --deep --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$keychain" "$f"
+            done
+            if [[ ${#signable[@]} -gt 0 ]]; then
+              if [[ -n "${APPLE_ID:-}" && -n "${APPLE_APP_PASSWORD:-}" && -n "${TEAM_ID:-}" ]]; then
+                for f in "${signable[@]}"; do
+                  case "$f" in
+                    *.app)
+                      notarize_zip="$RUNNER_TEMP/$(basename "$f").zip"
+                      ditto -c -k --keepParent "$f" "$notarize_zip"
+                      xcrun notarytool submit "$notarize_zip" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$TEAM_ID" --wait
+                      xcrun stapler staple "$f"
+                      rm -f "$notarize_zip"
+                      ;;
+                    *.dmg)
+                      xcrun notarytool submit "$f" --apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$TEAM_ID" --wait
+                      xcrun stapler staple "$f"
+                      ;;
+                    *)
+                      echo "::notice::Notarization skipped for $(basename "$f") (notarize .app or .dmg artifacts)."
+                      ;;
+                  esac
+                done
+                notarized="true"
+              else
+                echo "::warning::Developer ID signing succeeded but notarization credentials are absent; artifacts are signed but NOT notarized."
+              fi
+            fi
+          else
+            signing_mode="ad-hoc"
+            echo "::warning::MACOS_CERT_P12 is not configured; falling back to ad-hoc signing (not notarized). Configure the macOS signing secrets before distributing this release."
+            for f in "${signable[@]}"; do
+              case "$f" in
+                *.app|*.app/*) codesign --force --deep --sign - "$f" ;;
+                *) echo "::notice::Ad-hoc signing skipped for $(basename "$f") (ad-hoc codesign applies to app bundles/binaries; review the artifact)." ;;
+              esac
+            done
+          fi
+
+          {
+            echo "signing-mode=${signing_mode}"
+            echo "notarized=${notarized}"
+            echo "signable-count=${#signable[@]}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed macOS artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}-signed
+          path: signed/**
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}
+
+      - name: Record signed artifact name
+        id: record
+        env:
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        run: echo "signed-artifact-name=${ARTIFACT_NAME}-signed" >> "$GITHUB_OUTPUT"
+
   checksum:
     runs-on: ubuntu-latest
     outputs:
