@@ -1,0 +1,172 @@
+# COPY-MODE EXAMPLE — package release profile (T10).
+#
+# Copy this file into .github/workflows/release-package.yml when cross-repo reusable workflows
+# are blocked. Prefer the reusable mode (`.github/workflows/release-package.yml` in this template)
+# when the template ref is accessible.
+#
+# Publishes npm and/or PyPI distributions with provenance/OIDC trusted publishing (preferred).
+# `NPM_TOKEN`/`PYPI_API_TOKEN` are optional static-token fallbacks for registries where trusted
+# publishing is unavailable; when present they must be documented, scoped, and rotated.
+# Publishing is guarded by a matching release tag, `publish: true`, and the protected `release`
+# environment.
+name: Release (copy mode, package)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0).'
+        required: false
+        default: ''
+      publish:
+        description: 'Publish to the registry (only honored on a matching release tag ref).'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      should-publish: ${{ steps.resolve.outputs.should-publish }}
+    steps:
+      - name: Validate ref and version
+        id: resolve
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION_INPUT: ${{ inputs.version }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          if [[ "${VERSION_INPUT:-}" != "" ]]; then version="${VERSION_INPUT#v}"
+          elif [[ "$REF_TYPE" == "tag" ]]; then version="${REF_NAME#v}"
+          else version="0.0.0-dryrun"; fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "invalid version '${version}'"
+          tag="v${version}"
+          should_publish="false"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "tag '${REF_NAME}' is not a release tag"
+            [[ "$REF_NAME" == "$tag" ]] || fail "tag/version mismatch: ${REF_NAME} vs ${tag}"
+            if [[ "${PUBLISH_INPUT:-false}" == "true" ]]; then should_publish="true"; fi
+          fi
+          { echo "version=${version}"; echo "tag=${tag}"; echo "should-publish=${should_publish}"; } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build-package
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Detect publish auth mode
+        id: auth
+        env:
+          PYPI_TOKEN_PRESENT: ${{ secrets.PYPI_API_TOKEN != '' }}
+        run: echo "has-pypi-token=${PYPI_TOKEN_PRESENT:-false}" >> "$GITHUB_OUTPUT"
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Build distributions
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          if [[ -f package.json ]]; then npm pack --pack-destination dist; fi
+          if [[ -f pyproject.toml ]]; then python -m build --outdir dist; fi
+          shopt -s nullglob
+          files=(dist/*)
+          [[ ${#files[@]} -gt 0 ]] || { echo "::error::no distributions built"; exit 1; }
+      - name: Checksum distributions
+        id: checksum
+        uses: ./.github/actions/checksum
+        with:
+          paths: 'dist/**'
+          algorithm: sha256
+          output-file: SHA256SUMS
+          working-directory: 'dist'
+      - name: Upload bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: package-bundle
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: publish-package
+    needs: [guard, build]
+    if: ${{ needs.guard.outputs.should-publish == 'true' }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package-bundle
+          path: release
+      - name: Verify checksums
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum -c SHA256SUMS
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Publish to npm (trusted publishing/OIDC preferred)
+        if: ${{ hashFiles('release/*.tgz') != '' }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tarballs=(release/*.tgz)
+          if [[ -n "${NPM_TOKEN:-}" ]]; then
+            echo "::add-mask::${NPM_TOKEN}"
+            export NODE_AUTH_TOKEN="$NPM_TOKEN"
+            echo "::notice::Publishing with NPM_TOKEN (static-token exception; document rotation)."
+          else
+            echo "::notice::Publishing with npm trusted publishing (OIDC)."
+          fi
+          npm publish "${tarballs[@]}" --provenance --access public
+      - name: Publish to PyPI (OIDC trusted publishing)
+        if: ${{ hashFiles('release/*.whl', 'release/*.tar.gz') != '' && steps.auth.outputs.has-pypi-token == 'false' }}
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: release/
+          print-hash: true
+          skip-existing: true
+          attestations: true
+      - name: Publish to PyPI with a static token (fallback)
+        if: ${{ hashFiles('release/*.whl', 'release/*.tar.gz') != '' && steps.auth.outputs.has-pypi-token == 'true' }}
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${PYPI_API_TOKEN}"
+          shopt -s nullglob
+          dists=(release/*.whl release/*.tar.gz)
+          python -m pip install --quiet --disable-pip-version-check twine
+          TWINE_USERNAME='__token__' TWINE_PASSWORD="$PYPI_API_TOKEN" twine upload --non-interactive "${dists[@]}"

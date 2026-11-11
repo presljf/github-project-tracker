@@ -1,0 +1,69 @@
+# Thin container release caller example (T10 release profile, template repository).
+#
+# Reusable workflow: ./.github/workflows/reusable-release.yml (contract in
+# docs/ACTIONS_CATALOG.md §7.5; profile details in docs/RELEASE_PROFILES.md).
+#
+# Profile: container — build a container image, save it as a workflow artifact, and push it to
+# GHCR (`ghcr.io/<owner>/<repo>:<version>` plus `:sha-<short-sha>`) only when the guarded publish
+# path runs in the protected `release` environment. Dry-run builds and saves the image but never
+# logs in or pushes.
+#
+# This template caller is dispatch-only and dry-run by default: the template repository ships no
+# production image. Adopters replace the build-command with their real Dockerfile build, add a
+# `push: tags: v*` trigger, and configure the `release` environment before enabling publishing.
+# GHCR pushes use the workflow token (`packages: write`); no long-lived registry credentials.
+name: Release (container example)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0). Empty uses 0.0.0-dryrun on a dry-run dispatch.'
+        required: false
+        type: string
+        default: ''
+      dry-run:
+        description: 'Build and validate only; never push an image (default).'
+        required: false
+        type: boolean
+        default: true
+      publish:
+        description: 'Request publishing. Honored only when dispatching on a release tag ref with dry-run disabled.'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-container-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-container:
+    name: release-container
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/reusable-release.yml
+    with:
+      profile: container
+      version: ${{ inputs.version }}
+      dry-run: ${{ inputs.dry-run }}
+      publish: ${{ inputs.publish }}
+      # Template placeholder: builds a dependency-free `FROM scratch` image so the container
+      # pipeline (build -> save -> guarded push) is exercisable without a project Dockerfile.
+      # Replace with the project's real `docker build` command; the reusable workflow saves the
+      # image tagged as $IMAGE_NAME:$VERSION.
+      build-command: |
+        set -euo pipefail
+        mkdir -p dist
+        printf 'project tracker release payload %s\n' "$VERSION" > dist/payload.txt
+        printf 'FROM scratch\nCOPY payload.txt /payload.txt\n' > dist/Dockerfile
+        docker build -t "${IMAGE_NAME}:${VERSION}" -f dist/Dockerfile dist
+      artifact-globs: |
+        dist/image-*.tar
+        dist/container-metadata.json
+      # Set explicitly in a real project, for example ghcr.io/acme/widget.
+      image-name: ''

@@ -1,0 +1,174 @@
+# COPY-MODE EXAMPLE — generic GitHub Release profile (T10).
+#
+# Copy this file into .github/workflows/release.yml when cross-repo reusable workflows are
+# blocked by visibility/policy (hybrid D model, docs/ACTIONS_CATALOG.md §8). Copy
+# `.github/actions/checksum/` too. Prefer the reusable mode (`../../../.github/workflows/release.yml`
+# in this template) when the template ref is accessible.
+#
+# Guards: tag `v*` matching the tag pattern, dry-run builds by default on dispatch, and the
+# publish job runs only on a matching tag with `publish: true` inside the protected `release`
+# environment. There is deliberately no pull_request trigger.
+name: Release (copy mode, generic)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate (for example v1.0.0); empty derives it from a tag ref or uses 0.0.0-dryrun.'
+        required: false
+        default: ''
+      publish:
+        description: 'Publish (only honored on a matching release tag ref).'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      should-publish: ${{ steps.resolve.outputs.should-publish }}
+    steps:
+      - name: Validate ref and version
+        id: resolve
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION_INPUT: ${{ inputs.version }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$*"; exit 1; }
+          pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          if [[ "${VERSION_INPUT:-}" != "" ]]; then
+            version="${VERSION_INPUT#v}"
+          elif [[ "$REF_TYPE" == "tag" ]]; then
+            version="${REF_NAME#v}"
+          else
+            version="0.0.0-dryrun"
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "invalid version '${version}'"
+          tag="v${version}"
+          should_publish="false"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            [[ "$REF_NAME" =~ $pattern ]] || fail "tag '${REF_NAME}' does not match ${pattern}"
+            [[ "$REF_NAME" == "$tag" ]] || fail "tag/version mismatch: ${REF_NAME} vs ${tag}"
+            if [[ "${PUBLISH_INPUT:-false}" == "true" ]]; then should_publish="true"; fi
+          fi
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "should-publish=${should_publish}"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Build release artifacts
+        env:
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Replace with the project's real build command.
+          mkdir -p dist
+          git archive --format=tar.gz --prefix="release-${VERSION}/" -o "dist/release-${VERSION}.tar.gz" HEAD
+      - name: Upload artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-artifacts
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 30
+
+  checksum:
+    name: checksum
+    needs: [guard, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (local composite action)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-artifacts
+          path: release
+      - name: Generate and verify checksums
+        id: checksum
+        uses: ./.github/actions/checksum
+        with:
+          paths: '**'
+          algorithm: sha256
+          output-file: SHA256SUMS
+          working-directory: 'release'
+      - name: Verify checksums
+        env:
+          CHECKSUMS_FILE: ${{ steps.checksum.outputs.checksums-file }}
+        run: ( cd release && sha256sum -c "${CHECKSUMS_FILE}" )
+      - name: Upload release bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-bundle
+          path: release/**
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: publish
+    needs: [guard, checksum]
+    if: ${{ needs.guard.outputs.should-publish == 'true' }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-bundle
+          path: release
+      - name: Verify checksums
+        run: ( cd release && sha256sum -c SHA256SUMS )
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.guard.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release ${TAG} already exists; releases are immutable by policy."
+            exit 1
+          fi
+          gh release create "$TAG" release/* --verify-tag --draft --generate-notes

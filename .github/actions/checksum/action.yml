@@ -1,0 +1,156 @@
+# Composite checksum action (T10 release profile).
+#
+# Contract: docs/ACTIONS_CATALOG.md §7.8 `checksum`; docs/RELEASE_PROFILES.md.
+# - deterministic, sorted `<algorithm>  <path>` output (paths relative to working-directory);
+# - cross-platform: `sha256sum`/`sha512sum` on Linux, `shasum -a 256`/`-a 512` on macOS;
+# - fails closed when no file matches the newline-separated `paths` globs;
+# - never overwrites an existing checksum file (an overwritten checksum is a silent trust break);
+# - no secrets, no network, no writes outside the checksum file.
+name: Checksum artifacts
+description: >-
+  Generate a deterministic, sorted checksum file for release artifacts and self-verify it.
+  Fails when no file matches and never overwrites an existing checksum file.
+
+inputs:
+  paths:
+    description: >-
+      Newline-separated globs (for example `dist/*.tar.gz` or `dist/**`) of files to checksum,
+      relative to `working-directory`. `**` is matched recursively; `*` also matches `/`.
+    required: true
+  algorithm:
+    description: 'Checksum algorithm: sha256 (default) or sha512.'
+    required: false
+    default: sha256
+  output-file:
+    description: >-
+      Checksum file name. Empty derives SHA256SUMS for the sha256 algorithm and SHA512SUMS for
+      sha512. Never overwrites an existing file.
+    required: false
+    default: ''
+  working-directory:
+    description: 'Directory containing the artifacts, relative to the repository root.'
+    required: false
+    default: '.'
+
+outputs:
+  checksums-file:
+    description: 'Path of the generated checksum file (relative to working-directory).'
+    value: ${{ steps.checksum.outputs.checksums-file }}
+  digest-count:
+    description: 'Number of files checksummed.'
+    value: ${{ steps.checksum.outputs.digest-count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate and verify checksums
+      id: checksum
+      shell: bash
+      env:
+        PATHS_INPUT: ${{ inputs.paths }}
+        ALGORITHM_INPUT: ${{ inputs.algorithm }}
+        OUTPUT_FILE_INPUT: ${{ inputs.output-file }}
+        WORKDIR_INPUT: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        fail() { echo "::error::$*"; exit 1; }
+
+        algorithm="$(printf '%s' "${ALGORITHM_INPUT:-sha256}" | tr '[:upper:]' '[:lower:]')"
+        case "$algorithm" in
+          sha256)
+            if command -v sha256sum >/dev/null 2>&1; then
+              hash_cmd=(sha256sum)
+            elif command -v shasum >/dev/null 2>&1; then
+              hash_cmd=(shasum -a 256)
+            else
+              fail "No sha256 tool found (need sha256sum or shasum)."
+            fi
+            default_file="SHA256SUMS"
+            ;;
+          sha512)
+            if command -v sha512sum >/dev/null 2>&1; then
+              hash_cmd=(sha512sum)
+            elif command -v shasum >/dev/null 2>&1; then
+              hash_cmd=(shasum -a 512)
+            else
+              fail "No sha512 tool found (need sha512sum or shasum)."
+            fi
+            default_file="SHA512SUMS"
+            ;;
+          *)
+            fail "Unsupported algorithm '${ALGORITHM_INPUT}'; use sha256 or sha512."
+            ;;
+        esac
+
+        output_file="${OUTPUT_FILE_INPUT:-}"
+        if [[ -z "$output_file" ]]; then
+          output_file="$default_file"
+        fi
+        case "$output_file" in
+          */*) fail "output-file must be a file name in the working-directory, not a path: '${output_file}'." ;;
+        esac
+
+        workdir="${WORKDIR_INPUT:-.}"
+        [[ -d "$workdir" ]] || fail "working-directory '${workdir}' does not exist."
+        cd "$workdir"
+
+        if [[ -e "$output_file" ]]; then
+          fail "Refusing to overwrite existing '${output_file}'. Delete it deliberately or choose another output-file."
+        fi
+
+        # Enumerate every file once, then match the caller globs with bash pattern matching.
+        # `*` (and therefore `**`) matches `/` in [[ ]], so recursive globs work on bash 3.2
+        # (macOS) without `globstar`/`mapfile`.
+        all_files="$(find . -type f -print | sed 's|^\./||' | LC_ALL=C sort)"
+        if [[ -z "$all_files" ]]; then
+          fail "No files found under working-directory '${workdir}'."
+        fi
+
+        selected=""
+        patterns_seen=0
+        while IFS= read -r pattern; do
+          [[ -z "$pattern" ]] && continue
+          patterns_seen=$((patterns_seen + 1))
+          matched=0
+          while IFS= read -r rel; do
+            [[ -z "$rel" ]] && continue
+            # shellcheck disable=SC2053 # Unquoted: intentional glob match.
+            if [[ "$rel" == $pattern ]]; then
+              selected+="${rel}"$'\n'
+              matched=1
+            fi
+          done <<< "$all_files"
+          if [[ "$matched" -eq 0 ]]; then
+            echo "::warning::No file matched checksum glob '${pattern}'."
+          fi
+        done <<< "${PATHS_INPUT:-}"
+
+        if [[ "$patterns_seen" -eq 0 ]]; then
+          fail "paths input is empty; provide at least one glob."
+        fi
+
+        selected="$(printf '%s' "$selected" | LC_ALL=C sort -u)"
+        if [[ -z "$selected" ]]; then
+          fail "No files matched the checksum paths. A release without checksums is a bug."
+        fi
+
+        : > "$output_file"
+        count=0
+        while IFS= read -r rel; do
+          [[ -z "$rel" ]] && continue
+          digest="$("${hash_cmd[@]}" "$rel" | awk '{print $1}')"
+          printf '%s  %s\n' "$digest" "$rel" >> "$output_file"
+          count=$((count + 1))
+        done <<< "$selected"
+
+        echo "::group::${output_file} (${algorithm})"
+        cat "$output_file"
+        echo "::endgroup::"
+
+        # Self-verify before anything is published.
+        "${hash_cmd[@]}" -c "$output_file" >/dev/null
+        echo "::notice::Verified ${count} checksum(s) in ${output_file}."
+
+        echo "checksums-file=${output_file}" >> "$GITHUB_OUTPUT"
+        echo "digest-count=${count}" >> "$GITHUB_OUTPUT"
