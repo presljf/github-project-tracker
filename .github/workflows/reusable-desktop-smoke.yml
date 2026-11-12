@@ -1,0 +1,96 @@
+name: Reusable desktop smoke
+
+on:
+  workflow_call:
+    inputs:
+      runner-label:
+        description: 'macOS runner label.'
+        type: string
+        required: false
+        default: macos-15
+      node-version:
+        description: 'Node.js version.'
+        type: string
+        required: false
+        default: '22'
+      working-directory:
+        description: 'Repository-relative working directory.'
+        type: string
+        required: false
+        default: '.'
+      install-command:
+        description: 'Optional dependency-install command.'
+        type: string
+        required: false
+        default: ''
+      build-command:
+        description: 'Optional desktop build/stage command.'
+        type: string
+        required: false
+        default: ''
+      smoke-command:
+        description: 'Required desktop smoke command.'
+        type: string
+        required: true
+      artifact-path:
+        description: 'Optional artifact path uploaded on failure (smoke logs/summary).'
+        type: string
+        required: false
+        default: ''
+      artifact-name:
+        description: 'Artifact name base.'
+        type: string
+        required: false
+        default: desktop-smoke-artifacts
+      artifact-retention-days:
+        description: 'Artifact retention in days.'
+        type: number
+        required: false
+        default: 7
+    outputs:
+      smoke-passed:
+        description: 'true when the smoke command succeeded.'
+        value: ${{ jobs.desktop-smoke.outputs.smoke-passed }}
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-smoke:
+    name: desktop-smoke
+    runs-on: ${{ inputs.runner-label }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      smoke-passed: ${{ steps.smoke.outcome == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Install dependencies
+        if: ${{ inputs.install-command != '' }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.install-command }}
+      - name: Build / stage desktop
+        if: ${{ inputs.build-command != '' }}
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.build-command }}
+      - name: Run desktop smoke
+        id: smoke
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.smoke-command }}
+      - name: Upload smoke artifacts
+        if: ${{ always() && inputs.artifact-path != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-path }}
+          if-no-files-found: warn
+          retention-days: ${{ inputs.artifact-retention-days }}

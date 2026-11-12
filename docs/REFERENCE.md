@@ -319,7 +319,7 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 
 ## 13. Workflow catalog
 
-**Availability:** CI, release, tracker audit, and security are shipped. Web/E2E, desktop smoke, and docs are **contract-only** (not yet implemented).
+**Availability:** CI, release, tracker audit, security, and desktop smoke are shipped. Web/E2E, docs, and reusable audit are **contract-only** (not yet implemented).
 
 | Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
 |---|---|---|---|---|---|---|
