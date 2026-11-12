@@ -41,7 +41,7 @@ Once branch protection is available, require this check (`Tracker guard / guard`
 
 ## Local projects
 
-If the project carries `scripts/github/**` (copied mode), run:
+If the project carries `scripts/adopt/cli/**` (copied mode), run:
 
 ```bash
 npm run guard:gh
@@ -67,9 +67,9 @@ Exit 1 lists every changed file outside the declared task scope. The Lead runs t
 
 ## Files
 
-- `scripts/github/lib/guards.mjs` — pure scanner/scope logic.
-- `scripts/github/guard-gh-transport.mjs` — transport scanner CLI.
-- `scripts/github/guard-scope.mjs` — worktree scope CLI.
+- `scripts/adopt/lib/guards.mjs` — pure scanner/scope logic.
+- `scripts/adopt/cli/guard-gh-transport.mjs` — transport scanner CLI.
+- `scripts/adopt/cli/guard-scope.mjs` — worktree scope CLI.
 - `.github/workflows/reusable-guard.yml` — no-copy remote guard.
 - `tests/guards.test.mjs` — seeded scanner/scope tests.
 

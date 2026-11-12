@@ -116,7 +116,7 @@ Three invariants follow from the definitions:
 
 ### 2.5 Tracker audit (advisory first)
 
-- **Purpose:** run `scripts/github/audit.mjs` against the configured project and report tracker invariant violations.
+- **Purpose:** run `scripts/adopt/cli/audit.mjs` against the configured project and report tracker invariant violations.
 - **Trigger detail:** existing `tracker-audit.yml` runs Mondays 15:00 UTC and on `workflow_dispatch`; optionally an advisory run on `push` to `main` (throttled by the project) or on PRs once the workflow is stable.
 - **Required status:** advisory first; required only at release gates after a stable policy exists (`workflows.audit.mode: required`). Never required on PRs initially.
 - **Token:** `TRACKER_TOKEN` (config `workflows.audit.tokenSecret`), project-scoped read access. Absent → skip with `exit 0` in advisory mode; strict mode requires the token and fails with an actionable message if missing.
@@ -450,12 +450,12 @@ optional remote-only policy. Config (`tracker.config.json`, absent = no-op):
 
 | Interface | Definition |
 |---|---|
-| CLI | `node scripts/github/guard-local-suite.mjs --suite <id> [--mode enforce|report] [--hidden] [--json] [--root DIR] [--config FILE]`; offline (reads config only, no GitHub API) |
+| CLI | `node scripts/adopt/cli/guard-local-suite.mjs --suite <id> [--mode enforce|report] [--hidden] [--json] [--root DIR] [--config FILE]`; offline (reads config only, no GitHub API) |
 | Remote signal | `GITHUB_ACTIONS === 'true'` **only**; a local `CI=true` is not remote |
 | `enforce` (default) | visible local run exits 1 with workflow/PR-label/hidden/override/docs instructions (`BLOCKED_LOCAL_VISIBLE`); remote, declared hidden local (`--hidden`), and override-env runs are allowed |
 | `report` | local runs print `DEFERRED_REMOTE suite=... workflow=... prLabel=... overrideEnv=... docs=...` and exit 0 for verify aggregators (`--json` for object form) |
 | Override | suite `overrideEnv` truthy ⇒ allowed with a loud warning; deliberate human debugging only — agents must never set it |
-| Playwright helper | `scripts/github/playwright-remote-guard.mjs` exports `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })` returning a `globalSetup` function; no `@playwright/test` import; throws before any window is created |
+| Playwright helper | `scripts/adopt/lib/playwright-remote-guard.mjs` exports `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })` returning a `globalSetup` function; no `@playwright/test` import; throws before any window is created |
 | Config validation | `validate-config` + `verify:tooling` reject bad `localMode`/`overrideEnv`/unknown keys and duplicate suite ids |
 | Caller wiring | Remote run stays label/path-gated in the caller (`run-desktop-smoke`); local wrappers are `npm run guard:local-suite -- --suite desktop-smoke` (visible) and `... --hidden` (hidden local). See [profiles/desktop](../profiles/desktop/README.md) |
 

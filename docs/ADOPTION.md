@@ -136,7 +136,7 @@ until a human fills `reason/coveredBy/agreedOn`. Full wiring:
 ## 3. Install template/config
 
 Copy from the tracker template (copy mode requires the full set):
-- `scripts/github/**`, `schemas/tracker.config.schema.json`, `package.json`
+- `scripts/adopt/cli/**`, `schemas/tracker.config.schema.json`, `package.json`
 - `profiles/node/`, `profiles/release/**` (if used), `profiles/counts/` (if the counts contract is adopted), `tests/**` (optional but recommended)
 - `.github/ISSUE_TEMPLATE/*`
 - `.github/PULL_REQUEST_TEMPLATE.md`
@@ -146,7 +146,7 @@ Copy from the tracker template (copy mode requires the full set):
 
 Edit config for your repo/project/releases/sprints/commands. Validate:
 ```bash
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 # OK   tracker.config.json
 ```
 
@@ -158,7 +158,7 @@ Pin the template version exactly and record the feedback channel:
 
 ## 3.5 No-copy guard installation
 
-Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION.md); do not copy the guard implementation. Add `guard.allow` only for explicit migration exceptions. If the project carries `scripts/github/**` in copy mode, wire `npm run guard:gh` into its test/CI task.
+Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION.md); do not copy the guard implementation. Add `guard.allow` only for explicit migration exceptions. If the project carries `scripts/adopt/cli/**` in copy mode, wire `npm run guard:gh` into its test/CI task.
 
 ## 4. Create the plan skeleton
 
@@ -182,7 +182,7 @@ option. The tag records the version; stream close requires every child task done
   - required: deterministic Linux CI checks.
   - advisory first: desktop smoke/audit.
   - protect release tags/environments.
-- Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
+- Run `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
 
 ## 6. Adoption gate (for programs)

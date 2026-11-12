@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runBootstrap, buildIssueSpecs } from '../scripts/github/bootstrap.mjs';
+import { runBootstrap, buildIssueSpecs } from '../scripts/adopt/cli/bootstrap.mjs';
 import { FakeGitHub } from './helpers/fake-github.mjs';
 
 const silent = { log() {}, warn() {}, error() {} };
@@ -133,8 +133,8 @@ test('invalid config fails before any mutation', async () => {
 
 test('bootstrap-created task passes DoR, task start, and audit', async () => {
   const { FakeTaskGitHub } = await import('./helpers/fake-task-github.mjs');
-  const { startTask } = await import('../scripts/github/task.mjs');
-  const { collectAuditData, auditTracker } = await import('../scripts/github/audit.mjs');
+  const { startTask } = await import('../scripts/adopt/cli/task.mjs');
+  const { collectAuditData, auditTracker } = await import('../scripts/adopt/cli/audit.mjs');
   const github = new FakeTaskGitHub();
   const cfg = config();
   await runBootstrap({ config: cfg, github, apply: true, logger: silent });

@@ -4,7 +4,7 @@ Documentation updates are enforced by CI, not by a checklist.
 
 ## Mechanism
 
-`docs/DOCS_COVERAGE.json` maps changed source areas to the docs that must change in the same PR. `scripts/docs/guard-docs.mjs`:
+`docs/DOCS_COVERAGE.json` maps changed source areas to the docs that must change in the same PR. `scripts/adopt/docs/guard-docs.mjs`:
 
 1. computes the PR diff against the base SHA;
 2. matches changed source paths to coverage rules;
@@ -15,7 +15,7 @@ Documentation updates are enforced by CI, not by a checklist.
 `docs-guard` runs `docs:check`, `guard:gh`, and `guard-docs`; branch protection requires it on `main`. Adopters use the no-copy reusable guard workflow.
 
 **Counts contract rule (v1.3.0):** `counts-contract` maps
-`scripts/github/suite-counts.mjs`, `scripts/github/guard-docs-counts.mjs`, and `profiles/counts/` to
+`scripts/adopt/cli/suite-counts.mjs`, `scripts/adopt/cli/guard-docs-counts.mjs`, and `profiles/counts/` to
 REFERENCE + AGENT_GUIDE + this page, so a change to the counted-runner/guard wiring must update its
 docs. When a repo declares `docs.counts`, `guard:docs:counts` additionally enforces baseline
 agreement metadata and generated `docs/TEST_COUNTS.md`/inline-marker freshness (no test execution);

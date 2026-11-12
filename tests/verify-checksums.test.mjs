@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { verifyChecksums } from '../scripts/github/verify-checksums.mjs';
+import { verifyChecksums } from '../scripts/adopt/cli/verify-checksums.mjs';
 function fixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'checksums-'));
   fs.writeFileSync(path.join(dir, 'artifact.dmg'), 'payload');

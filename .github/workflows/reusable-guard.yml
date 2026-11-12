@@ -35,9 +35,12 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
+      # Invoke the pinned tracker checkout's stable npm aliases (layout-independent): T01 moved
+      # scripts into scripts/adopt/**, but the default tracker-ref stays v1.3.x until the v1.4.0
+      # tag, so direct script paths would break for one of the two layouts.
       - name: Guard GitHub transport
-        run: node .tracker-guard/scripts/github/guard-gh-transport.mjs --root .
+        run: npm --prefix "$GITHUB_WORKSPACE/.tracker-guard" run guard:gh -- --root "$GITHUB_WORKSPACE"
       - name: Guard docs coverage
         env:
           DOCS_GUARD_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: node .tracker-guard/scripts/docs/guard-docs.mjs --root . --base "${DOCS_GUARD_BASE:-origin/main}"
+        run: npm --prefix "$GITHUB_WORKSPACE/.tracker-guard" run guard:docs -- --root "$GITHUB_WORKSPACE" --base "${DOCS_GUARD_BASE:-origin/main}"

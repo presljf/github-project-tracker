@@ -1,8 +1,8 @@
 # COPY-MODE EXAMPLE — macOS sign/notarize release profile (T10).
 #
-# Copy this file into .github/workflows/release-macos.yml when cross-repo reusable workflows are
+# Copy this file into profiles/release/reusable/release-macos.yml when cross-repo reusable workflows are
 # blocked. Copy `.github/actions/checksum/` and `.github/actions/sign-notarize-macos/` too.
-# Prefer the reusable mode (`.github/workflows/release-macos.yml` in this template) when the
+# Prefer the reusable mode (`profiles/release/reusable/release-macos.yml` in this template) when the
 # template ref is accessible: it validates and checksums on dry-runs, which this compact copy
 # example does not (it builds on dry-runs and only signs/publishes on the guarded tag path).
 #

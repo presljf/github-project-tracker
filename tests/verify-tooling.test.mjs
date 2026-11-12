@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateTooling, major } from '../scripts/github/verify-tooling.mjs';
+import { evaluateTooling, major } from '../scripts/adopt/cli/verify-tooling.mjs';
 const contract = {
   trackerVersion: '1.2.1',
   tooling: {

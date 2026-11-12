@@ -41,24 +41,24 @@ the product profile is ignored, so existing boards keep working unchanged.
    `fields.Stream.options` is the initial set of per-delivery options; new deliveries are appended
    safely by `project-field-option.mjs` / `stream.mjs open` (existing option ids, colours, and item
    values are preserved).
-2. Validate and bootstrap: `node scripts/github/validate-config.mjs tracker.config.json`, then
-   `node scripts/github/bootstrap.mjs --config tracker.config.json --apply` creates the `Stream`
+2. Validate and bootstrap: `node scripts/adopt/cli/validate-config.mjs tracker.config.json`, then
+   `node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply` creates the `Stream`
    project field.
 3. Open a delivery container:
    ```bash
-   node scripts/github/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance"
+   node scripts/adopt/cli/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance"
    ```
 4. Create tasks as **sub-issues** of the `[Stream]` issue; set their `Stream` field to the same
    delivery option. Start each task with:
    ```bash
-   node scripts/github/task.mjs start --issue <task> --owner <login> \
+   node scripts/adopt/cli/task.mjs start --issue <task> --owner <login> \
      --executor "agent:<name>" --stream <stream-issue> --branch task/<issue>-<slug>
    ```
    Tooling DoR requires Stream membership + Stream field + Area/Kind/Estimate + acceptance + no
    blockers; WIP = 1, assignee and check-in rules are identical to the product profile.
 5. Close the delivery container after the tag/release flow:
    ```bash
-   node scripts/github/stream.mjs close --stream <stream-issue> \
+   node scripts/adopt/cli/stream.mjs close --stream <stream-issue> \
      --evidence "npm test 137/137; release gate green; tag v1.3.1 recorded" --tag v1.3.1
    ```
    `close` refuses while child tasks are open, requires the release gate green, records

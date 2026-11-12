@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateMainHistory } from '../scripts/github/check-main-history.mjs';
+import { evaluateMainHistory } from '../scripts/adopt/cli/check-main-history.mjs';
 test('accepts every main commit with a merged PR', () => {
   assert.equal(evaluateMainHistory({ commits: ['a'], pullsBySha: { a: [{ merged_at: '2026-01-01' }] } }).ok, true);
 });

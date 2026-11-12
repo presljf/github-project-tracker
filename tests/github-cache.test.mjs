@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { GitHubCli } from '../scripts/github/lib/github.mjs';
+import { GitHubCli } from '../scripts/adopt/lib/github.mjs';
 
 test('listFields is cached and cleared by field mutations', () => {
   let calls = 0;

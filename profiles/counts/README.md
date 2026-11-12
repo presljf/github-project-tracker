@@ -29,7 +29,7 @@ Absent `docs.counts` config is a no-op; existing projects keep current behaviour
 | `inventoryCommand` | command that produces the counted output (shown in drift guidance) |
 | `updateCommand` | command that records new counts + regenerates docs (shown in drift guidance) |
 
-Validate: `node scripts/github/validate-config.mjs tracker.config.json` and
+Validate: `node scripts/adopt/cli/validate-config.mjs tracker.config.json` and
 `npm run verify:tooling`. Baseline shape:
 [`test-counts.baseline.example.json`](./test-counts.baseline.example.json) /
 [`schemas/test-counts.baseline.schema.json`](../../schemas/test-counts.baseline.schema.json).
@@ -42,11 +42,11 @@ inventory, then `check`; CI must run both (or the wrapper script):
 ```json
 "scripts": {
   "test:counts": "node --test --test-reporter=tap tests/*.test.mjs > test-results/unit.tap",
-  "test:counts:check": "npm run test:counts && node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap",
+  "test:counts:check": "npm run test:counts && node scripts/adopt/cli/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap",
   "test:e2e:remote": "playwright test --reporter=json > test-results/e2e.json",
-  "test:e2e:check": "node scripts/github/suite-counts.mjs check --suite e2e --mode remote-visible --results test-results/e2e.json",
-  "docs:counts:update": "node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap",
-  "guard:docs:counts": "node scripts/github/guard-docs-counts.mjs"
+  "test:e2e:check": "node scripts/adopt/cli/suite-counts.mjs check --suite e2e --mode remote-visible --results test-results/e2e.json",
+  "docs:counts:update": "node scripts/adopt/cli/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap",
+  "guard:docs:counts": "node scripts/adopt/cli/guard-docs-counts.mjs"
 }
 ```
 
@@ -68,7 +68,7 @@ gives a machine-readable result. Flaky > 0 always fails. Unknown/malformed runne
 Counts change => **the same PR** changes the baseline, generated doc, and markers:
 
 1. Run the inventory (e.g. `npm run test:counts`) and then the update command:
-   `node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap`
+   `node scripts/adopt/cli/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap`
    (or `render` to regenerate docs only from the existing baseline).
 2. `record` writes new counts, regenerates `docs/TEST_COUNTS.md` + markers, preserves agreed skips,
    and adds **placeholder** `knownSkips` for new skips.

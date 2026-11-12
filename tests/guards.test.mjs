@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isAllowed, changedFilesOutsideScope, findTransportViolations } from '../scripts/github/lib/guards.mjs';
+import { isAllowed, changedFilesOutsideScope, findTransportViolations } from '../scripts/adopt/lib/guards.mjs';
 
 test('scope matching allows files and directories only', () => {
   assert.equal(isAllowed('docs/a.md', ['docs']), true);
-  assert.equal(isAllowed('scripts/github/a.mjs', ['scripts/github/']), true);
+  assert.equal(isAllowed('scripts/adopt/cli/a.mjs', ['scripts/adopt/cli/']), true);
   assert.equal(isAllowed('package.json', ['docs']), false);
 });
 

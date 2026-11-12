@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateClosing, parseClosingRefs } from '../scripts/github/guard-pr-close.mjs';
+import { evaluateClosing, parseClosingRefs } from '../scripts/adopt/cli/guard-pr-close.mjs';
 
 const task = { number: 1, title: '[Task] work' };
 const sprint = { number: 2, title: '[Sprint] 1.0.0.1 — work' };

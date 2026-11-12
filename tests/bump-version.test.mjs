@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { planVersionBump, applyVersionBump } from '../scripts/release/bump-version.mjs';
+import { planVersionBump, applyVersionBump } from '../scripts/internal/bump-version.mjs';
 
 function repo() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bump-'));
@@ -30,6 +30,11 @@ function repo() {
     path.join(root, 'profiles/tooling/tracker.config.example.json'),
     '{"automation":{"templateVersion":"1.2.0"},"feedback":{"pinnedVersion":"1.2.0"}}\n',
   );
+  fs.mkdirSync(path.join(root, 'profiles/release/reusable'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'profiles/release/reusable/release-macos.yml'),
+    'uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.2.0\n',
+  );
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"version":"1.2.0"}\n');
   fs.writeFileSync(path.join(root, 'tests.fixture.md'), 'v1.2.0\n');
   execFileSync('git', ['add', '.'], { cwd: root });
@@ -42,12 +47,15 @@ test('plans only allowlisted active files and preserves sprint keys', () => {
   assert.deepEqual(files, [
     '.github/ISSUE_TEMPLATE/form.yml',
     'docs/REFERENCE.md',
+    'profiles/release/reusable/release-macos.yml',
     'profiles/tooling/tracker.config.example.json',
     'tracker.config.json',
   ]);
   assert.equal(changes.find((c) => c.file === 'docs/REFERENCE.md').edits.length, 1);
   // Issue-form description + placeholder are both current-version examples.
   assert.equal(changes.find((c) => c.file === '.github/ISSUE_TEMPLATE/form.yml').edits.length, 2);
+  // Reusable-mode example callers keep pinned refs and must participate in the bump.
+  assert.equal(changes.find((c) => c.file === 'profiles/release/reusable/release-macos.yml').edits.length, 1);
   // Historical validation records are excluded from the bump.
   assert.ok(!files.includes('docs/DOCS_VALIDATION.md'));
 });

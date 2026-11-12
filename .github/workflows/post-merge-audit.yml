@@ -38,4 +38,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node scripts/github/post-merge-audit.mjs
+        run: node scripts/adopt/cli/post-merge-audit.mjs

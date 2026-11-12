@@ -33,9 +33,9 @@ The HTML has `@page { size: ... }` print CSS; it is generated twice in memory fo
 ## Regenerate
 
 ```bash
-node scripts/docs/build-cards.mjs            # rebuild HTML + A4/Letter PDFs
-node scripts/docs/build-cards.mjs --no-pdf   # rebuild HTML only
-node scripts/docs/build-cards.mjs --check    # verify committed artifacts (no writes)
+node scripts/internal/build-cards.mjs            # rebuild HTML + A4/Letter PDFs
+node scripts/internal/build-cards.mjs --no-pdf   # rebuild HTML only
+node scripts/internal/build-cards.mjs --check    # verify committed artifacts (no writes)
 ```
 
 - Requires Node >= 22. PDF generation additionally requires Chrome/Chromium (auto-detected; set `CHROME_PATH` if needed). Without a browser, HTML is still generated and the print fallback above applies.

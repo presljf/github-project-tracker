@@ -1,7 +1,7 @@
 # COPY-MODE EXAMPLE — container release profile (T10).
 #
-# Copy this file into .github/workflows/release-container.yml when cross-repo reusable workflows
-# are blocked. Prefer the reusable mode (`.github/workflows/release-container.yml` in this
+# Copy this file into profiles/release/reusable/release-container.yml when cross-repo reusable workflows
+# are blocked. Prefer the reusable mode (`profiles/release/reusable/release-container.yml` in this
 # template) when the template ref is accessible.
 #
 # Dry-run (dispatch without publish) builds and saves the image but never logs in or pushes.

@@ -18,9 +18,9 @@ function exists(relativePath) {
 const REUSABLE = '.github/workflows/reusable-release.yml';
 const CALLERS = [
   '.github/workflows/release.yml',
-  '.github/workflows/release-macos.yml',
-  '.github/workflows/release-container.yml',
-  '.github/workflows/release-package.yml',
+  'profiles/release/reusable/release-macos.yml',
+  'profiles/release/reusable/release-container.yml',
+  'profiles/release/reusable/release-package.yml',
 ];
 const COPY_EXAMPLES = [
   'profiles/release/copy/generic-release.yml',
@@ -198,9 +198,9 @@ function assertCallerPermissionUnion(file) {
 
 test('profile example callers are dispatch-only, dry-run by default, correctly profiled', () => {
   const expectations = [
-    ['.github/workflows/release-macos.yml', 'macos'],
-    ['.github/workflows/release-container.yml', 'container'],
-    ['.github/workflows/release-package.yml', 'package'],
+    ['profiles/release/reusable/release-macos.yml', 'macos'],
+    ['profiles/release/reusable/release-container.yml', 'container'],
+    ['profiles/release/reusable/release-package.yml', 'package'],
   ];
   for (const [file, profile] of expectations) {
     const text = read(file);
@@ -210,15 +210,19 @@ test('profile example callers are dispatch-only, dry-run by default, correctly p
     assert.match(trigger, /dry-run:[\s\S]*?default: true/, `${file} dry-run defaults true`);
     assert.match(trigger, /publish:[\s\S]*?default: false/, `${file} publish defaults false`);
     assert.match(text, new RegExp(`profile: ${profile}`), `${file} uses profile ${profile}`);
-    assert.match(text, /uses: \.\/\.github\/workflows\/reusable-release\.yml/, `${file} calls the reusable workflow`);
+    assert.match(
+      text,
+      /uses: presljf\/github-project-tracker\/\.github\/workflows\/reusable-release\.yml@v\d+\.\d+\.\d+/,
+      `${file} calls the pinned reusable workflow (copy examples must pin the adopted tag)`,
+    );
     assertNoPrTrigger(file);
     assertCallerPermissionUnion(file);
   }
-  const container = read('.github/workflows/release-container.yml');
+  const container = read('profiles/release/reusable/release-container.yml');
   assert.match(container, /packages: write/);
-  const pkg = read('.github/workflows/release-package.yml');
+  const pkg = read('profiles/release/reusable/release-package.yml');
   assert.match(pkg, /id-token: write/);
-  const macos = read('.github/workflows/release-macos.yml');
+  const macos = read('profiles/release/reusable/release-macos.yml');
   assert.match(macos, /MACOS_CERT_P12/);
   assert.match(macos, /APPLE_APP_PASSWORD/);
   // The callers' build commands must stay runnable placeholders (T02 fixed the unversioned-package case).
@@ -430,9 +434,9 @@ test('all T10 deliverables are present', () => {
   const expected = [
     '.github/workflows/reusable-release.yml',
     '.github/workflows/release.yml',
-    '.github/workflows/release-macos.yml',
-    '.github/workflows/release-container.yml',
-    '.github/workflows/release-package.yml',
+    'profiles/release/reusable/release-macos.yml',
+    'profiles/release/reusable/release-container.yml',
+    'profiles/release/reusable/release-package.yml',
     '.github/actions/checksum/action.yml',
     '.github/actions/sign-notarize-macos/action.yml',
     'docs/RELEASE_PROFILES.md',

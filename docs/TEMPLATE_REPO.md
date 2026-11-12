@@ -6,20 +6,20 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 
 ## Use this template
 
-1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/github/`, `schemas/`, `profiles/`, `tests/`, `.github/`, `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
+1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/adopt/cli/`, `schemas/`, `profiles/`, `tests/`, `.github/`, `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
 2. Follow [docs/ADOPTION.md](./ADOPTION.md) / [QUICKSTART](./QUICKSTART.md).
 3. Copy `tracker.config.example.json` to `tracker.config.json`, edit for your project, validate:
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    # OK   tracker.config.json
    ```
 4. Preview setup:
    ```bash
-   node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --dry-run
    ```
    Apply only after reviewing the plan:
    ```bash
-   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply
    ```
 5. Run the tracker audit and first task lifecycle.
 
@@ -28,7 +28,7 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 | Path | Purpose |
 |---|---|
 | `docs/` | playbook, HOW TO USE, reference, troubleshooting, adoption/upgrading, agent/multi-project, downstream, cards/style |
-| `scripts/github/` | bootstrap, audit, task CLI, validate-config, shared adapters |
+| `scripts/adopt/cli/` | bootstrap, audit, task CLI, validate-config, shared adapters |
 | `schemas/`, `examples/` | config contract and generic/pilot examples |
 | `profiles/node/` | generic lint/format profile |
 | `profiles/release/`, `.github/workflows/release*` | release profile examples (T10) |

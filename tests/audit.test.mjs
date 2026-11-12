@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { auditTracker, issueKind } from '../scripts/github/audit.mjs';
+import { auditTracker, issueKind } from '../scripts/adopt/cli/audit.mjs';
 
 function config(overrides = {}) {
   return {

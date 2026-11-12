@@ -27,4 +27,4 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: node scripts/github/guard-pr-close.mjs
+        run: node scripts/adopt/cli/guard-pr-close.mjs

@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { isSelfRepo, verifyContract } from '../scripts/github/verify-contract.mjs';
-import { evaluateReleaseGate } from '../scripts/github/release-gate.mjs';
-import { closeStream, DEFAULT_GATE_COMMAND, defaultGateCommand } from '../scripts/github/stream.mjs';
+import { isSelfRepo, verifyContract } from '../scripts/adopt/cli/verify-contract.mjs';
+import { evaluateReleaseGate } from '../scripts/adopt/cli/release-gate.mjs';
+import { closeStream, DEFAULT_GATE_COMMAND, defaultGateCommand } from '../scripts/adopt/cli/stream.mjs';
 import { FakeTaskGitHub } from './helpers/fake-task-github.mjs';
 
 const REPO_ROOT = process.cwd();
@@ -110,7 +110,7 @@ test('verify-contract downstream behaviour is unchanged (missing pins still fail
 });
 
 test('real verify-contract CLI passes on the contract repository itself', () => {
-  const result = runNodeScript('scripts/github/verify-contract.mjs', []);
+  const result = runNodeScript('scripts/adopt/cli/verify-contract.mjs', []);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /self-repo: downstream contract checks skipped/);
   assert.match(result.stdout, /Adoption contract OK — tracker v1\.3\.2/);
@@ -139,9 +139,9 @@ test('evaluateReleaseGate reports selfRepo and still fails open bypass OIs', () 
 test('release gate works self-repo (real CLI, no bypass check) and default gate command is composed', () => {
   const config = selfConfig();
   assert.equal(defaultGateCommand(config), `${DEFAULT_GATE_COMMAND} --repo ${TRACKER_REPO}`);
-  assert.equal(DEFAULT_GATE_COMMAND, 'node scripts/github/release-gate.mjs');
+  assert.equal(DEFAULT_GATE_COMMAND, 'node scripts/adopt/cli/release-gate.mjs');
 
-  const gate = runNodeScript('scripts/github/release-gate.mjs', ['--root', REPO_ROOT]);
+  const gate = runNodeScript('scripts/adopt/cli/release-gate.mjs', ['--root', REPO_ROOT]);
   assert.equal(gate.status, 0, gate.stderr);
   assert.match(gate.stdout, /Release gate OK — self-repo: downstream contract checks skipped/);
 });
@@ -189,7 +189,7 @@ test('stream close passes its release gate (self-repo tooling) and records close
     stream: 30,
     evidence: 'release gate self-repo PASS; all child tasks done',
     tag: 'v1.3.0',
-    gateCommand: `node scripts/github/release-gate.mjs --root ${REPO_ROOT}`,
+    gateCommand: `node scripts/adopt/cli/release-gate.mjs --root ${REPO_ROOT}`,
   });
   assert.equal(result.ok, true);
   assert.equal(result.tag, 'v1.3.0');

@@ -22,7 +22,7 @@ existing board. No config change is required.
 
 - New audit warning `PROJECT_STATUS_STALE` (closed project items not `Done`); advisory only, never
   changes the exit code, including `--strict`. Repair the drift with
-  `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply` (see
+  `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply` (see
   [REFERENCE §5.8](./REFERENCE.md#58-reconcile-status-close-out-project-status)).
 - New audit violation `SPRINT_HIERARCHY_MISSING_RELEASE` (open product sprint without a `[Release]`
   ancestor). Advisory runs still exit 0, but `--strict` audits will now fail on pre-existing
@@ -69,7 +69,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
    - copied files (re-copy + re-apply overrides).
 4. **Validate config:**
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    # OK   tracker.config.json
    ```
 5. Run local/CI checks; keep audit advisory in the upgrade PR.
@@ -105,11 +105,11 @@ To adopt `tooling`:
    version record); mixed repos may keep both declarations.
 2. Validate and bootstrap:
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
-   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply
    ```
-3. Open deliveries with `node scripts/github/stream.mjs open --name vX.Y.Z --delivery "..."` and
-   start tasks with `node scripts/github/task.mjs start --issue N --stream S`.
+3. Open deliveries with `node scripts/adopt/cli/stream.mjs open --name vX.Y.Z --delivery "..."` and
+   start tasks with `node scripts/adopt/cli/task.mjs start --issue N --stream S`.
 4. Historical product records keep working: audit rules follow `workProfile`, so Release/Sprint
    exit-evidence and hierarchy rules do not apply to a tooling profile.
 5. Rollback: set `workProfile` back to `product` (or remove it); no data migration is needed.
@@ -139,10 +139,10 @@ To adopt it:
      ]
    }
    ```
-2. Validate: `node scripts/github/validate-config.mjs tracker.config.json` and
+2. Validate: `node scripts/adopt/cli/validate-config.mjs tracker.config.json` and
    `npm run verify:tooling` (both reject malformed policy entries).
 3. Wire the offline guard before the suite spawns (`npm run guard:local-suite -- --suite <id>`)
-   and/or the Playwright `globalSetup` from `scripts/github/playwright-remote-guard.mjs`.
+   and/or the Playwright `globalSetup` from `scripts/adopt/lib/playwright-remote-guard.mjs`.
 4. Record the remote-run evidence at check-out; hidden local runs stay non-authoritative and the
    override env is for deliberate human debugging only (agents must not use it).
 5. Rollback: remove the `verification` block; absent config restores previous local behaviour.
@@ -159,13 +159,13 @@ To adopt it:
 
 1. Declare the block (see [profiles/counts](../profiles/counts/README.md)) and validate:
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    npm run verify:tooling
    ```
 2. Create the initial baseline from real output:
-   `node scripts/github/suite-counts.mjs record --suite <id> --mode <mode> --results <file>`, then
+   `node scripts/adopt/cli/suite-counts.mjs record --suite <id> --mode <mode> --results <file>`, then
    complete `knownSkips` agreement metadata (`reason`/`coveredBy`/`agreedOn`) and
-   `reviewed { on, by, evidence[] }`; `node scripts/github/suite-counts.mjs render` regenerates
+   `reviewed { on, by, evidence[] }`; `node scripts/adopt/cli/suite-counts.mjs render` regenerates
    `docs/TEST_COUNTS.md` + markers.
 3. Add CI gates: suite jobs run `suite-counts check`; docs jobs run `guard:docs:counts`
    (no test execution). Historical docs are exempt by construction — only `docs.counts.markers`

@@ -161,9 +161,9 @@ In-repo template callers (also the copyable contract examples):
 | Caller | Trigger | Profile | Caller permissions |
 |---|---|---|---|
 | `.github/workflows/release.yml` | push tags `v*`; dispatch (dry-run default) | generic | `contents: write`, `packages: write`, `id-token: write` |
-| `.github/workflows/release-macos.yml` | dispatch only (example) | macos | `contents: write`, `packages: write`, `id-token: write` |
-| `.github/workflows/release-container.yml` | dispatch only (example) | container | `contents: write`, `packages: write`, `id-token: write` |
-| `.github/workflows/release-package.yml` | dispatch only (example) | package | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-macos.yml` | dispatch only (example) | macos | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-container.yml` | dispatch only (example) | container | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-package.yml` | dispatch only (example) | package | `contents: write`, `packages: write`, `id-token: write` |
 
 **Permission-union requirement (found live in T02):** a caller job must grant at least the union of permissions declared by the called reusable workflow's jobs (`contents: write` for the release job, `packages: write` for the container job, `id-token: write` for OIDC package publishing). Granting only the current profile's subset made every dispatch fail with `startup_failure` at workflow validation. Jobs that do not apply to the active profile are skipped and never use the extra grant; each called job still declares its own reduced permission set. Copy-mode callers declare permissions directly and are unaffected.
 
@@ -393,9 +393,9 @@ Desktop smoke is a separate reusable profile:
 - The downstream contract verifier treats a bespoke desktop-smoke workflow as a contract
   bypass unless an OI-linked override is declared.
 - **Local guard:** declare the suite in `verification.remoteOnly[]` and gate local runs with
-  `scripts/github/guard-local-suite.mjs` (visible local blocked; hidden local allowed only when
+  `scripts/adopt/cli/guard-local-suite.mjs` (visible local blocked; hidden local allowed only when
   declared; `--mode report` defers for aggregators). Playwright suites can use
-  `scripts/github/playwright-remote-guard.mjs` as `globalSetup`. The remote visible run is the
+  `scripts/adopt/lib/playwright-remote-guard.mjs` as `globalSetup`. The remote visible run is the
   release evidence; hidden local is non-authoritative. See
   [profiles/desktop](../profiles/desktop/README.md#remote-only-policy-guarded-local-runs) and
   [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).

@@ -10,35 +10,35 @@ A portable, auditable GitHub project-tracker operating system: playbook, exhaust
 2. **Read the quickstart:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Handbook:** [docs/HOW_TO_USE.md](docs/HOW_TO_USE.md)
 3. **Configure:** copy `tracker.config.example.json` → `tracker.config.json`; edit repo/project/releases/sprints/commands.
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    # OK   tracker.config.json
    ```
 4. **Bootstrap** (dry-run first):
    ```bash
-   node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
-   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --dry-run
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply
    ```
    Bootstrap seeds valid default Area/Kind/Estimate (and Status/Release/Sprint/Source) so generated tasks pass DoR/audit; adjust any defaults for your project before check-in. Ensure `project.number` is the actual project number (task/audit require it). Expected output starts `Dry-run: N planned action(s); no mutations performed.` then `Applied N action(s).`
 5. **Run one task through the lifecycle** with the task CLI or manual docs:
    ```bash
-   node scripts/github/task.mjs start --issue 123 --owner YOUR_LOGIN
+   node scripts/adopt/cli/task.mjs start --issue 123 --owner YOUR_LOGIN
    # ... branch/PR/evidence ...
-   node scripts/github/task.mjs done --issue 123 --evidence "tests pass"
+   node scripts/adopt/cli/task.mjs done --issue 123 --evidence "tests pass"
    ```
 6. **Replace the bootstrap task placeholder:** generated task bodies contain `- [ ] Fill a testable criterion.` Edit/check acceptance criteria before `task.mjs done` (or use `--force` after review).
 7. **Audit:**
    ```bash
-   node scripts/github/audit.mjs --config tracker.config.json --advisory
+   node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
    ```
 
 Expected output examples:
 
 ```text
-$ node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
+$ node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --dry-run
 Dry-run: N planned action(s); no mutations performed.
-$ node scripts/github/task.mjs status --issue 123
+$ node scripts/adopt/cli/task.mjs status --issue 123
 status #123: Todo; project status=Todo; assignee=(none)
-$ node scripts/github/audit.mjs --config tracker.config.json --advisory
+$ node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
 No violations.
 ```
 
@@ -81,7 +81,7 @@ See [docs/ROADMAP_v1.1.0.md](docs/ROADMAP_v1.1.0.md): P0 rate-limit hardening, a
 
 ```
 docs/                 docs, playbook, comment templates, reference cards
-scripts/github/       bootstrap, audit, task CLI, validate-config, adapters
+scripts/adopt/cli/       bootstrap, audit, task CLI, validate-config, adapters
 schemas/, examples/   config contract + examples
 profiles/             Node and release profiles
 tests/                dependency-free Node test suite (npm test)
