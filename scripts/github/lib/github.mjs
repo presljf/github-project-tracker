@@ -568,6 +568,25 @@ export class GitHubCli {
     );
   }
 
+  /**
+   * Metadata-only PR fetch (no statusCheckRollup). Used as the degraded retry when the token
+   * cannot read check runs/statuses (private repos need `checks: read` + `statuses: read`).
+   */
+  getPullRequestMetadata(owner, repo, number) {
+    return this.run(
+      [
+        'pr',
+        'view',
+        String(number),
+        '--repo',
+        `${owner}/${repo}`,
+        '--json',
+        'number,state,isDraft,mergeable,mergeStateStatus,headRefName,body,labels',
+      ],
+      { json: true },
+    );
+  }
+
   mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true } = {}) {
     this._beforeMutation();
     const args = ['pr', 'merge', String(number), '--repo', `${owner}/${repo}`];

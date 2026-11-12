@@ -28,8 +28,13 @@ All notable changes to Project Tracker OS are documented here. The format follow
   skip identity, flaky>0/hard-fail policy, `check`/`record`/`render` CLI with deterministic
   `docs/TEST_COUNTS.md` + inline markers, and `guard:docs:counts` docs/staleness guard with historical
   exemption.
-- Remaining v1.3.0 items (post-merge-audit hardening, release metadata/tag) land in their own tasks
-  and are recorded at release close.
+- Harden the **post-merge bypass audit**: caller permissions now include `checks: read` +
+  `statuses: read` (documented in ACTIONS_CATALOG/REFERENCE/CI_SECURITY_PROFILE), required check
+  names are configurable via `guard.requiredChecks[]` (backwards-compatible default), and an
+  unreadable `statusCheckRollup` degrades loudly to a metadata-only closure audit (warning + job
+  summary, advisory exit 0, no false check-related OI; real closing-keyword violations still open an
+  OI; other errors still fail).
+- Remaining v1.3.0 item (release metadata/tag) lands in T05 and is recorded at release close.
 
 ## v1.2.2 — Qualified release tooling
 
