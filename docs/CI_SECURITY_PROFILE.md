@@ -514,3 +514,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
 `npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
 as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
+
+**Branch hygiene:** install `.githooks` via `npm run hooks:install`; `main-history-guard` runs on
+push to main and opens a `tracker-contract-exception` OI for commits without a merged PR. This is
+the backstop for `--no-verify` and private repos without branch protection.

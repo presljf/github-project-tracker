@@ -175,6 +175,13 @@ export async function startTask({
   const status = preflightStatus ?? (gitExec ? '' : gitStatus(repoRoot));
   const preflight = evaluateCleanTree({ statusText: status, allowDirty, reason: dirtyReason });
   if (!preflight.ok) throw new UsageError(`preflight: ${preflight.violations.join('; ')}`);
+  let hooksWarning = '';
+  try {
+    if (!gitExec) {
+      const hooksPath = execFileSync('git', ['config', 'core.hooksPath'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+      if (hooksPath !== '.githooks') hooksWarning = 'git hooks not installed; run npm run hooks:install';
+    }
+  } catch { hooksWarning = 'git hooks not installed; run npm run hooks:install'; }
   const { ctx, warning } = await checkDoR({ config, github, issueNumber, owner, dryRun });
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
   const comment = [
@@ -188,7 +195,7 @@ export async function startTask({
     '- **DoR:** type/milestone/fields/acceptance/dependencies checked',
     ...(allowDirty ? [`- **Dirty-worktree exception:** ${dirtyReason}`] : []),
     '- **Evidence planned:** attach at check-out',
-    `- **Risks/blockers:** ${warning || 'none'}`,
+    `- **Risks/blockers:** ${[warning, hooksWarning].filter(Boolean).join('; ') || 'none'}`,
     '',
     'Status → In Progress.',
   ].join('\n');
