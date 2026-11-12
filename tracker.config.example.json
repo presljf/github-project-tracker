@@ -102,7 +102,7 @@
     "branchPrefix": "task/",
     "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
     "templateRepo": "owner/github-project-tracker",
-    "templateVersion": "1.0.1",
+    "templateVersion": "1.0.2",
     "inReviewMode": "manual",
     "autoAddIssues": true,
     "closeToDone": true,

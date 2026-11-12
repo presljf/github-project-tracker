@@ -1,3 +1,10 @@
+## [1.0.2] — 2026-11-11
+
+- Migrate release-profile defaults/callers from retired `macos-14` to `macos-15`.
+- Make release artifact matching portable on macOS bash 3.2 (avoid `globstar`/globstar).
+- Correct the macOS runner-image retirement diagnosis in release docs.
+- Refresh template pin to `1.0.2`.
+
 # Changelog
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
