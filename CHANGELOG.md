@@ -9,6 +9,16 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## v1.2.0 — Downstream contract hardening
+
+- Reusable desktop-smoke workflow + thin caller contract.
+- Adoption contract manifest/verifier, no-admin merge enforcement, PR closure guard, post-merge bypass audit, release gate.
+- Docs/version consistency, cards/PDF regeneration, clean-tree/dependency preflight.
+- Remote macOS release fallback + checksum verifier.
+- Self-applied ESLint/Prettier.
+- Project metadata contract/verifier, historical reconciliation, branch-hygiene hooks, main-history detection.
+
+
 ## v1.0.0 — 2026-11-11 (release candidate; tag pending T08 live validation + release close)
 
 > The `v1.0.0` tag is created only after T08 replication/upgrade validation and T12 fresh-eyes docs QA pass. This section is the release-candidate record; the tag/date are finalized at release close.

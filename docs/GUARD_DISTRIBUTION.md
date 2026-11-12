@@ -18,9 +18,9 @@ permissions:
 
 jobs:
   guard:
-    uses: presljf/github-project-tracker/.github/workflows/reusable-guard.yml@v1.0.2
+    uses: presljf/github-project-tracker/.github/workflows/reusable-guard.yml@v1.2.0
     with:
-      tracker-ref: v1.0.2
+      tracker-ref: v1.2.0
       config-path: tracker.config.json
 ```
 

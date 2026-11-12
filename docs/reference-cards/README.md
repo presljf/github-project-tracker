@@ -1,6 +1,6 @@
 # Reference cards — print pack
 
-**Docs version:** `v1.0.2-docs.1` · Target template: `v1.0.2` · One page per card, A4 and US Letter.
+**Docs version:** `v1.2.0-docs.1` · Target template: `v1.2.0` · One page per card, A4 and US Letter.
 
 Printable one-page summaries for daily tracker operations. The full documentation remains authoritative; cards are condensed reminders that link back to the handbook and reference.
 

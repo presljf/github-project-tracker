@@ -1,6 +1,6 @@
 # PUBLICATION
 
-**Docs version:** v1.0.2-docs.1 · Target template: v1.0.2
+**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
 **Status:** public template repository — decision recorded 2026-11-11 (T01, [#39](https://github.com/presljf/github-project-tracker/issues/39)); publication/security checklist completed 2026-11-11 (T04, [#42](https://github.com/presljf/github-project-tracker/issues/42)).
 **Owner:** repository maintainer. Re-run §3 whenever visibility, license, security settings, maintainers, secrets, or release gating change, and before each release tag.
 **Scope:** publication posture and security checklist for this repository. Security reporting policy is [SECURITY.md](../SECURITY.md); downstream intake is [DOWNSTREAM_FEEDBACK.md](./DOWNSTREAM_FEEDBACK.md).
@@ -21,7 +21,7 @@
 | SHA-pinning requirement | Not enforced by the platform; actions are pinned by SHA by convention | [CI/security profile](./CI_SECURITY_PROFILE.md#8-action-sha-pinning) |
 | Default workflow token | Read-only (`default_workflow_permissions: read`) | `gh api repos/.../actions/permissions/workflow` |
 | Branch protection / rulesets | Available now that the repo is public; **pending T03 ([#41](https://github.com/presljf/github-project-tracker/issues/41) is Blocked)** | [CI/security profile §3](./CI_SECURITY_PROFILE.md#3-required-check-and-branch-protection-contract) |
-| GitHub Releases | None published yet; tags `v1.0.0` and `v1.0.2` exist | `gh release list` (empty); `git tag` |
+| GitHub Releases | None published yet; tags `v1.0.0` and `v1.2.0` exist | `gh release list` (empty); `git tag` |
 | Release gate | **No public release/announcement without explicit maintainer approval** | [Release tracker #45](https://github.com/presljf/github-project-tracker/issues/45) gates |
 
 ---
@@ -141,8 +141,8 @@ Record the results here (dated) whenever publication/security settings change; T
 | `tracker.config.json` governance still says `publication.status: "private"` and `security.privateVulnerabilityReporting: false` | Config examples understate current state | Config owner (out of T04 write scope): update config/docs pin follow-up; schema already supports both fields |
 | Secret scanning + push protection disabled | Leaked-secret detection relies on review/docs scan | Maintainer: enable GitHub secret scanning/push protection (free for public repos) and record here |
 | Branch protection/rulesets not enabled | Required checks/reviews not platform-enforced | T03 [#41](https://github.com/presljf/github-project-tracker/issues/41) once unblocked; contract in CI/security profile §3 |
-| No GitHub Releases for `v1.0.0`/`v1.0.2` tags | Tag exists without release notes/artifacts | Release task per [#45](https://github.com/presljf/github-project-tracker/issues/45); do not publish without approval |
+| No GitHub Releases for `v1.0.0`/`v1.2.0` tags | Tag exists without release notes/artifacts | Release task per [#45](https://github.com/presljf/github-project-tracker/issues/45); do not publish without approval |
 | `docs/README.md` index does not list this page | Discoverability | Docs-index owner (out of T04 write scope) |
-| Reference-card generator constants still print `v1.0.0-docs.1` / target template `v1.0.0` after the T05 docs bump to v1.0.2 (card Markdown metadata is v1.0.2), and repo-root relative links are rewritten as `docs/../<file>` in generated HTML/PDF | Regenerated card headers understate the docs/template version; a few print links are malformed | Scripts/docs owner (out of T04 write scope): update `DOCS_VERSION`/`TARGET_TEMPLATE` and root-relative link rewriting in `scripts/docs/build-cards.mjs`, then regenerate all cards |
+| Reference-card generator constants still print `v1.0.0-docs.1` / target template `v1.0.0` after the T05 docs bump to v1.2.0 (card Markdown metadata is v1.2.0), and repo-root relative links are rewritten as `docs/../<file>` in generated HTML/PDF | Regenerated card headers understate the docs/template version; a few print links are malformed | Scripts/docs owner (out of T04 write scope): update `DOCS_VERSION`/`TARGET_TEMPLATE` and root-relative link rewriting in `scripts/docs/build-cards.mjs`, then regenerate all cards |
 | Community files: CONTRIBUTING/CODE_OF_CONDUCT absent (community health 71%) | Lower contributor guidance | Maintainer decision; not a security blocker |
 | Default workflow token is read-only (good) but SHA-pinning is convention-only | Action refs verified by review, not platform policy | Maintainer may enable the SHA-pinning requirement; record here if enabled |

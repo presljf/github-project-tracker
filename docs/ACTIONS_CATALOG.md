@@ -1,6 +1,6 @@
 # ACTIONS CATALOG
 
-**Docs version:** v1.0.2-docs.1 · Target template: v1.0.2
+**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
 **Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
 **Availability key:** **shipped** = YAML exists in this repo; **contract-only** = interface documented here but not yet implemented. Contract-only items are never claimed as shipped.
@@ -582,12 +582,12 @@ The config keys come from `schemas/tracker.config.schema.json` and `tracker.conf
 
 ### 8.5 Private/public cross-repo reuse validation (before choosing reusable mode)
 
-**Result recorded 2026-11-11:** a private downstream repo could not resolve `presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.0.2`; GitHub failed with “workflow was not found.” The template was then made **public**; the same downstream test resolved and ran both the reusable CI workflow and the remote `checksum` composite action successfully. Public access is the validated no-copy path. Copy-mode remains documented as fallback; branch protection/private vulnerability reporting remain T03/T04.
+**Result recorded 2026-11-11:** a private downstream repo could not resolve `presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.2.0`; GitHub failed with “workflow was not found.” The template was then made **public**; the same downstream test resolved and ran both the reusable CI workflow and the remote `checksum` composite action successfully. Public access is the validated no-copy path. Copy-mode remains documented as fallback; branch protection/private vulnerability reporting remain T03/T04.
 
 Run these on a scratch private repo with read access to the template that pins the release; record commands/results in the release or adoption tracker:
 
-- [ ] Reusable workflow ref parses from the scratch repo: `uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.0.2` → runs, or fails with an explicit visibility/permission error (the error text is the evidence).
-- [ ] Composite action ref works: `uses: presljf/github-project-tracker/.github/actions/checksum@v1.0.2`.
+- [ ] Reusable workflow ref parses from the scratch repo: `uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.2.0` → runs, or fails with an explicit visibility/permission error (the error text is the evidence).
+- [ ] Composite action ref works: `uses: presljf/github-project-tracker/.github/actions/checksum@v1.2.0`.
 - [ ] Caller-granted permissions are sufficient; called workflow cannot exceed them.
 - [ ] Explicit secret passing works (`secrets: TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}`), and the audit workflow skips cleanly when the secret is absent.
 - [ ] Required check display names match the documented contract after one green run.

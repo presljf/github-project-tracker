@@ -1,6 +1,6 @@
 # Docs validation report (T12)
 
-**Docs version:** v1.0.2-docs.1 · **Target template:** v1.0.0
+**Docs version:** v1.2.0-docs.1 · **Target template:** v1.0.0
 **Status:** T12 docs QA evidence complete; v1.0.0 tag follows T08 live validation + release close
 **Rule:** docs must match implemented commands/config/workflows; stale docs are defects.
 
@@ -37,7 +37,7 @@ Coverage is tracked in the docs index and these docs:
 ## Fresh-eyes review
 
 - Two independent uninvolved agent reviews (see [fresh-eyes report](./FRESH_EYES_T12.md)) found and T12 fixed: wrong pin key, stale planned wording, workflow-catalog/implemented status drift, schema/command mapping mismatch, bootstrap field defaults/DoR blocker, copy-path omissions, project.number optionality, quickstart type/milestone gaps, audit overclaims, checksum path errors, action-pin exception, status-output wording, and unverifiable claims.
-- **Live T08 scratch validation completed:** private scratch repo `presljf/tracker-smoke-20261111-123300` (archived), project #3; bootstrap apply 51 actions, second apply 1 action/no creates, task lifecycle check-in→checkout, strict audit 0 violations (4 issues / 4 items). Tag v1.0.0 exposed a GraphQL field-options defect; fix is in T08 and is released as template patch **v1.0.2** (v1.0.0 tag remains immutable).
+- **Live T08 scratch validation completed:** private scratch repo `presljf/tracker-smoke-20261111-123300` (archived), project #3; bootstrap apply 51 actions, second apply 1 action/no creates, task lifecycle check-in→checkout, strict audit 0 violations (4 issues / 4 items). Tag v1.0.0 exposed a GraphQL field-options defect; fix is in T08 and is released as template patch **v1.2.0** (v1.0.0 tag remains immutable).
 - Human final review is recorded at release close before tagging.
 
 ## Release gate
