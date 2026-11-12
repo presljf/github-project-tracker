@@ -663,6 +663,28 @@ test('option utility is idempotent and dry-run safe', async () => {
   assert.equal(dryRunner.updates.length, 0);
 });
 
+test('option utility accepts gh-shaped single-select field types (live stream open)', async () => {
+  const ghShaped = {
+    listFields: async () => [
+      {
+        id: 'PVTSSF_live',
+        name: 'Stream',
+        type: 'ProjectV2SingleSelectField',
+        options: [{ id: 'OPT_1', name: 'v1.3.1-maintenance' }],
+      },
+    ],
+    updateFieldOptions: async () => ({}),
+  };
+  const result = await ensureSingleSelectOption({
+    runner: ghShaped,
+    owner: 'presljf',
+    projectNumber: 2,
+    fieldName: 'Stream',
+    optionName: 'v1.3.1-maintenance',
+  });
+  assert.equal(result.unmodified, true);
+});
+
 test('option utility rejects unknown fields, wrong field types, and invalid colours', async () => {
   const runner = optionRunner();
   await assert.rejects(
