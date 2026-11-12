@@ -300,6 +300,11 @@ export class GitHubCli {
     return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-blocked-by', blockedByUrl]);
   }
 
+
+  listOpenIssuesByLabel(owner, repo, label) {
+    return this.run(['issue', 'list', '--repo', `${owner}/${repo}`, '--label', label, '--state', 'open', '--json', 'number,title,url'], { json: true });
+  }
+
   getIssue(owner, repo, number) {
     return this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'], { json: true });
   }

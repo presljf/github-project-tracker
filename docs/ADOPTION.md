@@ -171,3 +171,7 @@ Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` wi
 ## Post-merge bypass audit
 
 Merged PRs with failed/missing required checks or invalid closure open a `tracker-contract-exception` OI. The next release must block until resolved.
+
+## Release gate
+
+Before releasing, run `npm run gate:release -- --root . --repo owner/repo`; it verifies the pinned contract and fails on any open `tracker-contract-exception` OI.

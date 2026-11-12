@@ -363,6 +363,12 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### Release gate
+
+`npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract and
+refuses release when any open `tracker-contract-exception` OI exists. Downstream release workflows
+must run this gate before a dispatch/tag publish.
+
 ### Post-merge bypass audit
 
 `.github/workflows/post-merge-audit.yml` runs when a PR is merged. It checks required checks
