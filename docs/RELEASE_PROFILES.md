@@ -343,3 +343,5 @@ Residual follow-ups: adopters/pilot must confirm macOS runner availability and e
 | [tracker config schema](../schemas/tracker.config.schema.json) | `workflows.release` keys |
 | [SECURITY.md](../SECURITY.md) | Private vulnerability reporting; never expose tokens |
 | [GitHub: reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) · [Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) · [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [OIDC](https://docs.github.com/en/actions/concepts/security/openid-connect) | Upstream behavior reference |
+
+| macos | [43146125258](https://github.com/presljf/github-project-tracker/actions/runs/43146125258) | **success** | `macos-15` runner; build/checksum passed; sign/publish skipped (dry-run, no secrets). Bash 3.2 portable artifact matching. |
