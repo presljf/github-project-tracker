@@ -464,6 +464,13 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 | Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
 | Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
 
+**Tag-only contract releases (this template repository):** the generic tag-triggered Release
+workflow (`.github/workflows/release.yml`) is intentionally `disabled_manually` here — earlier
+`v1.0.x` tag runs queued on the protected `release` environment. Contract releases such as
+**v1.3.0** are therefore tag-only: the annotated tag, `CHANGELOG.md`, and the recorded `gate:release`
+output are the release record (no GitHub Release/assets are published from this repo). Adopters own
+their publishing profiles/callers and enable them deliberately for artifact releases.
+
 ### Trigger matrix
 | Trigger | CI | Audit | Desktop | Release |
 |---|---|---|---|---|

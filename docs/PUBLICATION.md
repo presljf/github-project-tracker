@@ -23,6 +23,7 @@
 | Branch protection / rulesets | Available now that the repo is public; **pending T03 ([#41](https://github.com/presljf/github-project-tracker/issues/41) is Blocked)** | [CI/security profile §3](./CI_SECURITY_PROFILE.md#3-required-check-and-branch-protection-contract) |
 | GitHub Releases | None published yet; tags `v1.0.0` and `v1.3.0` exist | `gh release list` (empty); `git tag` |
 | Release gate | **No public release/announcement without explicit maintainer approval** | [Release tracker #45](https://github.com/presljf/github-project-tracker/issues/45) gates |
+| Generic tag Release workflow | Intentionally `disabled_manually` in this template repository (tag-only contract releases; tag + CHANGELOG + release-gate output are the release record) | Actions UI; v1.3.0 release evidence on [#116](https://github.com/presljf/github-project-tracker/issues/116) |
 
 ---
 
