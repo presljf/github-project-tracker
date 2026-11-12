@@ -363,6 +363,12 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### Qualified version bump
+
+Use `npm run release:bump -- --from 1.2.1 --to 1.2.2` (dry-run) or add `--apply`.
+It uses an explicit allowlist, excludes lockfiles/history/tests/submodules/binaries, reports exact
+line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards and run guards after applying.
+
 ### Release gate
 
 `npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract and

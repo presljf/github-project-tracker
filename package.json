@@ -31,7 +31,8 @@
     "verify:metadata": "node scripts/github/verify-metadata.mjs",
     "reconcile:metadata": "node scripts/github/reconcile-metadata.mjs",
     "hooks:install": "node scripts/github/install-hooks.mjs",
-    "verify:tooling": "node scripts/github/verify-tooling.mjs"
+    "verify:tooling": "node scripts/github/verify-tooling.mjs",
+    "release:bump": "node scripts/release/bump-version.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
