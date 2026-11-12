@@ -24,7 +24,7 @@ export const REQUIRED_CHECKS = DEFAULT_REQUIRED_CHECKS;
 
 const DEGRADED_WARNING =
   'WARNING: statusCheckRollup is unreadable (permission/API error); degrading post-merge audit to closure-only. ' +
-  'Required-check verification was skipped. Grant `checks: read` + `statuses: read` in the caller workflow permissions to restore the full audit.';
+  'Required-check verification was skipped. Grant `actions: read` + `checks: read` + `statuses: read` in the caller workflow permissions to restore the full audit (statusCheckRollup resolves checkSuite.workflowRun, which needs Actions read).';
 
 function errorText(err) {
   return [err?.stderr, err?.message].filter(Boolean).join('\n').trim();
@@ -154,7 +154,7 @@ function degradedSummary(result) {
     '- **Result:** PASS (degraded)',
     `- **Degraded:** \`statusCheckRollup\` unreadable (${result.degradedReason}); required-check verification skipped, closing-keyword/partial rules still enforced.`,
     `- **Required checks (not evaluated):** ${result.requiredChecks.join(', ')}`,
-    '- **Fix:** grant `checks: read` + `statuses: read` in the caller workflow permissions (private repos need them for the check rollup).',
+    '- **Fix:** grant `actions: read` + `checks: read` + `statuses: read` in the caller workflow permissions (statusCheckRollup resolves checkSuite.workflowRun, which needs Actions read).',
   ].join('\n');
 }
 

@@ -492,7 +492,7 @@ their publishing profiles/callers and enable them deliberately for artifact rele
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
 | Tracker audit | PAT or GitHub App installation token | project read/write (or read advisory) | store as secret; never print; project-scoped |
-| Post-merge audit | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read | least privilege; the copied caller must carry the same block; private repos need `checks:read`/`statuses:read` for `statusCheckRollup` |
+| Post-merge audit | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read | least privilege; the copied caller must carry the same block; private repos need `checks:read`/`statuses:read`/`actions:read` for `statusCheckRollup` (GraphQL resolves `checkSuite.workflowRun`) |
 | Release publish | `GITHUB_TOKEN`/environment secrets | contents:write | protected tag/environment |
 | Package/cloud publish | OIDC or environment secrets | least privilege | prefer short-lived |
 | Signing/notarization/container | project secrets/OIDC | minimal | skip cleanly if absent |
@@ -527,13 +527,16 @@ closing-keyword/partial-PR rules. Required check-run names resolve from
 `ci / ci-gate`, `docs-guard`, `pr-close-guard` — adopters must set their real names, e.g. CastDeck:
 `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard`). The workflow token needs
 `contents: read`, `issues: write`, `pull-requests: read`, and (on private repos)
-`checks: read` + `statuses: read` to read `statusCheckRollup`; the copied caller must carry the
-same permissions block.
+`checks: read` + `statuses: read` + **`actions: read`** to read `statusCheckRollup` — its GraphQL
+query also resolves `checkSuite.workflowRun`, which needs Actions read (checks+statuses alone still
+degrade; observed on CastDeck run 43276236147). The copied caller must carry the same permissions
+block. The v1.3.0 tag predates this correction; it ships post-tag in the tooling stream
+(`[Stream] v1.3.1-maintenance`), and adopters add `actions: read` to their copied caller.
 
 A merged PR with a failed/missing required check or invalid closure opens an OI labeled
 `tracker-contract-exception` and must be resolved before release. If `statusCheckRollup` is
 unreadable because of a permission/API error, the audit degrades loudly (warning + job summary +
-`checks: read`/`statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
+`actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
 closing-keyword/partial-PR rules only, and exits 0 in advisory mode — no false check-related OI.
 Real closing violations still open an OI; non-permission errors still fail.
 
