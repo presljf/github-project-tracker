@@ -102,12 +102,10 @@
     "uniqueKeys": true,
     "acceptedTitlePatterns": {
       "release": [
-        "[Release] <version> \u2014 ...",
-        "[<version>] Release ..."
+        "[Release] <version> \u2014 ..."
       ],
       "sprint": [
-        "[Sprint] <sprint> \u2014 ...",
-        "[<sprint>] Sprint ..."
+        "[Sprint] <sprint> \u2014 ..."
       ],
       "task": [
         "[<sprint>-T<nn>] ..."

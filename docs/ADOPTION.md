@@ -194,6 +194,4 @@ as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #8
 ## Project metadata verification
 
 Run `verify:metadata` against the live project. Required fields must exist; Priority is an
-optional standard field; project-specific forbidden fields are rejected. Open/current work is
-strict; historical audits use `--include-closed`, and migration uses `--warn-only` until T20
-reconciliation is approved.
+optional standard field; project-specific forbidden fields are rejected. Open/current work is strict with canonical `[Release]` / `[Sprint]` titles; legacy title formats fail. Historical audits use `--include-closed`; migration uses `--warn-only` until T20 reconciliation is approved.

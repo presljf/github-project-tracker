@@ -63,9 +63,9 @@ test('missing field fails', () =>
     ),
   ));
 
-test('supports canonical and legacy tracker title formats', () => {
+test('accepts canonical and flags legacy title formats', () => {
   assert.deepEqual(classifyTitle('[Sprint] 1.2.0.1 — sprint'), { kind: 'sprint', key: '1.2.0.1' });
-  assert.deepEqual(classifyTitle('[0.5.6] Sprint — sprint'), { kind: 'sprint', key: '0.5.6' });
   assert.deepEqual(classifyTitle('[Release] v1.2.0 — release'), { kind: 'release', key: 'v1.2.0' });
-  assert.deepEqual(classifyTitle('[v0.5.0] Release tracking — release'), { kind: 'release', key: 'v0.5.0' });
+  assert.deepEqual(classifyTitle('[0.5.6] Sprint — sprint'), { kind: 'legacy', key: null });
+  assert.deepEqual(classifyTitle('[v0.5.0] Release tracking — release'), { kind: 'legacy', key: null });
 });

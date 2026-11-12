@@ -4,19 +4,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { GitHubCli } from './lib/github.mjs';
 
-const RELEASE_CANONICAL = /^\[Release\]\s+([^\s—-]+)/i;
-const RELEASE_LEGACY = /^\[([^\]]+)\]\s+Release\b/i;
-const SPRINT_CANONICAL = /^\[Sprint\]\s+([^\s—-]+)/i;
-const SPRINT_LEGACY = /^\[([^\]]+)\]\s+Sprint\b/i;
+const RELEASE = /^\[Release\]\s+([^\s—-]+)/i;
+const SPRINT = /^\[Sprint\]\s+([^\s—-]+)/i;
 const TASK = /^\[([^\]]*?-T\d+)\]/i;
+const LEGACY_RELEASE = /^\[([^\]]+)\]\s+Release\b/i;
+const LEGACY_SPRINT = /^\[([^\]]+)\]\s+Sprint\b/i;
 
 export function classifyTitle(title = '') {
-  const release = title.match(RELEASE_CANONICAL) || title.match(RELEASE_LEGACY);
+  const release = title.match(RELEASE);
   if (release) return { kind: 'release', key: release[1].trim() };
-  const sprint = title.match(SPRINT_CANONICAL) || title.match(SPRINT_LEGACY);
+  const sprint = title.match(SPRINT);
   if (sprint) return { kind: 'sprint', key: sprint[1].trim() };
   const task = title.match(TASK);
   if (task) return { kind: 'task', key: task[1].trim() };
+  if (LEGACY_RELEASE.test(title) || LEGACY_SPRINT.test(title)) return { kind: 'legacy', key: null };
   return { kind: 'other', key: null };
 }
 export function evaluateMetadata({ contract, issueTypes = [], fields = [], issues = [] }) {
