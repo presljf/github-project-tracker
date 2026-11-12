@@ -79,7 +79,8 @@
         "schemas/",
         "tracker.config.json",
         "tracker.config.example.json",
-        "examples/"
+        "examples/",
+        "tracker.dependencies.example.json"
       ],
       "docs": [
         "docs/REFERENCE.md",

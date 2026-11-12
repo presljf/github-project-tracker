@@ -1,0 +1,11 @@
+{
+  "approvals": [
+    {
+      "paths": ["package.json", "package-lock.json"],
+      "issue": "https://github.com/owner/repo/issues/1",
+      "reason": "Explicitly approved dependency upgrade/fix",
+      "approvedBy": "owner",
+      "expires": "2026-12-31"
+    }
+  ]
+}

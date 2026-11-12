@@ -503,3 +503,8 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 - Docs version: `v1.0.1-docs.1` for this target; update with each template release.
 - Template/config: exact `vX.Y.Z`; patch/minor/major meanings in [UPGRADING](./UPGRADING.md).
 - Reference is normative for commands; handbook is task-oriented; playbook is conceptual; T12 validates the docs set before release.
+
+
+### Preflight and dependency approval
+
+`task.mjs start` rejects a dirty worktree unless `--allow-dirty --dirty-reason "..."` is supplied. `npm run guard:deps` requires dependency/lockfile changes to be listed in `tracker.dependencies.json` with an issue, reason, and expiry; script-only `package.json` edits are allowed.

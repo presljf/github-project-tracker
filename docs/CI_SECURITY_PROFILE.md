@@ -501,3 +501,6 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 ## Post-merge bypass audit
 
 `.github/workflows/post-merge-audit.yml` detects merged PRs with failed/missing required checks or invalid closing-keyword usage. It opens a `tracker-contract-exception` OI; release must not proceed until resolved. Required checks now include `pr-close-guard`.
+
+
+**Dependency approval guard:** `guard:deps` fails dependency/lockfile changes unless `tracker.dependencies.json` contains an OI-linked, reasoned, unexpired approval. Clean-tree preflight blocks task start on uncommitted work; `--allow-dirty` requires a recorded reason.

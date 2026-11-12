@@ -175,3 +175,7 @@ Merged PRs with failed/missing required checks or invalid closure open a `tracke
 ## Release gate
 
 Before releasing, run `npm run gate:release -- --root . --repo owner/repo`; it verifies the pinned contract and fails on any open `tracker-contract-exception` OI.
+
+## Preflight and dependency approval
+
+Start tasks only on a clean worktree. Dependency changes require an approved `tracker.dependencies.json` entry (issue/reason/expiry); CI runs `guard:deps`. Local installs should still pause for explicit human approval.
