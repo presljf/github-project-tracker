@@ -22,7 +22,7 @@ export function evaluateTooling({ contract, pkg = {}, configText = '', submodule
     violations.push(`eslint config does not import shared baseline: ${configPath}`);
   if (configText.includes("'no-useless-assignment': 'warn'") || configText.includes("'preserve-caught-error': 'warn'"))
     violations.push('local lint warning override present; fix warnings instead');
-  if (submoduleTag && submoduleTag !== String(contract.trackerVersion))
+  if (submoduleTag && String(submoduleTag).replace(/^v/, '') !== String(contract.trackerVersion).replace(/^v/, ''))
     violations.push(`.tracker-os tag=${submoduleTag} expected v${contract.trackerVersion}`);
   return { ok: violations.length === 0, violations };
 }
