@@ -497,3 +497,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 
 
 **PR close guard:** `.github/workflows/pr-close-guard.yml` validates closing keywords vs task issue kind; completion PRs use closing keywords, partial PRs use Refs/Part of and cannot close.
+
+## Post-merge bypass audit
+
+`.github/workflows/post-merge-audit.yml` detects merged PRs with failed/missing required checks or invalid closing-keyword usage. It opens a `tracker-contract-exception` OI; release must not proceed until resolved. Required checks now include `pr-close-guard`.
