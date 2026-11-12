@@ -265,4 +265,4 @@ Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. T03 completed (tracker audit
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [x] T12 shared rate-limit state/targeted queries/cost instrumentation — **COMPLETED 2026-11-11** (PR #67; shared state+cost report; targeted item lookups; batched dependencies/mutations; tests 58/58) — #60
 - [x] T11 docs coverage guard — **COMPLETED 2026-11-11** (PR #65; CI docs coverage; tests 53/53; issue-type CI wiring follow-up) — #58
-- [x] T10 scratch cleanup — **COMPLETED 2026-11-11** (smoke project #3 deleted; archived repo retained because delete_repo scope unavailable; worktrees/temp cleaned) — #51
+- [x] T10 scratch cleanup — **COMPLETED 2026-11-11** (smoke project #3 verified absent; archived repo retained because delete_repo scope unavailable; worktrees/temp cleaned) — #51
