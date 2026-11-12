@@ -961,3 +961,52 @@ test('checkDoR remains callable directly with product defaults', async () => {
   assert.equal(result.profile.name, 'product');
   assert.equal(result.stream, null);
 });
+
+test('tooling audit reports Project-status drift for every closed on-project item', () => {
+  const staleTask = toolingAuditData();
+  staleTask.projectItems.find((entry) => entry.content.number === 12).status = 'In Review';
+  const taskWarnings = auditTracker({ config: auditToolingConfig(), data: staleTask }).warnings.filter(
+    (warning) => warning.code === 'PROJECT_STATUS_STALE',
+  );
+  assert.equal(taskWarnings.length, 1);
+  assert.equal(taskWarnings[0].issue, 12);
+
+  // No historical exemption: Status is current-state board metadata, not delivery evidence. A
+  // historical closed task that is still on the project is drift even without Stream ancestry.
+  const historical = toolingAuditData();
+  historical.subIssues[10] = [11];
+  historical.projectItems.find((entry) => entry.content.number === 12).status = 'In Review';
+  const historicalWarnings = auditTracker({ config: auditToolingConfig(), data: historical }).warnings.filter(
+    (warning) => warning.code === 'PROJECT_STATUS_STALE',
+  );
+  assert.equal(historicalWarnings.length, 1);
+  assert.equal(historicalWarnings[0].issue, 12);
+
+  // A closed [Stream] container is in scope too.
+  const closedStream = toolingAuditData();
+  closedStream.issues[0].state = 'CLOSED';
+  closedStream.issues[1].state = 'CLOSED';
+  closedStream.projectItems[0].status = 'In Review';
+  closedStream.projectItems[1].status = 'Done';
+  closedStream.comments[10] = [{ body: '### Stream close evidence\n- Release gate: PASS' }];
+  closedStream.comments[11] = [{ body: '### Check-out\n- Evidence: done' }];
+  const streamWarnings = auditTracker({ config: auditToolingConfig(), data: closedStream }).warnings.filter(
+    (warning) => warning.code === 'PROJECT_STATUS_STALE',
+  );
+  assert.ok(streamWarnings.some((warning) => warning.issue === 10));
+});
+
+test('tooling profile does not emit the product sprint hierarchy rule', () => {
+  const data = toolingAuditData();
+  data.issues.push(auditIssue(13, '[Sprint] 1.0.0.1 — Stray sprint'));
+  data.projectItems.push({
+    content: { number: 13 },
+    status: 'Todo',
+    stream: 'v1.3.1',
+    area: 'docs',
+    kind: 'infra',
+    estimate: 'M',
+  });
+  const codes = auditTracker({ config: auditToolingConfig(), data }).violations.map((violation) => violation.code);
+  assert.ok(!codes.includes('SPRINT_HIERARCHY_MISSING_RELEASE'));
+});

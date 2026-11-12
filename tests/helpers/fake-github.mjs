@@ -145,8 +145,8 @@ export class FakeGitHub {
     return { subIssue: { number: child } };
   }
 
-  async listProjectItems(owner, number) {
-    this.calls.push(['listProjectItems', owner, number]);
+  async listProjectItems(owner, number, options = {}) {
+    this.calls.push(['listProjectItems', owner, number, options]);
     return structuredClone(this.items);
   }
 

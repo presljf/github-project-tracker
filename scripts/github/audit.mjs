@@ -48,6 +48,8 @@ function normalizeItems(items) {
     const number = item.content?.number;
     if (!number) continue;
     map.set(number, {
+      id: item.id || null,
+      repository: item.content?.repository || item.repository || null,
       status: item.status || '',
       release: item.release || '',
       sprint: item.sprint || '',
@@ -91,6 +93,8 @@ function normalizeDependencies(dependencies) {
   return map;
 }
 
+const DONE_STATUS = 'Done';
+
 const REQUIRED_TASK_SECTIONS = [
   'why / context',
   'current behavior',
@@ -110,18 +114,13 @@ function missingTaskSections(body) {
   );
 }
 
-export function auditTracker({ config, data, strict = false }) {
-  const violations = [];
-  const warnings = [];
-  const add = (code, issue, message) =>
-    violations.push({ code, issue: issue?.number ?? null, title: issue?.title || null, message });
-  const profile = getWorkProfileAdapter(config);
-  const issues = (data.issues || []).map(normalizeIssue);
+/**
+ * Reverse parent index + ancestor-kind lookup shared by the audit and the Project-status
+ * reconciliation plan (`projectStatusDrift`), so the read-only rule and the repair command cannot
+ * disagree about the hierarchy they walk.
+ */
+function ancestryLookup({ issues, subIssues }) {
   const issueByNumber = new Map(issues.map((issue) => [issue.number, issue]));
-  const items = normalizeItems(data.projectItems);
-  const comments = normalizeComments(data.comments);
-  const subIssues = normalizeSubIssues(data.subIssues);
-  const dependencies = normalizeDependencies(data.dependencies);
   const parentOf = new Map();
   for (const [parent, children] of subIssues) for (const child of children) parentOf.set(child, parent);
   const ancestorKindsCache = new Map();
@@ -139,6 +138,22 @@ export function auditTracker({ config, data, strict = false }) {
     ancestorKindsCache.set(number, kinds);
     return kinds;
   };
+  return { parentOf, ancestorKindsFor };
+}
+
+export function auditTracker({ config, data, strict = false }) {
+  const violations = [];
+  const warnings = [];
+  const add = (code, issue, message) =>
+    violations.push({ code, issue: issue?.number ?? null, title: issue?.title || null, message });
+  const profile = getWorkProfileAdapter(config);
+  const issues = (data.issues || []).map(normalizeIssue);
+  const issueByNumber = new Map(issues.map((issue) => [issue.number, issue]));
+  const items = normalizeItems(data.projectItems);
+  const comments = normalizeComments(data.comments);
+  const subIssues = normalizeSubIssues(data.subIssues);
+  const dependencies = normalizeDependencies(data.dependencies);
+  const { ancestorKindsFor } = ancestryLookup({ issues, subIssues });
   const evidenceRules = closedEvidenceRules(profile);
   const ancestryRequirements = taskAncestryRequirements(profile);
 
@@ -173,6 +188,12 @@ export function auditTracker({ config, data, strict = false }) {
         if (!ancestorKinds.has(requirement.kind))
           add(requirement.code, issue, `open task has no ${requirement.noun} tracker ancestor`);
       }
+    }
+    // Hierarchy integrity: an open product sprint must sit under a [Release] ancestor. Its child
+    // tasks can carry a sprint ancestor while the sprint itself is orphaned (the #137 incident);
+    // closed/historical sprints are exempt and the tooling profile has no release container.
+    if (!profile.isTooling && kind === 'sprint' && !ancestorKindsFor(issue.number).has('release')) {
+      add('SPRINT_HIERARCHY_MISSING_RELEASE', issue, 'open sprint has no release tracker ancestor');
     }
     if (issue.labels.some((name) => /^(area|release|sprint|type):/i.test(name))) {
       add('DUPLICATE_DIMENSION_LABEL', issue, 'dimension is represented by a field/type/milestone and a label');
@@ -224,6 +245,12 @@ export function auditTracker({ config, data, strict = false }) {
       });
   }
 
+  // Advisory (non-blocking): closed project items left in a non-Done status. The Project Status
+  // field is per-item metadata and is NOT updated when a `Closes #N` keyword closes the issue at
+  // merge time, so the closing session must reconcile it. Warnings never affect `ok`/`--strict`
+  // exit behaviour; `reconcile-status.mjs` reuses this same plan to repair the drift.
+  warnings.push(...projectStatusDrift({ config, data }));
+
   const result = {
     ok: violations.length === 0,
     strict: Boolean(strict),
@@ -237,12 +264,53 @@ export function auditTracker({ config, data, strict = false }) {
   return result;
 }
 
+/**
+ * Closed project items whose Project Status is not `Done` — the drift left behind when a completion
+ * PR closes an issue with `Closes #N` before the `task.mjs done` path can run (that path refuses
+ * closed issues). Advisory: `auditTracker` surfaces these as `warnings` (never blocking, even under
+ * `--strict`); `reconcile-status.mjs` reuses the same plan to repair them.
+ *
+ * Scope: items that are on the configured project. There is no profile gate and no historical
+ * record exemption here — unlike delivery evidence (see the T06 `requiresStreamAncestry`
+ * precedent), Project Status is current-state board metadata, not a historical record, so any
+ * closed on-project item left in a non-Done status is drift (including the #116 product-era task
+ * that motivated this rule). Closed items that were never added to the project are out of scope.
+ */
+export function projectStatusDrift({ config, data }) {
+  const issues = (data.issues || []).map(normalizeIssue);
+  const items = normalizeItems(data.projectItems);
+  const expectedRepository = config.repository || null;
+  const fix = 'npm run reconcile:status -- --config tracker.config.json --apply';
+  const drift = [];
+  for (const issue of issues) {
+    if (issue.state !== 'CLOSED') continue;
+    const item = items.get(issue.number);
+    if (!item || item.status === DONE_STATUS) continue;
+    // A project can host items from several repositories; never warn about or mutate another
+    // repository's item (same issue number) on a shared project.
+    if (expectedRepository && item.repository && item.repository !== expectedRepository) continue;
+    const status = item.status || null;
+    drift.push({
+      code: 'PROJECT_STATUS_STALE',
+      issue: issue.number,
+      title: issue.title,
+      status,
+      itemId: item.id,
+      fix,
+      message: status
+        ? `closed issue has Project status ${status} (expected Done)`
+        : 'closed issue has no Project status (expected Done)',
+    });
+  }
+  return drift.sort((a, b) => a.issue - b.issue);
+}
+
 export async function collectAuditData(github, config) {
   if (!config.project?.number) throw new Error('config.project.number is required for audit');
   const [repoOwner, repoName] = config.repository.split('/');
   const owner = config.project.owner || repoOwner;
   const issues = await github.listIssues(repoOwner, repoName, 'all');
-  const projectItems = await github.listProjectItems(owner, config.project.number);
+  const projectItems = await github.listProjectItems(owner, config.project.number, { limit: 1000 });
   const comments = {};
   const subIssues = {};
   const dependencies = {};
@@ -274,6 +342,7 @@ function usage() {
     'Usage: node scripts/github/audit.mjs --config tracker.config.json [--advisory|--strict] [--json]',
     '',
     'Default: advisory (exit 0, violations printed).',
+    'Warnings (e.g. PROJECT_STATUS_STALE) are always advisory and never change the exit code.',
     'Invariants follow config.workProfile: "product" (default; Release → Sprint → Task) or',
     '"tooling" ([Stream] → Task; Stream field and stream close evidence).',
     '  --strict    Exit 1 when any violation is found (release-gate mode)',
@@ -317,7 +386,13 @@ if (isMain) {
         } else {
           console.log('No violations.');
         }
-        for (const warning of result.warnings) console.log(`warning: ${warning}`);
+        for (const warning of result.warnings) {
+          if (typeof warning === 'string') console.log(`warning: ${warning}`);
+          else
+            console.log(
+              `warning: [${warning.code || 'ADVISORY'}] ${warning.issue ? `#${warning.issue} ` : ''}${warning.message || ''}${warning.fix ? ` — fix: ${warning.fix}` : ''}`,
+            );
+        }
       }
       if (args.strict && !result.ok) process.exitCode = 1;
     } catch (err) {
