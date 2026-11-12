@@ -62,7 +62,7 @@ Three invariants follow from the definitions:
 | Security — `security.yml` (Dependabot + dependency review + optional CodeQL) | PR dependency review; weekly/monthly `schedule`; CodeQL opt-in | Dependabot default; dependency review advisory then required; CodeQL opt-in advisory | `ubuntu-latest` | Dependency/supply-chain/code scanning | `contents: read`; `security-events: write` (CodeQL job only); `pull-requests: write` only if commenting | none | CodeQL SARIF → code scanning; summary otherwise | Dependency-review policy failure when required; CodeQL advisory until stable |
 | Docs — `docs.yml` → `reusable-docs.yml` | PR/push paths `docs/**`, `**/*.md`; `workflow_dispatch` | optional advisory; can be required for docs-only repos | `ubuntu-latest` | Markdown fence/link/consistency checks | `contents: read` | none | report summary, 7d | Advisory by default; broken fences/relative links fail |
 
-**Shipped vs contract-only:** shipped: `ci.yml`/`reusable-ci.yml`, `security.yml`/`reusable-security.yml`, `release.yml`+macOS/container/package callers/`reusable-release.yml`, checksum/sign-notarize composite actions, and the advisory `tracker-audit.yml`. Contract-only: `e2e.yml`/`reusable-e2e.yml`, `desktop-smoke.yml`/`reusable-desktop-smoke.yml`, `docs.yml`/`reusable-docs.yml`, `reusable-audit.yml`, and `setup-node-cache` (CI setup/cache is inlined in `reusable-ci.yml`).
+**Shipped vs contract-only:** shipped: `ci.yml`/`reusable-ci.yml`, `security.yml`/`reusable-security.yml`, `release.yml`+macOS/container/package callers/`reusable-release.yml`, checksum/sign-notarize composite actions, and the advisory `tracker-audit.yml`. Shipped desktop smoke: `reusable-desktop-smoke.yml` plus the caller example in `profiles/desktop/`. Contract-only: `e2e.yml`/`reusable-e2e.yml`, `docs.yml`/`reusable-docs.yml`, `reusable-audit.yml`, and `setup-node-cache` (CI setup/cache is inlined in `reusable-ci.yml`).
 
 ### 2.1 CI (required)
 
@@ -408,11 +408,11 @@ Required-check mapping: the implementation exposes `ci / prepare`, `ci / lint`, 
 | Artifacts | traces/screenshots/videos on failure; retention from input |
 | Stability | optional-input additions minor; command/browser default changes are minor but documented in release notes; output renames major |
 
-### 7.4 `reusable-desktop-smoke.yml` — desktop smoke contract
+### 7.4 `reusable-desktop-smoke.yml` — desktop smoke contract (shipped)
 
 | Interface | Definition |
 |---|---|
-| Inputs | `runner-label` string default `macos-15`; `working-directory` default `.`; `build-command` string required; `smoke-command` string required; `artifact-retention-days` number default `7` |
+| Inputs | `runner-label` default `macos-15`; `node-version`; `working-directory`; optional `install-command`/`build-command`; required `smoke-command`; optional `artifact-path`/`artifact-name`/`artifact-retention-days` |
 | Outputs | `smoke-passed`, `artifact-name` |
 | Secrets | none |
 | Permissions | `contents: read` |
@@ -704,7 +704,7 @@ Never write `run: echo "${{ github.event.pull_request.title }}"`. The same rule 
 | `reusable-security.yml` + `security.yml`, Dependabot | implemented (T15) |
 | `reusable-release.yml` + `release.yml`, macOS/container/package callers, checksum/sign actions | implemented (T10) |
 | `tracker-audit.yml` advisory workflow | implemented (T04); reusable audit wrapper remains a contract |
-| `reusable-e2e.yml`, `reusable-desktop-smoke.yml`, `reusable-docs.yml` | contract only — not yet implemented |
+| `reusable-e2e.yml`, `reusable-docs.yml`, `reusable-audit.yml` | contract only — not yet implemented |
 | composite `setup-node-cache` | contract only; T15 inlines setup/cache in `reusable-ci.yml` |
 | composite `checksum`, `sign-notarize-macos` | implemented (T10) |
 
