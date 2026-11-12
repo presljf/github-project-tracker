@@ -333,13 +333,15 @@ test('unreadable rollup degrades to metadata-only closure audit with warning + s
     assert.equal(github.calls.labels.length, 0);
     const warning = logger.lines.find((line) => line.level === 'warn');
     assert.match(warning.message, /^WARNING: statusCheckRollup is unreadable/);
+    assert.match(warning.message, /actions: read/);
     assert.match(warning.message, /checks: read/);
     const logged = logger.lines.find((line) => line.level === 'log');
     assert.match(logged.message, /degraded: closure-only/);
     const summary = fs.readFileSync(summaryFile, 'utf8');
     assert.match(summary, /### Post-merge audit — PR #42/);
     assert.match(summary, /Result:\*\* PASS \(degraded\)/);
-    assert.match(summary, /checks: read/);
+    assert.match(summary, /actions: read/);
+    assert.match(summary, /checkSuite\.workflowRun/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -396,10 +398,17 @@ test('post-merge audit workflow carries least-privilege permissions incl. checks
     'pull-requests: read',
     'checks: read',
     'statuses: read',
+    'actions: read',
   ]) {
     assert.ok(yaml.includes(permission), `workflow must grant ${permission}`);
   }
-  for (const forbidden of ['pull_request_target', 'contents: write', 'checks: write', 'statuses: write']) {
+  for (const forbidden of [
+    'pull_request_target',
+    'contents: write',
+    'checks: write',
+    'statuses: write',
+    'actions: write',
+  ]) {
     assert.ok(!yaml.includes(forbidden), `workflow must not contain ${forbidden}`);
   }
   assert.match(yaml, /types: \[closed\]/);

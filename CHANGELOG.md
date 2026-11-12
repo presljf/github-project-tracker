@@ -9,6 +9,16 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## Unreleased — post-v1.3.0 tooling stream
+
+- **Post-merge-audit caller permissions correction:** add `actions: read` on top of `checks: read` +
+  `statuses: read`. `gh pr view --json statusCheckRollup` also resolves `checkSuite.workflowRun`,
+  which needs Actions read — without it private-repo merged-PR audits degrade to closure-only
+  (observed on CastDeck run `43276236147`: success-but-degraded despite `checks: read`).
+  Docs corrected (ACTIONS CATALOG / CI SECURITY PROFILE / REFERENCE); the **v1.3.0 tag predates this
+  correction** and it ships post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`); adopters
+  add `actions: read` to their copied caller (CastDeck C3).
+
 ## v1.3.0 — Verification & documentation contract
 
 - Add the enforced **tooling work profile** (`workProfile: "product" | "tooling"`, default
