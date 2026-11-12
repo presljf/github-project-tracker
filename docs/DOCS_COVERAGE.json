@@ -116,6 +116,15 @@
         "docs/REFERENCE.md",
         "docs/ADOPTION.md"
       ]
+    },
+    {
+      "id": "security-root",
+      "paths": [
+        "SECURITY.md"
+      ],
+      "docs": [
+        "docs/CI_SECURITY_PROFILE.md"
+      ]
     }
   ]
 }

@@ -64,6 +64,7 @@ jobs:
           DOCS_GUARD_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           npm run docs:check
+          npm run guard:versions
           npm run guard:gh
           npm run guard:deps
           node scripts/docs/guard-docs.mjs --base "${DOCS_GUARD_BASE:-origin/main}"

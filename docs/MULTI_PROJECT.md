@@ -1,6 +1,6 @@
 # MULTI-PROJECT
 
-**Docs version:** v1.0.1-docs.1 · Target template: v1.0.1
+**Docs version:** v1.0.2-docs.1 · Target template: v1.0.2
 Guidance for running several projects/programs on the tracker without collapsing into one mega-board.
 
 ## Model

@@ -19,8 +19,8 @@ body:
     id: tracker_version
     attributes:
       label: Pinned tracker version
-      description: Exact `automation.templateVersion` in use (e.g. 1.0.1). Supported versions are listed in SECURITY.md.
-      placeholder: "1.0.1"
+      description: Exact `automation.templateVersion` in use (e.g. 1.0.2). Supported versions are listed in SECURITY.md.
+      placeholder: "1.0.2"
     validations:
       required: true
   - type: textarea
