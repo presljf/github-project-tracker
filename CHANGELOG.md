@@ -9,15 +9,34 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
-## Unreleased — post-v1.3.0 tooling stream
+## v1.3.2 — Patch release: post-v1.3.0 fixes + close-out reconciliation
 
+Patch release of the v1.3.0 contract surface: fixes merged to `main` after the v1.3.0 tag, with no
+v1.4.0 reusable-workflow API change. The annotated `v1.3.2` tag is the version record.
+
+- **Adopt the tooling work profile in this repository** (#123): `workProfile: "tooling"` lands
+  post-tag (the v1.3.0 tag records the contract; subsequent deliveries are `[Stream]` → Task with
+  tag-based version records). Product history stays valid.
+- **Fix live `[Stream]` open:** use the GraphQL `ProjectV2SingleSelectField` shape for the
+  `gh project field-create` fallback so `stream.mjs open` works against live project fields (#124).
+- **Document the tag-only v1.3.0 release record** (#127): release evidence lives on #116; no GitHub
+  Release/artifacts for tag-only contract releases.
 - **Post-merge-audit caller permissions correction:** add `actions: read` on top of `checks: read` +
   `statuses: read`. `gh pr view --json statusCheckRollup` also resolves `checkSuite.workflowRun`,
   which needs Actions read — without it private-repo merged-PR audits degrade to closure-only
   (observed on CastDeck run `43276236147`: success-but-degraded despite `checks: read`).
-  Docs corrected (ACTIONS CATALOG / CI SECURITY PROFILE / REFERENCE); the **v1.3.0 tag predates this
-  correction** and it ships post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`); adopters
-  add `actions: read` to their copied caller (CastDeck C3).
+  Docs corrected (ACTIONS CATALOG / CI SECURITY PROFILE / REFERENCE); the v1.3.0 tag predates the
+  correction, which ships in this v1.3.2 patch (#129).
+- **Close-out Project-status reconciliation + hierarchy integrity** (#131): new advisory audit
+  warning `PROJECT_STATUS_STALE` for closed project items not `Done` (never changes the exit code,
+  including `--strict`), new violation `SPRINT_HIERARCHY_MISSING_RELEASE` for an open product sprint
+  with no `[Release]` ancestor (closed/historical and tooling exempt), and a new `reconcile-status`
+  command (`npm run reconcile:status`; report-only default, `--apply`, `--json`) to list and fix
+  status drift left by `Closes #` auto-closes. Close-out and hierarchy verification procedures are
+  documented (REFERENCE §5.8–5.9, AGENT GUIDE, PLAYBOOK, close templates); adopters running
+  `--strict` audits should expect the new sprint-hierarchy check (see UPGRADING).
+- **Version pins refreshed** to `1.3.2` across config, contract metadata, docs headers, examples and
+  reference cards (cards rebuilt).
 
 ## v1.3.0 — Verification & documentation contract
 

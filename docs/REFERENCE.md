@@ -1,6 +1,6 @@
 # REFERENCE
 
-**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
+**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
 **Scope:** commands, config, fields/statuses, labels, templates, audit rules, workflows, tokens, runners, release profiles, and expected outputs.
 
 > **Availability key:** **now** = shipped and validated in this template; **planned** = contract/example only, not claimed as implemented. Manual fallbacks remain in [HOW TO USE](./HOW_TO_USE.md).
@@ -666,7 +666,7 @@ Task context uses a targeted `issue.projectItems` lookup (and batched WIP item l
 
 ### Qualified version bump
 
-Use `npm run release:bump -- --from 1.3.0 --to 1.3.0` (dry-run) or add `--apply`.
+Use `npm run release:bump -- --from 1.3.2 --to 1.3.3` (dry-run) or add `--apply`.
 It uses an explicit allowlist, excludes lockfiles/history/tests/submodules/binaries, reports exact
 line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards and run guards after applying.
 
@@ -689,8 +689,9 @@ closing-keyword/partial-PR rules. Required check-run names resolve from
 `checks: read` + `statuses: read` + **`actions: read`** to read `statusCheckRollup` — its GraphQL
 query also resolves `checkSuite.workflowRun`, which needs Actions read (checks+statuses alone still
 degrade; observed on CastDeck run 43276236147). The copied caller must carry the same permissions
-block. The v1.3.0 tag predates this correction; it ships post-tag in the tooling stream
-(`[Stream] v1.3.1-maintenance`), and adopters add `actions: read` to their copied caller.
+block. The fix ships in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the
+tooling stream, `[Stream] v1.3.1-maintenance`), so adopters pinned to v1.3.0 add `actions: read` to
+their copied caller.
 
 A merged PR with a failed/missing required check or invalid closure opens an OI labeled
 `tracker-contract-exception` and must be resolved before release. If `statusCheckRollup` is
@@ -831,7 +832,7 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 
 ## 20. Versioning
 
-- Docs version: `v1.3.0-docs.1` for this target; update with each template release.
+- Docs version: `v1.3.2-docs.1` for this target; update with each template release.
 - Template/config: exact `vX.Y.Z`; patch/minor/major meanings in [UPGRADING](./UPGRADING.md).
 - Reference is normative for commands; handbook is task-oriented; playbook is conceptual; T12 validates the docs set before release.
 

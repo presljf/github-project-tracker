@@ -158,7 +158,7 @@ jobs:
 If the template repository is public (or private reusable-workflow access is granted), the caller may reference it instead of copying:
 
 ```yaml
-    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.3.0
+    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.3.2
 ```
 
 Private template caveat: reusable workflows in a private repository need explicit access from the caller repository, and the caller's Actions settings must allow reusable workflows. If either is unavailable, copy the two reusable files and the thin caller; never edit the copy's contract without recording a local deviation (see [UPGRADING](./UPGRADING.md)).
@@ -505,7 +505,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 - **Caller permissions (least privilege):** `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`. The copied caller must carry the same block; private repos require `checks: read` (check runs), `statuses: read` (commit statuses) **and `actions: read`** for `statusCheckRollup` — its GraphQL query also resolves `checkSuite.workflowRun`, which needs Actions read (observed on CastDeck run 43276236147: success-but-degraded with only checks+statuses).
 - **Required check names:** resolve from `guard.requiredChecks[]` in `tracker.config.json`; absent config keeps the backwards-compatible default (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). Adopters must set their real check contexts (e.g. CastDeck: `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard`).
 - **Degraded mode:** if `statusCheckRollup` is unreadable due to a permission/API error, the audit prints a loud warning + job summary (`actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, enforces the closing-keyword/partial rules only, and exits 0 in advisory mode — it does not fail red and does not open a false check-related OI. Real closing-keyword/partial violations still open an OI; non-permission errors still fail.
-- **v1.3.0 correction (post-tag):** the v1.3.0 tag shipped `checks: read` + `statuses: read` guidance before the Actions-read requirement was found live; this correction ships post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`). Adopters add `actions: read` to their copied caller; CastDeck's caller fix is tracked in its C3 PR.
+- **v1.3.0 actions:read correction (fixed in v1.3.2):** the v1.3.0 tag shipped `checks: read` + `statuses: read` guidance before the Actions-read requirement was found live; the correction landed post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`) and is included in v1.3.2. Adopters pinned to v1.3.0 add `actions: read` to their copied caller; CastDeck's caller fix is tracked in its C3 PR.
 - **Evidence:** after private-repo adoption, verify a merged PR run completes green (degraded warning acceptable only until the permissions are applied) and record the run URL.
 
 

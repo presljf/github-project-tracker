@@ -12,8 +12,8 @@ on:
 # - actions: read -> statusCheckRollup also resolves checkSuite.workflowRun, which needs Actions read;
 #   `checks`+`statuses` alone still return "Resource not accessible by integration" for the rollup on
 #   private repos (observed on CastDeck run 43276236147). The copied caller workflow must carry the
-#   same permissions block; the v1.3.0 tag predates this correction (it ships post-tag in the tooling
-#   stream, [Stream] v1.3.1-maintenance).
+#   same permissions block; the fix ships in v1.3.2 (the v1.3.0 tag predates it; it landed post-tag
+#   in the tooling stream, [Stream] v1.3.1-maintenance).
 permissions:
   contents: read
   issues: write

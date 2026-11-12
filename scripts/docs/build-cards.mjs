@@ -29,8 +29,8 @@ const ROOT = path.resolve(SCRIPT_DIR, '../..');
 const CARDS_DIR = path.join(ROOT, 'docs/reference-cards');
 const DOCS_URL = 'https://github.com/presljf/github-project-tracker/blob/main/docs';
 const REPO_URL = 'https://github.com/presljf/github-project-tracker/blob/main';
-const DOCS_VERSION = 'v1.3.0-docs.1';
-const TARGET_TEMPLATE = 'v1.3.0';
+const DOCS_VERSION = 'v1.3.2-docs.1';
+const TARGET_TEMPLATE = 'v1.3.2';
 
 /** Card order defines the printed card number (n/N). */
 const CARDS = [

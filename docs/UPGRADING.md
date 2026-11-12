@@ -1,6 +1,6 @@
 # UPGRADING
 
-**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
+**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
 The tracker is versioned; downstream projects pin an exact version and upgrade deliberately.
 
 ## Version semantics

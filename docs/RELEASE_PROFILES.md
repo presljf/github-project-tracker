@@ -1,6 +1,6 @@
 # RELEASE PROFILES
 
-**Docs version:** `v1.3.0-docs.1` · Target template: `v1.3.0`
+**Docs version:** `v1.3.2-docs.1` · Target template: `v1.3.2`
 **Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and copy-mode examples under `profiles/release/`.
 **Status:** T10 implements this profile layer; T02 added live dry-run validation (generic/container/package pass, macOS blocked by runner-plan support) and fixed the caller permission-union startup failure. Publishing is dry-run/skip guarded by default; no live release was published.
 **Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
@@ -180,7 +180,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
-    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.0
+    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.2
     with:
       profile: generic
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
@@ -301,7 +301,7 @@ Run before enabling any publish path (T12 captures evidence for the template rel
 ## 10. Versioning and stability
 
 - The reusable interface is versioned with the template (ACTIONS CATALOG §7.9). Adding optional inputs/outputs/secrets is **minor**; changing dry-run defaults, tag semantics, output names, or requiring a new secret is **major**.
-- Callers pin the exact template tag (`@v1.3.0`) or full SHA; never `@main` or a floating major tag. Composite actions consumed cross-repo are pinned the same way; copy-mode files record their origin template version.
+- Callers pin the exact template tag (`@v1.3.2`) or full SHA; never `@main` or a floating major tag. Composite actions consumed cross-repo are pinned the same way; copy-mode files record their origin template version.
 - Downstream upgrades follow [UPGRADING](./UPGRADING.md): read the changelog/migration, re-pin, re-run the dry-run/dispatch validation, and record the new pin in the tracker config.
 - When the contract changes, update this page, the catalog summary (§7.5), REFERENCE, and the changelog in the same release.
 - **Rollback:** remove/disable the caller trigger or environment approval to stop publishes; keep published tags/releases immutable (never delete or move a tag to "undo" a release — publish a new patch version instead); revert a bad pipeline change with a normal PR and re-run the dry-run validation before re-enabling publishing.
