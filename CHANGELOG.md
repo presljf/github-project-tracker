@@ -9,6 +9,13 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## v1.2.1 — Tooling contract
+
+- Shared `profiles/node/eslint.config.mjs` baseline.
+- Tooling section in the adoption contract with ESLint/Prettier/globals ranges.
+- `verify:tooling`: version ranges, exact `.tracker-os` tag, shared baseline import, and undeclared-override rejection.
+- Tracker lint runs through the shared baseline.
+
 ## v1.2.0 — Downstream contract hardening
 
 - Reusable desktop-smoke workflow + thin caller contract.
@@ -17,7 +24,6 @@ All notable changes to Project Tracker OS are documented here. The format follow
 - Remote macOS release fallback + checksum verifier.
 - Self-applied ESLint/Prettier.
 - Project metadata contract/verifier, historical reconciliation, branch-hygiene hooks, main-history detection.
-
 
 ## v1.0.0 — 2026-11-11 (release candidate; tag pending T08 live validation + release close)
 

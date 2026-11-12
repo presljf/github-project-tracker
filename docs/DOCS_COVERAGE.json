@@ -160,6 +160,17 @@
         "docs/README.md",
         "docs/REFERENCE.md"
       ]
+    },
+    {
+      "id": "tooling-profile",
+      "paths": [
+        "profiles/node/",
+        "scripts/github/verify-tooling.mjs"
+      ],
+      "docs": [
+        "docs/LINTING.md",
+        "docs/ADOPTION.md"
+      ]
     }
   ]
 }

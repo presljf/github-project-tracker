@@ -1,6 +1,6 @@
 # TASK CLI
 
-**Docs version:** v1.2.0-docs.1 · Status: available now
+**Docs version:** v1.2.1-docs.1 · Status: available now
 
 `scripts/github/task.mjs` implements the task lifecycle with DoR/WIP/DoD checks. It reads `tracker.config.json`, updates the Project Status field, assigns the owner, and posts standard comments.
 

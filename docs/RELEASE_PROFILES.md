@@ -1,6 +1,6 @@
 # RELEASE PROFILES
 
-**Docs version:** `v1.2.0-docs.1` · Target template: `v1.2.0`
+**Docs version:** `v1.2.1-docs.1` · Target template: `v1.2.1`
 **Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and copy-mode examples under `profiles/release/`.
 **Status:** T10 implements this profile layer; T02 added live dry-run validation (generic/container/package pass, macOS blocked by runner-plan support) and fixed the caller permission-union startup failure. Publishing is dry-run/skip guarded by default; no live release was published.
 **Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
@@ -180,7 +180,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
-    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.2.0
+    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.2.1
     with:
       profile: generic
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
@@ -300,7 +300,7 @@ Run before enabling any publish path (T12 captures evidence for the template rel
 ## 10. Versioning and stability
 
 - The reusable interface is versioned with the template (ACTIONS CATALOG §7.9). Adding optional inputs/outputs/secrets is **minor**; changing dry-run defaults, tag semantics, output names, or requiring a new secret is **major**.
-- Callers pin the exact template tag (`@v1.2.0`) or full SHA; never `@main` or a floating major tag. Composite actions consumed cross-repo are pinned the same way; copy-mode files record their origin template version.
+- Callers pin the exact template tag (`@v1.2.1`) or full SHA; never `@main` or a floating major tag. Composite actions consumed cross-repo are pinned the same way; copy-mode files record their origin template version.
 - Downstream upgrades follow [UPGRADING](./UPGRADING.md): read the changelog/migration, re-pin, re-run the dry-run/dispatch validation, and record the new pin in the tracker config.
 - When the contract changes, update this page, the catalog summary (§7.5), REFERENCE, and the changelog in the same release.
 - **Rollback:** remove/disable the caller trigger or environment approval to stop publishes; keep published tags/releases immutable (never delete or move a tag to "undo" a release — publish a new patch version instead); revert a bad pipeline change with a normal PR and re-run the dry-run validation before re-enabling publishing.
@@ -324,7 +324,7 @@ Live findings fixed in this change:
 1. **Caller permission-union startup failure (fixed).** Initial dispatches of all profiles returned `startup_failure` with zero jobs. Cause: callers granted only the current profile's permission subset while `reusable-release.yml` declares `contents: write` (release job), `packages: write` (container job), and `id-token: write` (package job); GitHub validates the caller grant against the union of called-job declarations. All four callers now grant `contents: write`, `packages: write`, `id-token: write` (§5.1), and the structural test guards it. A temporary branch-ref experiment (interface-only reusable-workflow stub, then real jobs added back) isolated the cause before the fix.
 2. **Package template build (fixed).** The template `package.json` is private and unversioned, so the original `npm pack` placeholder failed live (`npm error Invalid package, must have name and version`). The package caller now stages a versioned docs tarball for validation; real projects `npm pack` their versioned package.
 3. **No-publish checks.** `gh release list` was empty before and after all runs; every run's publish jobs show `skipped`; the `release` environment was never entered; no registry/image push or OIDC exchange occurred.
-4. **Actions queue diagnosis.** 14 runs were stuck `queued` with **zero job records** (created 2026-11-11 20:28–20:46 UTC, including two tag-triggered generic release runs on `v1.0.0`/`v1.2.0`), while runs after ~21:49 UTC completed. GitHub's status history for 2026-11-11 records a Git Operations/Pull Requests incident (20:22–20:26 UTC) and a multi-product incident "including Actions, Pages, and Copilot products" (20:48–21:21 UTC); the stranded entries fall in that degraded window and were never scheduled. Fresh dispatches execute normally, so the **queue issue is resolved for new runs** (operationally cleared). The 14 zombie entries persist in the queued list; this session's mutation policy rejected `gh run cancel` (approval prompts disabled), so the repository owner must cancel them — in particular the two stale tag-triggered `Release (generic)` runs — before treating the queue as clean. `release.yml` stays `disabled_manually`; it was enabled only for the generic dry-run dispatch and disabled again immediately after.
+4. **Actions queue diagnosis.** 14 runs were stuck `queued` with **zero job records** (created 2026-11-11 20:28–20:46 UTC, including two tag-triggered generic release runs on `v1.0.0`/`v1.2.1`), while runs after ~21:49 UTC completed. GitHub's status history for 2026-11-11 records a Git Operations/Pull Requests incident (20:22–20:26 UTC) and a multi-product incident "including Actions, Pages, and Copilot products" (20:48–21:21 UTC); the stranded entries fall in that degraded window and were never scheduled. Fresh dispatches execute normally, so the **queue issue is resolved for new runs** (operationally cleared). The 14 zombie entries persist in the queued list; this session's mutation policy rejected `gh run cancel` (approval prompts disabled), so the repository owner must cancel them — in particular the two stale tag-triggered `Release (generic)` runs — before treating the queue as clean. `release.yml` stays `disabled_manually`; it was enabled only for the generic dry-run dispatch and disabled again immediately after.
 5. **`actionlint` unavailable (documented).** Not installed in the authoring environment and tool installation/network download is blocked by this session's policy. Substitute validation: PyYAML parse + duplicate-key detection for every workflow/action, the structural `tests/release-profiles.test.mjs` suite, and live dispatch validation (the strongest validator). T12/T15 must run `actionlint .github/workflows/*.yml` where available.
 6. **T10 local verification retained:** checksum generator behaviour and `prepare` guard cases from §8 remain covered by the local harness and tests; the new permission-union test prevents this startup-failure regression.
 

@@ -6,14 +6,14 @@ import path from 'node:path';
 import { verifyContract } from '../scripts/github/verify-contract.mjs';
 
 const contract = {
-  trackerVersion: '1.2.0',
+  trackerVersion: '1.2.1',
   requiredConfig: ['repository', 'automation.templateVersion'],
   requiredWorkflows: [{ id: 'ci', reusable: 'presljf/github-project-tracker/.github/workflows/reusable-ci.yml' }],
   requiredProfiles: ['node'],
   requiredDocs: ['docs/TRACKER.md'],
   overrideManifest: 'tracker.overrides.json',
 };
-function fixture({ pin = '1.2.0', workflow = true, docs = true } = {}) {
+function fixture({ pin = '1.2.1', workflow = true, docs = true } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'contract-'));
   fs.mkdirSync(path.join(root, '.github/workflows'), { recursive: true });
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
@@ -25,7 +25,7 @@ function fixture({ pin = '1.2.0', workflow = true, docs = true } = {}) {
   if (workflow)
     fs.writeFileSync(
       path.join(root, '.github/workflows/ci.yml'),
-      'jobs:\n  ci:\n    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.2.0\n',
+      'jobs:\n  ci:\n    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.2.1\n',
     );
   return root;
 }

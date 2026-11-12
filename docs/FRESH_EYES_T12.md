@@ -4,7 +4,7 @@
 **Reviewer:** independent uninvolved agent session (`app-layer`; no tracker implementation context)
 **Mode:** read-only; no repository/GitHub mutations; temp validation files removed
 **Snapshot:** HEAD `35a0800` + T12 working-tree fixes
-**Verdict:** after the fixes below, the manual UI/`gh` and bootstrap → task CLI → audit paths are documented and tested end-to-end in the T08 scratch project; template patch v1.2.0 carries the GraphQL adapter fix found by T08.
+**Verdict:** after the fixes below, the manual UI/`gh` and bootstrap → task CLI → audit paths are documented and tested end-to-end in the T08 scratch project; template patch v1.2.1 carries the GraphQL adapter fix found by T08.
 
 ## Checks run
 
@@ -48,7 +48,7 @@
 - Quickstart sets native issue type + milestone; README tells users to replace/check the bootstrap acceptance placeholder before `done`.
 - Audit docs no longer overclaim native-type fallback, duplicate/retired labels, or secret scanning.
 - Checksum examples use repo-root working directory; audit actions pinned by SHA; `TRACKER_TOKEN` fixed-name documented.
-- T08 live scratch: bootstrap apply 51 actions; re-run 1 action/no creates; task lifecycle complete; strict audit 0 violations. v1.0.0 GraphQL options defect fixed in v1.2.0.
+- T08 live scratch: bootstrap apply 51 actions; re-run 1 action/no creates; task lifecycle complete; strict audit 0 violations. v1.0.0 GraphQL options defect fixed in v1.2.1.
 
 ## Deferred nits / limitations
 

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-export function findStaleVersions({ files, stale = ['1.0.1', '1.0.2'], allow = [] } = {}) {
+export function findStaleVersions({ files, stale = ['1.0.1', '1.0.2', '1.2.0'], allow = [] } = {}) {
   const allowed = new Set(allow);
   const violations = [];
   for (const rel of files) {
@@ -24,7 +24,7 @@ function main() {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'tracker.config.json'), 'utf8'));
   const current = String(config.automation.templateVersion || '');
   const files = execFileSync('git', ['ls-files', '*.md', '*.yml', '*.yaml', '*.json', '*.mjs'], { cwd: root, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-  const violations = findStaleVersions({ files, stale: ['1.0.1', '1.0.2'], allow: ['CHANGELOG.md', 'docs/ROADMAP_v1.1.0.md', 'package-lock.json'] });
+  const violations = findStaleVersions({ files, stale: ['1.0.1', '1.0.2', '1.2.0'], allow: ['CHANGELOG.md', 'docs/ROADMAP_v1.1.0.md', 'package-lock.json'] });
   if (violations.length) {
     console.error(`Version consistency FAILED — ${violations.length} file(s) still reference an older version:`);
     for (const f of violations) console.error(`- ${f}`);

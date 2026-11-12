@@ -1,6 +1,6 @@
 # REFERENCE
 
-**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
+**Docs version:** v1.2.1-docs.1 · Target template: v1.2.1
 **Scope:** commands, config, fields/statuses, labels, templates, audit rules, workflows, tokens, runners, release profiles, and expected outputs.
 
 > **Availability key:** **now** = shipped and validated in this template; **planned** = contract/example only, not claimed as implemented. Manual fallbacks remain in [HOW TO USE](./HOW_TO_USE.md).
@@ -500,7 +500,7 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 
 ## 20. Versioning
 
-- Docs version: `v1.2.0-docs.1` for this target; update with each template release.
+- Docs version: `v1.2.1-docs.1` for this target; update with each template release.
 - Template/config: exact `vX.Y.Z`; patch/minor/major meanings in [UPGRADING](./UPGRADING.md).
 - Reference is normative for commands; handbook is task-oriented; playbook is conceptual; T12 validates the docs set before release.
 

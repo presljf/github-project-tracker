@@ -1,25 +1,8 @@
 import js from '@eslint/js';
 import globals from 'globals';
 
-/**
- * Generic Node >=22 lint baseline for Project Tracker adopters.
- *
- * Copy this file and add project-specific overrides (browser files, generated paths,
- * framework rules) below the base config. Do not add style rules that Prettier owns.
- */
+/** Generic Node lint baseline shared by Tracker OS and adopters. */
 export default [
-  {
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/.git/**',
-      '**/generated/**',
-      '**/.next/**',
-      '**/out/**',
-    ],
-  },
   js.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs}'],
@@ -31,7 +14,13 @@ export default [
     rules: {
       'no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+        {
+          args: 'none',
+          vars: 'local',
+          ignoreRestSiblings: true,
+          varsIgnorePattern: '^_',
+          caughtErrors: 'none',
+        },
       ],
       'no-undef': 'error',
       'no-dupe-keys': 'error',
@@ -43,9 +32,5 @@ export default [
       'no-console': 'off',
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
-  },
-  {
-    files: ['test/**/*.{js,mjs,cjs}', '**/*.test.{js,mjs,cjs}'],
-    languageOptions: { globals: { ...globals.node } },
   },
 ];
