@@ -195,3 +195,8 @@ as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #8
 
 Run `verify:metadata` against the live project. Required fields must exist; Priority is an
 optional standard field; project-specific forbidden fields are rejected. Open/current work is strict with canonical `[Release]` / `[Sprint]` titles; legacy title formats fail. Historical audits use `--include-closed`; migration uses `--warn-only` until T20 reconciliation is approved.
+
+
+## Metadata reconciliation
+
+Run report-first (`--repair=none`), review the plan, then apply open-only or selected repairs. Closed history is report-only by default; exceptions/OIs are recorded for issues not safely changed.
