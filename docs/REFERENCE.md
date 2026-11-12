@@ -183,9 +183,10 @@ gh issue edit 123 --repo OWNER/REPO \
 
 If native sub-issues/dependencies are unavailable: use body links + labels; document fallback.
 
-Create trackers and tasks through `bootstrap.mjs`, `task.mjs`, or `stream.mjs`. If board creation
-used raw `gh`/UI instead, assert the intended tree and run the advisory audit before starting work
-(§5.9).
+Create trackers and tasks through `bootstrap.mjs` (it creates and links the tree); `task.mjs` and
+`stream.mjs` operate on that tree, and `task.mjs start` enforces the existing parent link. If board
+creation used raw `gh`/UI instead, assert the intended tree and run the advisory audit before
+starting work (§5.9).
 
 ### Views
 ```bash
@@ -361,6 +362,12 @@ node scripts/github/reconcile-status.mjs --config tracker.config.json --json    
 npm run reconcile:status                                                       # report-only, default config
 ```
 
+A repository that pins the tracker as a submodule runs the pinned copy with its project token:
+
+```bash
+GH_TOKEN=$(gh auth token) node .tracker-os/scripts/github/reconcile-status.mjs --config tracker.config.json
+```
+
 Report-only on a clean board (exit 0, no mutations):
 
 ```text
@@ -428,7 +435,7 @@ gh api repos/OWNER/REPO/issues/RELEASE_ISSUE/sub_issues \
   --jq '.[] | "\(.number)\t\(.state)\t\(.title)"'
 gh api repos/OWNER/REPO/issues/SPRINT_ISSUE/sub_issues \
   --jq '.[] | "\(.number)\t\(.state)\t\(.title)"'
-# inverse link: a sprint/task parent is its tracker; 404 = no parent (top-level tracker, expected for a release/stream)
+# inverse link: a sprint/task parent is its tracker; 404 = no parent (e.g. a top-level [Stream])
 gh api repos/OWNER/REPO/issues/SPRINT_ISSUE/parent --jq '.number'
 
 # tooling: tasks under a stream
@@ -600,7 +607,8 @@ Rule codes appear as `[CODE]` in output and as `violations[].code` / `warnings[]
 `--json`; use §5.8–5.9 to repair close-out findings. `PROJECT_STATUS_STALE` is a warning and never
 affects the exit code; `SPRINT_HIERARCHY_MISSING_RELEASE` follows the normal advisory/strict rule
 (advisory run exits 0, `--strict` exits 1 — adopters running strict audits may only now be able to
-see pre-existing unlinked open sprints; the v1.3.2 release task owns the CHANGELOG/UPGRADING note).
+see pre-existing unlinked open sprints; the v1.3.2 release task owns the CHANGELOG entry and the
+version/pin/cards refresh).
 
 ## 13. Workflow catalog
 

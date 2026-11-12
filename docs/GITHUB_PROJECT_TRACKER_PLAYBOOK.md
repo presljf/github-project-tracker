@@ -153,8 +153,9 @@ Plus:
 - Gate issues and adoption tasks are blocked by external releases via native "blocked by" links where supported.
 - Do not close a parent with open children unless deferral is explicitly recorded.
 - A **sprint is a child of its release**; a **task is a child of its sprint** (tooling: tasks are
-  children of the `[Stream]` container). Create the tree with `bootstrap.mjs`/`task.mjs`/`stream.mjs`;
-  if it was created by raw `gh`/UI, assert the child/parent links and run the advisory audit before
+  children of the `[Stream]` container). Create the tree with `bootstrap.mjs` (task/stream CLIs
+  operate on it; `task.mjs start` enforces the existing parent link); if it was created by raw
+  `gh`/UI, assert the child/parent links and run the advisory audit before
   starting work (REFERENCE §5.9). The audit flags open product sprints without a release ancestor
   (`SPRINT_HIERARCHY_MISSING_RELEASE`).
 
