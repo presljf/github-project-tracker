@@ -38,5 +38,8 @@
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "prettier": "^3.10.0"
+  },
+  "overrides": {
+    "espree": "11.2.0"
   }
 }
