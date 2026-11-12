@@ -16,6 +16,20 @@ This guide onboards a **new project** onto the tracker. The CastDeck pilot is on
 
 Default: **one board per project**, repo linked. Do not create an umbrella until per-project boards are healthy.
 
+### 0.1 Choose the work profile
+
+`tracker.config.json` selects the enforced lifecycle. The choice is per repo and optional:
+
+| `workProfile` | Lifecycle | Use when |
+|---|---|---|
+| `product` (default; absent) | `[Release]` → `[Sprint]` → tasks with Release/Sprint fields | versioned product work planned as releases/sprints |
+| `tooling` | `[Stream]` → tasks with a `Stream` field; tag (if any) is the version record | tooling/pipeline work that has no versioned release until the tag is cut |
+
+`tooling` is not a weaker path: DoR, WIP = 1, assignee/check-in, PR + evidence on `done`, and the
+stream close gate are enforced by the same engine. See
+[profiles/tooling](../profiles/tooling/README.md) for the config shape and lifecycle commands.
+Existing `product` configs are unchanged; a declared `Stream` field in product mode is ignored.
+
 ## 1. Preconditions
 
 - GitHub repo(s) with permission to enable Issues/Projects/Actions.
@@ -50,6 +64,11 @@ gh api repos/OWNER/REPO/milestones -f title="v0.1.0" -f description="First relea
 
 ### 2.3 Fields
 Create Status (`Todo`, `In Progress`, `In Review`, `Blocked`, `Done`), Release, Sprint, Area, Kind (`feature`, `fix`, `ux`, `spike`, `test`, `infra`), Estimate (`S`,`M`,`L`), Source (`Internal`, Downstream). Avoid reserved field name `Type`; use `Kind`.
+
+For the tooling profile, declare `Stream` instead of Release/Sprint: `"fields": { "Stream": { "options": ["v1.3.1"] } }`.
+`bootstrap.mjs` creates it from config; `stream.mjs open` / `project-field-option.mjs --field Stream --option <delivery>`
+append new per-delivery options safely (existing option ids, colours, and item values are preserved). `releases` may
+be `[]` in tooling configs because the tag is the version record.
 
 ### 2.4 Views/workflows
 Create In flight, Current sprint, Roadmap, Blocked, Release readiness, Recently done, Downstream. Enable auto-add and close→Done; do not auto-start work.
@@ -97,6 +116,10 @@ Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION
 
 Pilot example (clearly marked): `examples/castdeck.config.json` shows a real project config; do not copy its release content.
 
+**Tooling profile alternative:** instead of release/sprint trackers, open one `[Stream] <name> — <delivery>`
+container per delivery (`stream.mjs open`) and add tasks as sub-issues carrying the same `Stream` field
+option. The tag records the version; stream close requires every child task done and the release gate green.
+
 ## 5. Audit, CI, protection
 
 - Configure the tracker audit token as a secret (project-scoped).
@@ -132,7 +155,9 @@ Do one small docs/config task end-to-end:
 - [ ] Parent sprint progress updates.
 - [ ] Audit/WIP check.
 
-Do not start feature work until the first task proves the loop.
+Tooling profile variant: open a `[Stream]` container, add the task as its sub-issue with the `Stream`
+field, start with `task.mjs start --stream`, finish with `done --pr ... --evidence ...`, then close the
+stream after the release gate passes. Do not start feature work until the first task proves the loop.
 
 ## 8. Adoption checklist
 

@@ -14,6 +14,19 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 7. **Plan changes are explicit.** Dated `plan-change` comment + label + tracker/field updates; no silent scope changes.
 8. **No silent WIP.** If a session ends, post a checkpoint and hand off.
 
+## Work profiles
+
+The repo config selects the enforced lifecycle (`workProfile`; absent means `product`):
+
+- **`product` (default)** — `[Release]` → `[Sprint]` → tasks with Release/Sprint fields. Start with
+  `task.mjs start --issue N`; close via the sprint/release lifecycle.
+- **`tooling`** — `[Stream]` → tasks with a `Stream` field; the tag (if any) is the version record.
+  Start with `task.mjs start --issue N --stream S`; `done` also requires `--pr`; close the delivery
+  with `stream.mjs close` (refuses while child tasks are open and requires the release gate green).
+
+Confirm the profile in the task issue/config before checking in; a product config rejects
+`--stream` and a tooling config rejects a start without it. Do not mix lifecycles in one delivery.
+
 ## Session start
 
 - [ ] Read the task issue (Why, goal, non-goals, acceptance, test/evidence, deps).
@@ -21,6 +34,8 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 - [ ] Check WIP: no other In Progress task for this owner.
 - [ ] Confirm branch/base and repo state (`git status`, pull main).
 - [ ] Check task type/fields/blockers; no unresolved dependency.
+- [ ] For tooling work, confirm the open `[Stream]` container and that the task is its sub-issue with
+      a matching `Stream` field option.
 - [ ] Check docs/related issues for context.
 
 ## Check-in
@@ -46,6 +61,8 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 - Attach PR/evidence; set In Review only when ready for review.
 - Verify acceptance criteria one by one; report deviations.
 - Merge with `Closes #`; set Done; post [check-out](./comment-templates/check-out.md) with tests/evidence/follow-ups.
+- Tooling profile: `done` requires the PR plus evidence; close the `[Stream]` container only after
+  every child task is done and the release gate is green (`stream.mjs close --stream S`).
 - Update parent sprint/release if exit/gates affected.
 - Do not claim completion for unverified work; mark Blocked/defer instead.
 

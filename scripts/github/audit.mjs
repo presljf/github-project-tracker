@@ -11,9 +11,18 @@ import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from './lib/github.mjs';
 import { parseArgs, UsageError } from './lib/cli.mjs';
+import {
+  closedEvidenceRules,
+  fieldMissingCode,
+  getWorkProfileAdapter,
+  requiredItemFields,
+  requiresMilestone,
+  taskAncestryRequirements,
+} from './lib/work-profile.mjs';
 
 export function issueKind(title) {
   if (/^\[(Program|Roadmap)\]/i.test(title)) return 'roadmap';
+  if (/^\[Stream\]/i.test(title)) return 'stream';
   if (/^\[Release\]/i.test(title) || /^\[v?\d+\.\d+\.\d+\]\s*Release\b/i.test(title)) return 'release';
   if (/^\[Sprint\]/i.test(title) || /^\[\d+\.\d+\.\d+\.\d+\]\s*Sprint\b/i.test(title)) return 'sprint';
   return 'task';
@@ -42,6 +51,7 @@ function normalizeItems(items) {
       status: item.status || '',
       release: item.release || '',
       sprint: item.sprint || '',
+      stream: item.stream || '',
       area: item.area || '',
       kind: item.kind || '',
       estimate: item.estimate || '',
@@ -105,6 +115,7 @@ export function auditTracker({ config, data, strict = false }) {
   const warnings = [];
   const add = (code, issue, message) =>
     violations.push({ code, issue: issue?.number ?? null, title: issue?.title || null, message });
+  const profile = getWorkProfileAdapter(config);
   const issues = (data.issues || []).map(normalizeIssue);
   const issueByNumber = new Map(issues.map((issue) => [issue.number, issue]));
   const items = normalizeItems(data.projectItems);
@@ -113,13 +124,13 @@ export function auditTracker({ config, data, strict = false }) {
   const dependencies = normalizeDependencies(data.dependencies);
   const parentOf = new Map();
   for (const [parent, children] of subIssues) for (const child of children) parentOf.set(child, parent);
+  const evidenceRules = closedEvidenceRules(profile);
+  const ancestryRequirements = taskAncestryRequirements(profile);
 
   const hasCheckIn = (number) =>
     (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
   const hasBlockerNote = (number) => (comments.get(number) || []).some((body) => /###\s*Blocker/i.test(body));
-  const hasSprintExit = (number) =>
-    (comments.get(number) || []).some((body) => /###\s*Sprint (demo|close|exit)|Status\s*→\s*Done/i.test(body));
-  const hasReleaseExit = (number) => (comments.get(number) || []).some((body) => /###\s*Release close/i.test(body));
+  const hasEvidence = (number, pattern) => (comments.get(number) || []).some((body) => pattern.test(body));
 
   if (!config.automation?.templateVersion)
     add('TEMPLATE_VERSION_MISSING', null, 'config.automation.templateVersion is required');
@@ -128,14 +139,14 @@ export function auditTracker({ config, data, strict = false }) {
   for (const issue of issues) {
     const kind = issueKind(issue.title);
     if (issue.state !== 'OPEN') {
-      if (kind === 'sprint' && !hasSprintExit(issue.number))
-        add('SPRINT_EXIT_EVIDENCE_MISSING', issue, 'closed sprint has no demo/exit evidence comment');
-      if (kind === 'release' && !hasReleaseExit(issue.number))
-        add('RELEASE_EXIT_EVIDENCE_MISSING', issue, 'closed release has no close evidence comment');
+      for (const rule of evidenceRules) {
+        if (!rule.kinds.includes(kind)) continue;
+        if (!hasEvidence(issue.number, rule.pattern)) add(rule.code, issue, rule.message);
+      }
       continue;
     }
     if (!issue.type) add('TYPE_MISSING', issue, 'open issue has no native type');
-    if (kind !== 'roadmap' && !issue.milestone)
+    if (requiresMilestone(profile, kind) && !issue.milestone)
       add('MILESTONE_MISSING', issue, 'open release/sprint/task has no milestone');
     if (kind === 'task') {
       for (const section of missingTaskSections(issue.body)) {
@@ -143,19 +154,18 @@ export function auditTracker({ config, data, strict = false }) {
       }
       let current = issue.number;
       const seen = new Set();
-      let hasRelease = false;
-      let hasSprint = false;
+      const ancestorKinds = new Set();
       while (parentOf.has(current) && !seen.has(current)) {
         seen.add(current);
         current = parentOf.get(current);
         const parent = issueByNumber.get(current);
         if (!parent) continue;
-        const parentKind = issueKind(parent.title);
-        if (parentKind === 'release') hasRelease = true;
-        if (parentKind === 'sprint') hasSprint = true;
+        ancestorKinds.add(issueKind(parent.title));
       }
-      if (!hasRelease) add('TASK_HIERARCHY_MISSING_RELEASE', issue, 'open task has no release tracker ancestor');
-      if (!hasSprint) add('TASK_HIERARCHY_MISSING_SPRINT', issue, 'open task has no sprint tracker ancestor');
+      for (const requirement of ancestryRequirements) {
+        if (!ancestorKinds.has(requirement.kind))
+          add(requirement.code, issue, `open task has no ${requirement.noun} tracker ancestor`);
+      }
     }
     if (issue.labels.some((name) => /^(area|release|sprint|type):/i.test(name))) {
       add('DUPLICATE_DIMENSION_LABEL', issue, 'dimension is represented by a field/type/milestone and a label');
@@ -164,13 +174,9 @@ export function auditTracker({ config, data, strict = false }) {
     if (!item) {
       add('PROJECT_ITEM_MISSING', issue, 'open issue is not on the configured project');
     } else {
-      for (const field of ['Area', 'Kind', 'Estimate']) {
-        if (!item[field.toLowerCase()])
-          add(`FIELD_${field.toUpperCase()}_MISSING`, issue, `project field ${field} is empty`);
+      for (const field of requiredItemFields(profile, kind)) {
+        if (!item[field.toLowerCase()]) add(fieldMissingCode(profile, field), issue, `project field ${field} is empty`);
       }
-      if (kind !== 'roadmap' && !item.release) add('FIELD_RELEASE_MISSING', issue, 'release field is empty');
-      if ((kind === 'sprint' || kind === 'task') && !item.sprint)
-        add('FIELD_SPRINT_MISSING', issue, 'sprint field is empty');
       if (issue.labels.includes('source:downstream') && !item.source)
         add('FIELD_SOURCE_MISSING', issue, 'downstream issue has no Source field');
       if (item.status === 'Blocked') {
@@ -214,6 +220,7 @@ export function auditTracker({ config, data, strict = false }) {
   const result = {
     ok: violations.length === 0,
     strict: Boolean(strict),
+    workProfile: profile.name,
     checked: { issues: issues.length, projectItems: items.size },
     violations,
     warnings,
@@ -260,6 +267,8 @@ function usage() {
     'Usage: node scripts/github/audit.mjs --config tracker.config.json [--advisory|--strict] [--json]',
     '',
     'Default: advisory (exit 0, violations printed).',
+    'Invariants follow config.workProfile: "product" (default; Release → Sprint → Task) or',
+    '"tooling" ([Stream] → Task; Stream field and stream close evidence).',
     '  --strict    Exit 1 when any violation is found (release-gate mode)',
     '  --advisory  Explicit advisory mode (default)',
     '  --json      Machine-readable result',

@@ -261,6 +261,8 @@ Only start a task when:
 - [ ] Dependencies/blockers linked.
 - [ ] Estimate, Release, Sprint, Area, Kind fields set; Source if downstream.
 - [ ] Native type + no unresolved blocker.
+- [ ] Tooling profile: open `[Stream]` container exists, the task is its sub-issue, and the same
+      `Stream` option is set on the task; Release/Sprint/milestone are not required.
 
 If not ready, set **Todo** and comment what is missing; do not start.
 
@@ -327,6 +329,10 @@ Check-out flow:
 5. Post [check-out](./comment-templates/check-out.md), including tests/evidence/deviations.
 6. Update parent sprint/release if exit criteria affected.
 
+Tooling profile: use `task.mjs done --issue N --pr <PR> --evidence "..."` — the PR is required, and
+the audit flags closed tooling tasks without a `### Check-out` comment. `[Stream]` containers are
+closed by `stream.mjs close`, never by a PR closing keyword.
+
 ```bash
 gh pr merge --squash --delete-branch
 # ✓ Merged pull request #...
@@ -366,6 +372,27 @@ Acceptance: no Done sprint with open children unless deferral is recorded.
 - Release notes/docs updated; release tracker + milestone closed; final summary posted.
 - Do not close with open child sprints unless deferred.
 
+### Tooling profile: Stream → Task deliveries
+
+Repos with `"workProfile": "tooling"` replace the release/sprint hierarchy with unversioned
+`[Stream]` containers; the tag (if any) is the version record.
+
+```bash
+# open a delivery container (appends the per-delivery Stream option safely)
+node scripts/github/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance"
+
+# start a task inside it (task must be a sub-issue with the same Stream option)
+node scripts/github/task.mjs start --issue 123 --stream 120 --owner presljf
+
+# check out with PR + evidence, then close the container after every child task is done
+node scripts/github/task.mjs done --issue 123 --pr https://github.com/OWNER/REPO/pull/45 --evidence "npm test 137/137"
+node scripts/github/stream.mjs close --stream 120 --evidence "release gate green" --tag v1.3.1
+```
+
+`close` refuses while child tasks are open, requires the release gate green, records
+`### Stream close evidence`, and validates the tag against `automation.tagPattern`. See
+[profiles/tooling](../profiles/tooling/README.md).
+
 ## 13. Audit
 
 Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (or `--strict` for release gates).
@@ -378,10 +405,12 @@ Checklist:
 - [ ] WIP ≤ 1 per owner (or documented exception).
 - [ ] Blocked has reason + dependency link.
 - [ ] No duplicate/retired labels.
-- [ ] Sprint/release Done has exit evidence.
+- [ ] Sprint/release Done has exit evidence (product profile); closed stream has `### Stream close evidence`
+      and closed tooling tasks have `### Check-out` evidence (tooling profile).
 - [ ] Template version pinned; downstream issues have origin/version/context.
 - [ ] No secrets in config/artifacts (manual review; audit does not scan comments).
-- [ ] Open tasks have required DoR sections and release/sprint tracker ancestry (strict audit).
+- [ ] Open tasks have required DoR sections and profile-correct tracker ancestry (release+sprint for
+      product, `[Stream]` for tooling) and profile-correct fields.
 
 Enforcement: advisory in CI first; required at release gates once stable. Audit token is project-scoped and stored as a secret.
 

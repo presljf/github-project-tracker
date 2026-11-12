@@ -11,7 +11,8 @@ import { validateConfig } from './validate-config.mjs';
 import { evaluateCleanTree, gitStatus } from './lib/preflight.mjs';
 import { issueKind } from './audit.mjs';
 import { createGitHub } from './lib/github.mjs';
-import { parseArgs, UsageError } from './lib/cli.mjs';
+import { parseArgs, parseIssueRef, UsageError } from './lib/cli.mjs';
+import { doneRequiresPr, getWorkProfileAdapter } from './lib/work-profile.mjs';
 
 const STATUSES = ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'];
 
@@ -123,24 +124,64 @@ async function checkWip({ ctx, owner, dryRun }) {
   return null;
 }
 
-export async function checkDoR({ config, github, issueNumber, owner, dryRun = false }) {
+async function validateStreamMembership({ config, github, issue, item, streamNumber, profile }) {
+  const { repoOwner, repoName } = repoParts(config);
+  const streamCtx = await readContext({ config, github, issueNumber: streamNumber });
+  const streamKind = issueKind(streamCtx.issue.title);
+  if (streamKind !== 'stream')
+    throw new Error(`--stream #${streamNumber} is a ${streamKind} tracker, not a [Stream] container`);
+  if (String(streamCtx.issue.state).toUpperCase() !== 'OPEN')
+    throw new Error(`--stream #${streamNumber} is not open; start work inside an open [Stream] container`);
+  if (!streamCtx.item) throw new Error(`DoR: stream #${streamNumber} is not on project #${config.project.number}`);
+  const streamValue = streamCtx.item[profile.streamField.toLowerCase()];
+  if (!streamValue)
+    throw new Error(
+      `DoR: stream #${streamNumber} project field ${profile.streamField} is empty; set the per-delivery Stream option first`,
+    );
+  const children = await github.listSubIssues(repoOwner, repoName, streamNumber);
+  const childNumbers = (children || []).map((child) => child.number ?? child);
+  if (!childNumbers.includes(issue.number))
+    throw new Error(
+      `DoR: task #${issue.number} is not a sub-issue of stream #${streamNumber}; link it under the [Stream] container first`,
+    );
+  const taskValue = item[profile.streamField.toLowerCase()];
+  if (taskValue && taskValue !== streamValue)
+    throw new Error(
+      `DoR: task ${profile.streamField} field ${JSON.stringify(taskValue)} does not match stream #${streamNumber} (${JSON.stringify(streamValue)})`,
+    );
+  return streamCtx;
+}
+
+export async function checkDoR({ config, github, issueNumber, owner, dryRun = false, stream = null }) {
+  const profile = getWorkProfileAdapter(config);
   const ctx = await readContext({ config, github, issueNumber });
   const { issue, item } = ctx;
   const kind = issueKind(issue.title);
   if (kind !== 'task')
-    throw new Error(`#${issueNumber} is a ${kind} tracker, not a task; use the sprint/release lifecycle`);
+    throw new Error(
+      `#${issueNumber} is a ${kind} tracker, not a task; use the ${profile.isTooling ? 'stream' : 'sprint/release'} lifecycle`,
+    );
   if (String(issue.state).toUpperCase() !== 'OPEN') throw new Error(`#${issueNumber} is not open`);
   if (!issue.issueType?.name) throw new Error('DoR: issue has no native type');
-  if (!issue.milestone) throw new Error('DoR: issue has no milestone');
   if (!item) throw new Error(`DoR: issue is not on project #${config.project.number}`);
-  for (const fieldName of ['Area', 'Kind', 'Estimate', 'Release', 'Sprint']) {
+  let streamCtx = null;
+  if (profile.isTooling) {
+    if (stream === null || stream === undefined)
+      throw new UsageError('DoR: the tooling work profile requires --stream <issue|url> (the [Stream] container)');
+    streamCtx = await validateStreamMembership({ config, github, issue, item, streamNumber: stream, profile });
+  } else {
+    if (stream !== null && stream !== undefined)
+      throw new UsageError('--stream is only valid for workProfile "tooling"; the product profile uses Release/Sprint');
+    if (!issue.milestone) throw new Error('DoR: issue has no milestone');
+  }
+  for (const fieldName of profile.taskFields) {
     if (!item[fieldName.toLowerCase()]) throw new Error(`DoR: project field ${fieldName} is empty`);
   }
   if (!hasAcceptance(issue.body)) throw new Error('DoR: issue has no "## Acceptance criteria" section');
   const deps = await github.issueDependencies(ctx.repoOwner, ctx.repoName, issueNumber);
   if ((deps?.blocked_by || 0) > 0) throw new Error(`DoR: issue is blocked by ${deps.blocked_by} dependency(ies)`);
   const wip = await checkWip({ ctx, owner, dryRun });
-  return { ctx, kind, warning: wip };
+  return { ctx, kind, warning: wip, profile, stream: streamCtx };
 }
 
 function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
@@ -165,6 +206,7 @@ export async function startTask({
   owner,
   executor,
   branch,
+  stream = null,
   dryRun = false,
   repoRoot = process.cwd(),
   gitExec = null,
@@ -184,8 +226,23 @@ export async function startTask({
   } catch {
     hooksWarning = 'git hooks not installed; run npm run hooks:install';
   }
-  const { ctx, warning } = await checkDoR({ config, github, issueNumber, owner, dryRun });
+  const {
+    ctx,
+    warning,
+    profile,
+    stream: streamCtx,
+  } = await checkDoR({
+    config,
+    github,
+    issueNumber,
+    owner,
+    dryRun,
+    stream,
+  });
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
+  const dorSummary = profile.isTooling
+    ? 'type/stream/fields/acceptance/dependencies checked'
+    : 'type/milestone/fields/acceptance/dependencies checked';
   const comment = [
     '### Check-in',
     '',
@@ -194,7 +251,10 @@ export async function startTask({
     `- **Branch:** \`${git.branch}\``,
     `- **Starting HEAD:** \`${git.head}\``,
     `- **Scope confirmed:** ${ctx.issue.title}`,
-    '- **DoR:** type/milestone/fields/acceptance/dependencies checked',
+    ...(profile.isTooling
+      ? [`- **Work profile:** ${profile.label}`, `- **Stream:** #${streamCtx.issue.number} — ${streamCtx.issue.title}`]
+      : []),
+    `- **DoR:** ${dorSummary}`,
     ...(allowDirty ? [`- **Dirty-worktree exception:** ${dirtyReason}`] : []),
     '- **Evidence planned:** attach at check-out',
     `- **Risks/blockers:** ${[warning, hooksWarning].filter(Boolean).join('; ') || 'none'}`,
@@ -215,6 +275,8 @@ export async function startTask({
     executor,
     branch: git.branch,
     head: git.head,
+    profile: profile.name,
+    stream: streamCtx ? streamCtx.issue.number : null,
     comment,
     ...(dryRun ? { plannedComment: comment } : {}),
   };
@@ -274,8 +336,19 @@ export async function blockTask({ config, github, issueNumber, reason, blockedBy
   return { ok: true, dryRun, action: 'block', issue: issueNumber, comment: body };
 }
 
+function isPullRequestRef(value) {
+  const text = String(value || '').trim();
+  return /^https?:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+\/?$/.test(text) || /^#?\d+$/.test(text);
+}
+
 export async function doneTask({ config, github, issueNumber, evidence, pr, force = false, dryRun = false }) {
+  const profile = getWorkProfileAdapter(config);
   if (!evidence) throw new UsageError('--evidence or --evidence-file is required for done');
+  if (doneRequiresPr(profile)) {
+    if (!pr)
+      throw new UsageError('--pr is required for done in the tooling work profile (link the PR with its evidence)');
+    if (!isPullRequestRef(pr)) throw new UsageError('--pr must be a pull request URL or number');
+  }
   const ctx = await readContext({ config, github, issueNumber });
   if (String(ctx.issue.state).toUpperCase() !== 'OPEN') throw new Error(`#${issueNumber} is not open`);
   const unchecked = uncheckedAcceptance(ctx.issue.body);
@@ -287,6 +360,12 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
     '### Check-out',
     '',
     '- **Acceptance criteria:** checked',
+    ...(profile.isTooling
+      ? [
+          `- **Work profile:** ${profile.label}`,
+          `- **Stream:** ${ctx.item?.[profile.streamField.toLowerCase()] || '(not set)'}`,
+        ]
+      : []),
     `- **PR:** ${pr || 'not provided'}`,
     `- **Evidence:** ${evidence}`,
     '- **Deviations:** none',
@@ -298,10 +377,11 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
     await github.closeIssue(ctx.repoOwner, ctx.repoName, issueNumber);
     await github.addComment(ctx.repoOwner, ctx.repoName, issueNumber, body);
   }
-  return { ok: true, dryRun, action: 'done', issue: issueNumber, comment: body };
+  return { ok: true, dryRun, action: 'done', issue: issueNumber, profile: profile.name, comment: body };
 }
 
 export async function statusTask({ config, github, issueNumber }) {
+  const profile = getWorkProfileAdapter(config);
   const ctx = await readContext({ config, github, issueNumber });
   return {
     ok: true,
@@ -309,12 +389,14 @@ export async function statusTask({ config, github, issueNumber }) {
     issue: issueNumber,
     title: ctx.issue.title,
     state: ctx.issue.state,
+    workProfile: profile.name,
     assignees: assigneeLogins(ctx.issue),
     status: ctx.item?.status || null,
     fields: ctx.item
       ? {
           release: ctx.item.release || null,
           sprint: ctx.item.sprint || null,
+          ...(profile.isTooling || ctx.item.stream ? { stream: ctx.item.stream || null } : {}),
           area: ctx.item.area || null,
           kind: ctx.item.kind || null,
           estimate: ctx.item.estimate || null,
@@ -330,11 +412,15 @@ function usage() {
     '',
     'Commands:',
     '  start       --issue N [--owner LOGIN] [--executor TEXT] [--branch NAME]',
+    '              [--stream ISSUE|URL]   (required in the tooling work profile)',
     '  checkpoint  --issue N (--message TEXT | --message-file FILE)',
     '  review      --issue N [--pr URL] [--evidence TEXT]',
     '  block       --issue N --reason TEXT [--blocked-by URL]',
     '  done        --issue N (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]',
     '  status      --issue N',
+    '',
+    'Work profile comes from tracker.config.json: "product" (default; Release/Sprint fields) or',
+    '"tooling" ([Stream] container + Stream field; done requires --pr).',
     '',
     'Default: mutations enabled. --dry-run performs read-only validation and prints the planned result.',
   ].join('\n');
@@ -358,6 +444,7 @@ if (isMain) {
           'owner',
           'executor',
           'branch',
+          'stream',
           'message',
           'message-file',
           'pr',
@@ -383,6 +470,8 @@ if (isMain) {
       const owner = args.owner || config.automation?.defaultAssignee || '@me';
       const executor = args.executor || process.env.TRACKER_EXECUTOR || 'agent:session';
       const dryRun = Boolean(args['dry-run']);
+      if (args.stream && command !== 'start') throw new UsageError('--stream is only valid for the start command');
+      const stream = args.stream ? parseIssueRef(args.stream, '--stream') : null;
       const github = createGitHub();
       let result;
       if (command === 'start')
@@ -393,6 +482,7 @@ if (isMain) {
           owner,
           executor,
           branch: args.branch,
+          stream,
           dryRun,
           allowDirty: Boolean(args['allow-dirty']),
           dirtyReason: args['dirty-reason'],

@@ -10,6 +10,8 @@
     "bootstrap": "node scripts/github/bootstrap.mjs",
     "audit": "node scripts/github/audit.mjs",
     "task": "node scripts/github/task.mjs",
+    "stream": "node scripts/github/stream.mjs",
+    "field-option": "node scripts/github/project-field-option.mjs",
     "validate:config": "node scripts/github/validate-config.mjs",
     "docs:check": "node scripts/docs/check-docs.mjs",
     "rate-limit": "node scripts/github/rate-limit.mjs",

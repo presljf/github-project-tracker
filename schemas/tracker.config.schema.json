@@ -22,6 +22,13 @@
       "const": 1,
       "description": "Config contract version. Bump only with a documented migration."
     },
+    "workProfile": {
+      "enum": [
+        "product",
+        "tooling"
+      ],
+      "description": "Enforced work lifecycle: product = Release → Sprint → Task with Release/Sprint fields (default); tooling = [Stream] container → Task with a Stream field and the tag as the version record. Absent means product."
+    },
     "repository": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
@@ -63,8 +70,6 @@
     "fields": {
       "type": "object",
       "required": [
-        "Release",
-        "Sprint",
         "Area",
         "Kind",
         "Estimate"
@@ -178,6 +183,30 @@
               }
             }
           }
+        },
+        "Stream": {
+          "type": "object",
+          "required": [
+            "options"
+          ],
+          "additionalProperties": false,
+          "description": "Tooling-profile delivery container field: one option per [Stream] delivery. Optional in the product profile; required when workProfile is tooling.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Project field name (default Stream). Override only if the project board uses another name."
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
         }
       }
     },
@@ -222,7 +251,8 @@
     },
     "releases": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
+      "description": "Product-profile plan skeleton (releases → sprints → tasks). The product profile requires at least one release; tooling-profile repos may leave it empty because the tag is the version record.",
       "items": {
         "type": "object",
         "required": [

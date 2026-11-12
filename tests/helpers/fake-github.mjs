@@ -57,7 +57,23 @@ export class FakeGitHub {
     const field = this.fields.find((item) => item.id === fieldId);
     if (!field) throw new Error(`unknown field ${fieldId}`);
     const existing = new Map(field.options.map((option) => [option.name, option]));
-    field.options = optionNames.map((name) => existing.get(name) || { id: next('OPT'), name, color: 'BLUE' });
+    field.options = optionNames.map((entry) => {
+      const spec = typeof entry === 'string' ? { name: entry } : entry;
+      const current = existing.get(spec.name);
+      if (current) {
+        return {
+          ...current,
+          color: spec.color || current.color,
+          description: spec.description ?? current.description,
+        };
+      }
+      return {
+        id: spec.id || next('OPT'),
+        name: spec.name,
+        color: spec.color || 'BLUE',
+        description: spec.description || '',
+      };
+    });
     return structuredClone(field);
   }
 
@@ -115,7 +131,10 @@ export class FakeGitHub {
   async listSubIssues(owner, repo, parent) {
     this.calls.push(['listSubIssues', parent]);
     const children = this.subIssues.get(parent) || [];
-    return children.map((number) => ({ number, state: 'OPEN' }));
+    return children.map((number) => {
+      const issue = this.issues.find((entry) => entry.number === number);
+      return { number, state: issue?.state || 'OPEN' };
+    });
   }
 
   async addSubIssue(owner, repo, parent, child) {

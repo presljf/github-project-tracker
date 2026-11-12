@@ -9,6 +9,17 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## v1.3.0 — Verification & documentation contract (in progress)
+
+- Add the enforced **tooling work profile** (`workProfile: "product" | "tooling"`, default
+  `product`; absent config keeps `product`): `[Stream]` container → Task lifecycle with a `Stream`
+  project field, tooling DoR/WIP/`done` enforcement, `stream.mjs open|close` lifecycle gates,
+  mode-aware audit, safe single-select project-field option append, and a `profiles/tooling/`
+  selection guide. Product behaviour and historical records are unchanged.
+- Remaining v1.3.0 items (remote-only suite policy, verified PASS/FAIL/SKIP counts contract,
+  post-merge-audit hardening, release metadata/tag) land in their own tasks and are recorded at
+  release close.
+
 ## v1.2.2 — Qualified release tooling
 
 - Add `release:bump` with explicit allowlist, exclusions, dry-run diff, and v/dotted-key preservation.
