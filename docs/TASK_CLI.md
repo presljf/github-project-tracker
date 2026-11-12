@@ -138,6 +138,21 @@ hidden wrapper with it) and into the Playwright `globalSetup` via
 `scripts/github/playwright-remote-guard.mjs`. Agents must never set the suite override env — it is
 for deliberate human debugging only. Details: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
+## Counts evidence
+
+When `docs.counts` is configured, test-count evidence at check-out must come from the counted
+inventory and the counts guard, not from remembered numbers:
+
+```bash
+node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
+node scripts/github/guard-docs-counts.mjs
+```
+
+`check` prints `COUNTS_OK ...` on zero drift and fails on count/skip drift, flaky > 0, or malformed
+output; `guard:docs:counts` validates the baseline agreement metadata and generated doc/markers.
+A counts change in the same task/PR must update the baseline + generated doc + markers together
+(see [profiles/counts](../profiles/counts/README.md)).
+
 ## Availability
 
 The task CLI is covered by `npm test` (mock adapter, happy/error/WIP/DoR/DoD/dry-run paths). T12 validates the real end-to-end lifecycle on a scratch issue before release. The tooling work profile, stream open/close lifecycle, and mode-aware audit are covered by `tests/work-profile.test.mjs` (DoR matrix, close gates, a closed rehearsal stream cycle, and audit positive/negative fixtures).

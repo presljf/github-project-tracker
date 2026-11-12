@@ -1,0 +1,33 @@
+{
+  "config": {},
+  "stats": {
+    "startTime": "2026-11-12T17:00:00.000Z",
+    "duration": 1234,
+    "expected": 5,
+    "skipped": 2,
+    "unexpected": 1,
+    "flaky": 1,
+    "interrupted": 0
+  },
+  "suites": [
+    {
+      "title": "desktop",
+      "file": "desktop/smoke.spec.ts",
+      "specs": [
+        { "title": "launches window", "ok": true, "tests": [{ "status": "expected", "results": [{ "status": "passed" }] }] },
+        { "title": "focus ring", "ok": false, "tests": [{ "status": "unexpected", "results": [{ "status": "failed" }] }] },
+        { "title": "native dialog", "ok": true, "tests": [{ "status": "skipped", "results": [] }] }
+      ],
+      "suites": [
+        {
+          "title": "nested",
+          "specs": [
+            { "title": "deep skip", "ok": true, "tests": [{ "status": "skipped", "results": [] }] }
+          ],
+          "suites": []
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

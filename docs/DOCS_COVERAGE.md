@@ -14,6 +14,13 @@ Documentation updates are enforced by CI, not by a checklist.
 
 `docs-guard` runs `docs:check`, `guard:gh`, and `guard-docs`; branch protection requires it on `main`. Adopters use the no-copy reusable guard workflow.
 
+**Counts contract rule (v1.3.0):** `counts-contract` maps
+`scripts/github/suite-counts.mjs`, `scripts/github/guard-docs-counts.mjs`, and `profiles/counts/` to
+REFERENCE + AGENT_GUIDE + this page, so a change to the counted-runner/guard wiring must update its
+docs. When a repo declares `docs.counts`, `guard:docs:counts` additionally enforces baseline
+agreement metadata and generated `docs/TEST_COUNTS.md`/inline-marker freshness (no test execution);
+it is a separate docs-job step, not part of `guard-docs`.
+
 ## Exceptions
 
 Apply label `docs:no-change` **and** provide a reason:
@@ -27,7 +34,7 @@ The exception is reviewable in the PR; it is not silent.
 ## Current limits
 
 - Native Feature/Bug issue-type wiring is supported by the guard (`--linked-issue-type`) but the CI caller does not yet fetch linked issue types; labels/coverage mapping are the current enforced path.
-- Generated-doc staleness is covered by `docs:check` and card checks; T12/T15 will add more generated checks.
+- Generated-doc staleness is covered by `docs:check` and card checks; `guard:docs:counts` covers the counts baseline/markers when `docs.counts` is configured (absent = no-op). The tracker template does not self-adopt the counts contract yet; adopters wire it per [profiles/counts](../profiles/counts/README.md).
 
 
 ## Lint/format self-check (T18)

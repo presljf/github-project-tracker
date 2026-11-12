@@ -1,0 +1,65 @@
+{
+  "$schema": "../../schemas/test-counts.baseline.schema.json",
+  "schemaVersion": 1,
+  "suites": [
+    {
+      "id": "unit",
+      "modes": [
+        {
+          "mode": "full",
+          "collected": 156,
+          "passed": 156,
+          "failed": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "knownSkips": [],
+          "reviewed": {
+            "on": "2026-11-12",
+            "by": "agent:tracker-os-builder",
+            "evidence": ["https://github.com/presljf/github-project-tracker/pull/120"]
+          }
+        },
+        {
+          "mode": "offline",
+          "collected": 120,
+          "passed": 120,
+          "failed": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "knownSkips": [],
+          "reviewed": {
+            "on": "2026-11-12",
+            "by": "agent:tracker-os-builder",
+            "evidence": ["https://github.com/presljf/github-project-tracker/pull/120"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "desktop-smoke",
+      "modes": [
+        {
+          "mode": "remote-visible",
+          "collected": 60,
+          "passed": 59,
+          "failed": 0,
+          "skipped": 1,
+          "flaky": 0,
+          "knownSkips": [
+            {
+              "test": "desktop › native dialog › deep skip",
+              "reason": "native focus/dialog coverage requires an interactive macOS session; covered manually on release runs",
+              "coveredBy": "https://github.com/presljf/github-project-tracker/issues/114",
+              "agreedOn": "2026-11-12"
+            }
+          ],
+          "reviewed": {
+            "on": "2026-11-12",
+            "by": "agent:tracker-os-builder",
+            "evidence": ["https://github.com/presljf/github-project-tracker/actions/runs/0"]
+          }
+        }
+      ]
+    }
+  ]
+}

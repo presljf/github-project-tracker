@@ -127,6 +127,31 @@ To adopt it:
 See [profiles/desktop](../profiles/desktop/README.md) and
 [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
+## Optional: adopt the verified counts contract
+
+v1.3.0 adds an optional `docs.counts` block (baseline, generated doc, marker files,
+inventory/update commands). Absent config is a no-op and existing docs/suites are unchanged.
+
+To adopt it:
+
+1. Declare the block (see [profiles/counts](../profiles/counts/README.md)) and validate:
+   ```bash
+   node scripts/github/validate-config.mjs tracker.config.json
+   npm run verify:tooling
+   ```
+2. Create the initial baseline from real output:
+   `node scripts/github/suite-counts.mjs record --suite <id> --mode <mode> --results <file>`, then
+   complete `knownSkips` agreement metadata (`reason`/`coveredBy`/`agreedOn`) and
+   `reviewed { on, by, evidence[] }`; `node scripts/github/suite-counts.mjs render` regenerates
+   `docs/TEST_COUNTS.md` + markers.
+3. Add CI gates: suite jobs run `suite-counts check`; docs jobs run `guard:docs:counts`
+   (no test execution). Historical docs are exempt by construction — only `docs.counts.markers`
+   files are checked.
+4. Rollback: remove the `docs.counts` block (and generated/baseline files if desired); absent config
+   restores previous behaviour.
+
+See [REFERENCE §5.7](./REFERENCE.md#57-verified-counts-contract-suite-counts-guard-docs-counts).
+
 ## Rollback
 
 - Revert the upgrade PR **or** restore the previous tag/commit for copied files.

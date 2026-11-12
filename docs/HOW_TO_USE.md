@@ -307,6 +307,9 @@ If you cannot start: leave Todo or set Blocked with a reason; don't create orpha
   `npm run guard:local-suite -- --suite <id>` before spawning (or the hidden wrapper); local
   `--mode report` records `DEFERRED_REMOTE`, and the remote visible run is the evidence. The
   override env is for deliberate human debugging only; agents must not set it.
+- **Verified counts:** when `docs.counts` is configured, run the counted inventory and
+  `suite-counts check`; counts change ⇒ baseline + `docs/TEST_COUNTS.md` + markers change in the
+  same PR (`docs:counts:update`, then complete skip/review agreement). `guard:docs:counts` must pass.
 
 ```bash
 git add -A
@@ -321,6 +324,7 @@ Reviewer checks:
 - [ ] Acceptance criteria/evidence.
 - [ ] Required checks pass; test plan executed.
 - [ ] Remote-only suites: remote run/artifact evidence attached; hidden local runs not cited as evidence.
+- [ ] Counts evidence: `COUNTS_OK` from the counted inventory (when `docs.counts` is configured), not remembered numbers.
 - [ ] No secrets/live calls; docs updated.
 - [ ] One task/one PR.
 - [ ] Deviations/follow-ups recorded.

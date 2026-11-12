@@ -274,6 +274,7 @@ Run before enabling any publish path (T12 captures evidence for the template rel
 - [ ] `actionlint .github/workflows/*.yml` passes in an environment that has it (not available in the authoring environment for T10; T15/T12 must run it on real workflows).
 - [ ] `npm test` passes, including `tests/release-profiles.test.mjs` (structural guards: dry-run defaults, publish guards, tag pattern, environment, pinned SHAs, no secrets).
 - [ ] `npm run validate:config` passes (release config keys remain schema-valid).
+- [ ] When `docs.counts` is configured: suite jobs pass `suite-counts check` (zero drift, no flaky) and the docs job passes `guard:docs:counts` (baseline agreement + generated doc/markers current).
 - [ ] Dispatch dry-run: no release/asset/image/package is created and `dry-run` output is `true`; checksums are produced and verified.
 - [ ] Negative: `publish: true` with `dry-run: true` fails with the contradictory-inputs error.
 - [ ] Negative: a non-release tag (for example `v1.2`) or a tag/version mismatch fails before any build/publish.
