@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 /** Reconcile project metadata to the Tracker OS canonical contract. */
-import fs from 'node:fs';
-import path from 'node:path';
 import { GitHubCli } from './lib/github.mjs';
 
 const RELEASE_LEGACY = /^\[([^\]]+)\]\s+Release\b(.*)$/i;
@@ -67,7 +65,6 @@ function main() {
   };
   const repo = get('repo', 'presljf/castdeck');
   const [owner, name] = repo.split('/');
-  const root = process.cwd();
   const contract = JSON.parse(
     fs.readFileSync(get('contract', path.join(root, 'contract/adoption-contract.json')), 'utf8'),
   );
