@@ -363,6 +363,13 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### No-admin merge wrapper
+
+Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch` (or `node scripts/github/merge-pr.mjs`).
+It refuses `--admin`, refuses drafts/non-mergeable PRs, and requires `ci / ci-gate` + `docs-guard`
+to be SUCCESS. Repo branch protection also has `enforce_admins=true`; the wrapper is defense in depth,
+not a substitute for branch protection.
+
 ### Docs coverage guard
 
 `npm run guard:docs -- --base origin/main` fails when a changed source area mapped in `docs/DOCS_COVERAGE.json` has no mapped docs change. `docs-guard` CI includes it; branch protection requires the check. See [DOCS COVERAGE](./DOCS_COVERAGE.md).

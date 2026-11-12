@@ -386,6 +386,21 @@ export class GitHubCli {
     return result;
   }
 
+
+  getPullRequest(owner, repo, number) {
+    return this.run(['pr', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup'], { json: true });
+  }
+
+  mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true } = {}) {
+    this._beforeMutation();
+    const args = ['pr', 'merge', String(number), '--repo', `${owner}/${repo}`];
+    if (method === 'merge') args.push('--merge');
+    else if (method === 'rebase') args.push('--rebase');
+    else args.push('--squash');
+    if (deleteBranch) args.push('--delete-branch');
+    return this.run(args);
+  }
+
   _graphql(query, variables) {
     const inputPath = path.join(os.tmpdir(), `tracker-graphql-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
     fs.writeFileSync(inputPath, JSON.stringify({ query, variables }));
