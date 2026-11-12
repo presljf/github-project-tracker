@@ -339,3 +339,10 @@ Tooling rules:
 - [Documentation index](./README.md) · [HOW TO USE](./HOW_TO_USE.md) · [REFERENCE](./REFERENCE.md) · [TROUBLESHOOTING](./TROUBLESHOOTING.md)
 - [Reference cards](./reference-cards/README.md) · [docs assets policy](./assets/README.md)
 - [UPGRADING](./UPGRADING.md) · [AGENT GUIDE](./AGENT_GUIDE.md) · [SECURITY.md](../SECURITY.md)
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

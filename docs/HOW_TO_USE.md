@@ -452,3 +452,10 @@ Template: [plan-change](./comment-templates/plan-change.md).
 - **Plan of record:** GitHub issues/fields/milestones; chat is context.
 
 **Next:** [Reference](./REFERENCE.md) for every command/field/token; [Troubleshooting](./TROUBLESHOOTING.md) for failures; [Adoption](./ADOPTION.md) to onboard a project.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

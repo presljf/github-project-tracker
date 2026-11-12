@@ -88,3 +88,10 @@ The task CLI is covered by `npm test` (mock adapter, happy/error/WIP/DoR/DoD/dry
 ### Preflight
 
 `start` blocks on uncommitted changes. Deliberate exception: `--allow-dirty --dirty-reason "why"`, recorded in the check-in comment.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

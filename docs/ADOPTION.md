@@ -183,3 +183,10 @@ Start tasks only on a clean worktree. Dependency changes require an approved `tr
 ## Manual release fallback
 
 When a protected environment is unsupported, use hosted macOS dry-run → download artifacts → `verify:checksums` → draft release → second-reviewer checksum comparison → publish, retaining run/checksum evidence. The fallback is manual approval, not platform-enforced protection.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

@@ -108,3 +108,10 @@ For each adopted project, track the upgrade as a task/issue:
 ## Docs versioning
 
 Docs carry `vX.Y.Z-docs.N`; update docs with the template version. T12 validates docs before release; downstream should refresh linked docs on upgrade.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
