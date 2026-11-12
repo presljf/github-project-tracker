@@ -483,13 +483,22 @@ jobs:
           fi
 
           # Fail closed when nothing matches the artifact globs (a release without artifacts is a bug).
-          shopt -s globstar nullglob
+          # Portable across bash 3.2 (macOS hosted runners) and bash 5 (Ubuntu): avoid globstar.
+          shopt -s nullglob
           files=()
           while IFS= read -r pattern; do
             [[ -z "$pattern" ]] && continue
-            expanded=( $pattern )
-            if [[ ${#expanded[@]} -gt 0 ]]; then
-              files+=("${expanded[@]}")
+            if [[ "$pattern" == *'**'* ]]; then
+              base="${pattern%%/**/*}"
+              suffix="${pattern##*/}"
+              [[ -n "$base" ]] || base="."
+              while IFS= read -r match; do
+                files+=("$match")
+              done < <(find "$base" -type f -name "$suffix" 2>/dev/null)
+            else
+              while IFS= read -r match; do
+                files+=("$match")
+              done < <(compgen -G "$pattern" || true)
             fi
           done <<< "$ARTIFACT_GLOBS"
           file_count=0
