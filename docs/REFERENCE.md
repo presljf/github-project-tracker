@@ -259,7 +259,7 @@ node scripts/github/project-field-option.mjs --config tracker.config.json --fiel
 ```
 Reads the current options first, preserves every existing id/colour/description (so item values
 that reference those ids are unchanged), appends only a new name, and is idempotent on re-run.
-Used by `stream.mjs open` and handy when creating per-delivery options by hand.
+Used by `stream.mjs open` and handy when creating per-delivery options by hand. Accepts both the `ProjectV2SingleSelectField` type reported by `gh project field-list` and the `SINGLE_SELECT` shape used by the test fakes; non-single-select fields are rejected.
 
 ### 5.6 guard-local-suite (remote-only verification policy)
 
