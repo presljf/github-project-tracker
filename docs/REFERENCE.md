@@ -535,3 +535,5 @@ Priority (P0–P3 when present); forbidden fields are project-specific only.
 ### Metadata reconciliation
 
 `npm run reconcile:metadata -- --repo owner/repo --repair=none` is report-only. `--repair=open-only`, `--repair=selected --issues N,N`, or `--repair=all-safe` mutate only selected scope; `--include-closed` extends the report/selection. Legacy `[vX] Release` and `[key] Sprint` titles are renamed to canonical `[Release]` / `[Sprint]`; implementation tasks normalize to native Feature.
+
+Inline repair examples: `--repair=open-only`, `--repair=selected --issues 3,4`, `--repair=all-safe`.
