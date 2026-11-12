@@ -36,10 +36,12 @@ async function main() {
   const pr = Number(process.env.PR_NUMBER);
   const repo = process.env.GITHUB_REPOSITORY || '';
   const [owner, name] = repo.split('/');
-  const body = process.env.PR_BODY || '';
-  const branch = process.env.PR_BRANCH || '';
-  const labels = (process.env.PR_LABELS || '').split(',').map((s) => s.trim()).filter(Boolean);
   const gh = new GitHubCli();
+  const pull = gh.getPullRequest(owner, name, pr);
+  const body = process.env.PR_BODY || pull.body || '';
+  const branch = process.env.PR_BRANCH || pull.headRefName || '';
+  const eventLabels = (process.env.PR_LABELS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const labels = eventLabels.length ? eventLabels : (pull.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
   const lookup = (n) => gh.getIssue(owner, name, n);
   const result = evaluateClosing({ body, branch, labels, lookup });
   if (result.ok) console.log('PR closing-keyword guard OK.');
