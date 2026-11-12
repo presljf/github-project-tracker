@@ -343,7 +343,7 @@ test('release-profiles doc covers every required profile topic', () => {
     'dry-run is the default',
     'permission-union requirement',
     'startup_failure',
-    'macos-14-arm64-us-default',
+    'macos-15-arm64-us-default',
     'live validation evidence',
     'release` environment',
     'tag pattern',

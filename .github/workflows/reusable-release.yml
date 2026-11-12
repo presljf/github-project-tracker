@@ -95,7 +95,7 @@ on:
         description: 'macOS runner label used by the macos profile.'
         type: string
         required: false
-        default: macos-14
+        default: macos-15
       macos-team-id:
         description: 'Apple Developer team ID used for signing/notarization (non-secret; required to notarize).'
         type: string
@@ -314,7 +314,7 @@ jobs:
           fi
 
           case "$profile" in
-            macos) runner="${MACOS_RUNNER_INPUT:-macos-14}" ;;
+            macos) runner="${MACOS_RUNNER_INPUT:-macos-15}" ;;
             *) runner="ubuntu-latest" ;;
           esac
 
