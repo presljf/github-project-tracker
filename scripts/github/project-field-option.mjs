@@ -42,7 +42,7 @@ export function findSingleSelectField(fields, fieldName) {
       `project field ${JSON.stringify(fieldName)} not found; declare it in tracker.config.json and run bootstrap`,
     );
   }
-  // `gh project field-list` reports `type: "ProjectV2SingleSelectField"`; the fakes/tests use
+  // The project field-list command reports `type: "ProjectV2SingleSelectField"`; the fakes/tests use
   // `dataType: "SINGLE_SELECT"`. Accept both and reject anything else (e.g. ProjectV2Field text).
   const dataType = field.dataType || field.type;
   const singleSelect = dataType === 'SINGLE_SELECT' || dataType === 'ProjectV2SingleSelectField';
