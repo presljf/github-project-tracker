@@ -7,5 +7,6 @@
 - **Carried over:** <issues/none>
 - **Risks/retro:** <learnings>
 - **Parent release tracker updated:** yes
+- **Project statuses reconciled:** yes/no (closed issues from merge keywords set to Done)
 
 Status → Done; sprint closed.

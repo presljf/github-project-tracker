@@ -483,10 +483,10 @@ export class GitHubCli {
     return result;
   }
 
-  listProjectItems(owner, number) {
-    return this._cached(`items:${owner}:${number}`, () => {
+  listProjectItems(owner, number, { limit = 100 } = {}) {
+    return this._cached(`items:${owner}:${number}:${limit}`, () => {
       const result = this.run(
-        ['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100'],
+        ['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', String(limit)],
         { json: true },
       );
       return result?.items || [];

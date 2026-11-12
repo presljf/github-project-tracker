@@ -164,3 +164,96 @@ test('detects missing required task sections and release/sprint ancestry', () =>
   const hierarchyResult = auditTracker({ config: config(), data: noHierarchy });
   assert.ok(hierarchyResult.violations.some((v) => v.code === 'TASK_HIERARCHY_MISSING_SPRINT'));
 });
+
+test('reports closed items with stale Project status as non-blocking warnings', () => {
+  const stale = baseData();
+  const closedTask = stale.projectItems.find((entry) => entry.content.number === 4);
+  closedTask.status = 'In Review';
+  const result = auditTracker({ config: config(), data: stale });
+  assert.equal(result.ok, true, 'status drift must never block the audit');
+  assert.equal(result.violations.length, 0);
+  const warnings = result.warnings.filter((warning) => warning.code === 'PROJECT_STATUS_STALE');
+  assert.equal(warnings.length, 1);
+  assert.equal(warnings[0].issue, 4);
+  assert.match(warnings[0].message, /Project status In Review \(expected Done\)/);
+
+  // Strict mode still exits 0 for warnings: only violations gate.
+  const strictResult = auditTracker({ config: config(), data: stale, strict: true });
+  assert.equal(strictResult.ok, true);
+  assert.equal(strictResult.warnings.filter((warning) => warning.code === 'PROJECT_STATUS_STALE').length, 1);
+});
+
+test('stale status detection scopes to closed items on the project with a non-Done status', () => {
+  const data = baseData();
+  // Closed item whose status is Done stays clean.
+  assert.equal(
+    auditTracker({ config: config(), data }).warnings.filter((warning) => warning.code === 'PROJECT_STATUS_STALE')
+      .length,
+    0,
+  );
+  // Open items are ignored even when their status is not Done.
+  data.issues[5].state = 'OPEN';
+  data.projectItems.find((entry) => entry.content.number === 5).status = 'In Progress';
+  assert.equal(
+    auditTracker({ config: config(), data }).warnings.filter((warning) => warning.code === 'PROJECT_STATUS_STALE')
+      .length,
+    0,
+  );
+  // Closed items missing from the project are out of scope.
+  const offProject = baseData();
+  offProject.projectItems = offProject.projectItems.filter((entry) => entry.content.number !== 4);
+  assert.equal(
+    auditTracker({ config: config(), data: offProject }).warnings.filter(
+      (warning) => warning.code === 'PROJECT_STATUS_STALE',
+    ).length,
+    0,
+  );
+});
+
+test('flags an open sprint without a release ancestor but exempts linked and closed sprints', () => {
+  // baseData() has the open sprint #6 linked under release #2 and the closed sprint #3 unlinked.
+  const clean = auditTracker({ config: config(), data: baseData() });
+  assert.ok(!clean.violations.some((violation) => violation.code === 'SPRINT_HIERARCHY_MISSING_RELEASE'));
+
+  const orphan = baseData();
+  orphan.issues.push(issue(9, '[Sprint] 1.0.0.3 — Orphan sprint'));
+  orphan.projectItems.push(item(9, { sprint: '1.0.0.3' }));
+  const result = auditTracker({ config: config(), data: orphan });
+  const violations = result.violations.filter((violation) => violation.code === 'SPRINT_HIERARCHY_MISSING_RELEASE');
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].issue, 9);
+  assert.match(violations[0].message, /open sprint has no release tracker ancestor/);
+});
+
+test('stale-status warning carries fix guidance; unset status is drift; foreign-repo items ignored', () => {
+  const data = baseData();
+  const stale = data.projectItems.find((entry) => entry.content.number === 4);
+  stale.status = 'In Review';
+  stale.id = 'ITEM_4';
+  stale.content.repository = 'owner/repo';
+  const warning = auditTracker({ config: config(), data }).warnings.find(
+    (entry) => entry.code === 'PROJECT_STATUS_STALE',
+  );
+  assert.equal(warning.itemId, 'ITEM_4');
+  assert.match(warning.fix, /reconcile:status/, 'warning must point at the repair command');
+  assert.match(warning.message, /expected Done/);
+
+  // An item auto-added to the project without a Status value is drift too ("not Done").
+  const unset = baseData();
+  unset.projectItems.find((entry) => entry.content.number === 4).status = '';
+  const unsetWarning = auditTracker({ config: config(), data: unset }).warnings.find(
+    (entry) => entry.code === 'PROJECT_STATUS_STALE',
+  );
+  assert.match(unsetWarning.message, /no Project status/);
+
+  // Shared projects can host other repositories' items; never flag (or repair) a foreign item.
+  const foreign = baseData();
+  const foreignItem = foreign.projectItems.find((entry) => entry.content.number === 4);
+  foreignItem.status = 'In Review';
+  foreignItem.content.repository = 'other/repo';
+  assert.equal(
+    auditTracker({ config: config(), data: foreign }).warnings.filter((entry) => entry.code === 'PROJECT_STATUS_STALE')
+      .length,
+    0,
+  );
+});

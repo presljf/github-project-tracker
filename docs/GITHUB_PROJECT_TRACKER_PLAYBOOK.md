@@ -129,7 +129,8 @@ Views:
 
 Workflows:
 - Auto-add repo issues to the project.
-- Issue closed → Status Done.
+- Issue closed → Status Done **only when the project's built-in workflow is enabled** (UI-only). Do
+  not rely on it: verify a closed issue actually moved and reconcile drift at close-out (§7.3).
 - Do **not** auto-set In Progress/In Review on events initially; those transitions are explicit check-in/out actions.
 
 ### 3.5 Labels (minimal)
@@ -151,6 +152,12 @@ Plus:
 - Gate/adoption issues may parent pre-release work.
 - Gate issues and adoption tasks are blocked by external releases via native "blocked by" links where supported.
 - Do not close a parent with open children unless deferral is explicitly recorded.
+- A **sprint is a child of its release**; a **task is a child of its sprint** (tooling: tasks are
+  children of the `[Stream]` container). Create the tree with `bootstrap.mjs` (task/stream CLIs
+  operate on it; `task.mjs start` enforces the existing parent link); if it was created by raw
+  `gh`/UI, assert the child/parent links and run the advisory audit before
+  starting work (REFERENCE §5.9). The audit flags open product sprints without a release ancestor
+  (`SPRINT_HIERARCHY_MISSING_RELEASE`).
 
 ### 3.7 Branch protection / required checks
 - Require PR review/checks for `main` (solo maintainers may use admin bypass only for documented emergencies).
@@ -230,6 +237,7 @@ Rules:
 - [ ] Docs/config updated; no secrets/live third-party calls.
 - [ ] PR merged or issue closed with rationale; `Closes` linkage.
 - [ ] Project Status Done; check-out comment posted.
+- [ ] Project Status reconciled for every issue auto-closed by this merge (closure by `Closes` keyword does not set Done; §7.3).
 - [ ] Deviations/follow-ups recorded; parent sprint/release updated if relevant.
 
 ### Definition of Done (sprint)
@@ -237,6 +245,7 @@ Rules:
 - [ ] Exit criteria/demo evidence posted.
 - [ ] Parent release tracker updated.
 - [ ] Sprint status Done and issue closed.
+- [ ] Project statuses reconciled for every issue closed during the sprint (merge-keyword auto-closes included).
 
 ### Definition of Done (release)
 - [ ] Every release gate checked.
@@ -244,6 +253,7 @@ Rules:
 - [ ] Release notes/docs/acceptance evidence updated.
 - [ ] Release tracker + milestone closed; final summary posted.
 - [ ] No open child sprints unless explicitly deferred.
+- [ ] Project statuses reconciled across the project; no closed item left outside **Done**.
 
 ---
 
@@ -278,8 +288,13 @@ Abort/rollback: if the task cannot start, set Blocked or return to Todo with a c
 2. Attach evidence (test output, screenshots, API samples, artifact checksums).
 3. Merge the PR with `Closes #<issue>` (or close manually with a reason if no code).
 4. Set Status **Done**; confirm issue is closed.
-5. Post check-out comment (§15.3) with evidence, deviations, follow-ups.
-6. Update parent sprint/release tracker if this task affects exit/gates.
+5. Reconcile Project Status for issues auto-closed by the merge: issue closure does not update the
+   field and `task.mjs done` refuses closed issues, so run
+   `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply` (REFERENCE §5.8).
+6. Post check-out comment (§15.3) with evidence, deviations, follow-ups.
+7. Update parent sprint/release tracker if this task affects exit/gates.
+
+**Auto-close caveat:** GitHub closes the issue at merge; the Status update is a separate action the closer owns.
 
 ### 7.4 Sprint lifecycle
 
@@ -294,6 +309,7 @@ Abort/rollback: if the task cannot start, set Blocked or return to Todo with a c
 
 **Close-out**
 - Every child Done or deferred with plan-change.
+- Reconcile child-task Project Status before closing: every issue closed by a merge keyword must be Done on the board (REFERENCE §5.8).
 - Post sprint demo/exit comment (§15.4) with evidence.
 - Close sprint issue; Status Done.
 - Update parent release tracker.
@@ -311,6 +327,7 @@ Abort/rollback: if the task cannot start, set Blocked or return to Todo with a c
 **Close-out**
 - All activation gates checked.
 - Tag from green main; build/publish artifacts; verify checksums.
+- Reconcile Project Status for the whole project; no closed item may remain outside Done.
 - Close release tracker + milestone; post final summary.
 - Update program roadmap/decision log.
 
@@ -348,6 +365,12 @@ Invariants:
 - Template version (`automation.templateVersion`) is recorded; stale versions flagged.
 - Downstream issues have origin/version/context; `Source` set during triage.
 - No secrets in issues/comments/artifacts.
+- Open product sprints have a release tracker ancestor (`SPRINT_HIERARCHY_MISSING_RELEASE`); closed
+  and historical sprints are exempt; the tooling profile has no release ancestor to check.
+- Closed project items are Done (`PROJECT_STATUS_STALE`, warning): issue closure does not change the
+  field, and warnings never block, including under `--strict` — reconcile at close-out (§7.3).
+- Board creation outside `bootstrap.mjs`/task CLI was followed by the expected-tree assertion and
+  advisory audit, with the result recorded (REFERENCE §5.9).
 
 Enforcement:
 - **Advisory** audit in CI initially (job summary/artifact).
@@ -551,6 +574,7 @@ Status → In Progress.
 
 Status → Done; issue closed.
 ```
+Board note: this comment is generated by `task.mjs done`; when the issue was already closed by a merge keyword, reconcile its Status separately (§7.3).
 
 ### 15.4 Sprint close
 ```markdown
@@ -563,6 +587,7 @@ Status → Done; issue closed.
 - **Carried over:** <issues/none>
 - **Risks/retro:** <learnings>
 - **Parent release tracker updated:** yes
+- **Project statuses reconciled:** yes/no (closed issues from merge keywords set to Done)
 
 Status → Done; sprint closed.
 ```
@@ -606,6 +631,7 @@ Label: `plan-change`.
 - **Known issues:** <none or list>
 - **Rollback:** <how>
 - **Milestone/release tracker closed:** yes
+- **Project statuses reconciled:** yes/no (no closed item left outside Done)
 
 Status → Done; milestone closed.
 ```

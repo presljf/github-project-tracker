@@ -15,6 +15,9 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 8. **No silent WIP.** If a session ends, post a checkpoint and hand off.
 9. **No visible local GUI suites.** Suites declared under `verification.remoteOnly[]` run visibly only on a remote runner (`GITHUB_ACTIONS=true`) or in the documented hidden local mode; agents must never set the override env (human debugging only) and never claim local hidden runs as evidence.
 10. **Counts are verified, not remembered.** Cite test counts only from counted-runner output + `suite-counts check`; counts change ⇒ baseline, generated `docs/TEST_COUNTS.md`, and markers change in the same PR. Never hand-edit generated counts/markers and never leave a non-zero skip unnamed.
+11. **Close-out includes the board.** A `Closes #N` merge closes the issue without updating Project
+    Status, and `done` refuses closed issues. Run `npm run reconcile:status` after every merge and
+    `--apply` before sprint/release close; verify the hierarchy tree and advisory audit (REFERENCE §5.9).
 
 ## Work profiles
 
@@ -79,6 +82,9 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - [ ] Check task type/fields/blockers; no unresolved dependency.
 - [ ] For tooling work, confirm the open `[Stream]` container and that the task is its sub-issue with
       a matching `Stream` field option.
+- [ ] Product work: confirm the sprint is a sub-issue of its release (and the task of its sprint) with
+      `gh api repos/OWNER/REPO/issues/<n>/sub_issues`; if the tree was built outside `bootstrap.mjs`/
+      `task.mjs`, assert it before starting (REFERENCE §5.9).
 - [ ] Check remote-only suites: do not plan visible local runs; use the guard/hidden mode and plan
       the remote evidence run.
 - [ ] Check docs/related issues for context.
@@ -109,6 +115,13 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - Tooling profile: `done` requires the PR plus evidence; close the `[Stream]` container only after
   every child task is done and the release gate is green (`stream.mjs close --stream S`).
 - Update parent sprint/release if exit/gates affected.
+- **Reconcile Project Status after every merge.** `Closes #` closes the issue before the `done` path
+  and `task.mjs done` refuses closed issues (`#N is not open`). Run
+  `node scripts/github/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run
+  with `--apply` until the report says every closed item is Done.
+- **Verify the board after a merge or raw board creation:** assert the expected tree and run
+  `node scripts/github/audit.mjs --config tracker.config.json --advisory`, then attach the result as
+  close-out evidence. Commands: [REFERENCE §5.8–5.9](./REFERENCE.md#58-reconcile-status-close-out-project-status).
 - Do not claim completion for unverified work; mark Blocked/defer instead.
 
 ## Multi-agent boundaries

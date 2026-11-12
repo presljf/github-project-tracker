@@ -15,6 +15,22 @@ The tracker is versioned; downstream projects pin an exact version and upgrade d
 - No `main` tracking; no silent sync.
 - Patch/minor upgrades should be low-risk; major upgrades require a migration plan.
 
+## v1.3.2 — advisory close-out warning and sprint hierarchy check
+
+Patch release: run an advisory audit after upgrading to see whether either new check flags your
+existing board. No config change is required.
+
+- New audit warning `PROJECT_STATUS_STALE` (closed project items not `Done`); advisory only, never
+  changes the exit code, including `--strict`. Repair the drift with
+  `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply` (see
+  [REFERENCE §5.8](./REFERENCE.md#58-reconcile-status-close-out-project-status)).
+- New audit violation `SPRINT_HIERARCHY_MISSING_RELEASE` (open product sprint without a `[Release]`
+  ancestor). Advisory runs still exit 0, but `--strict` audits will now fail on pre-existing
+  unlinked open sprints — fix them (link the sprint as a sub-issue of its release) before relying
+  on a strict audit gate. Closed/historical sprints are exempt; the tooling profile is unaffected.
+- New `reconcile-status` command (`npm run reconcile:status`) to list and fix Project Status drift
+  left by `Closes #N` auto-closes.
+
 ## Before upgrading
 
 - [ ] Read the target changelog/release notes/migration notes.

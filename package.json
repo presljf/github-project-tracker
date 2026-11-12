@@ -36,6 +36,7 @@
     "format:check": "prettier --check \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.mjs\" \"package.json\" \".github/**/*.{yml,yaml}\"",
     "verify:metadata": "node scripts/github/verify-metadata.mjs",
     "reconcile:metadata": "node scripts/github/reconcile-metadata.mjs",
+    "reconcile:status": "node scripts/github/reconcile-status.mjs",
     "hooks:install": "node scripts/github/install-hooks.mjs",
     "verify:tooling": "node scripts/github/verify-tooling.mjs",
     "release:bump": "node scripts/release/bump-version.mjs"

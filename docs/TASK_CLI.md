@@ -92,7 +92,9 @@ Area/Kind/Estimate/Stream must be set on the task.
 **done** requires evidence and no unchecked acceptance criteria; `--force` is an explicit override
 after review. In the tooling profile `--pr` (PR URL or number) is also required, so a task cannot
 be checked out without its PR being recorded; the audit flags closed tooling tasks that lack a
-`### Check-out` comment. It does not run the tracker audit; run `audit.mjs`/release gates separately.
+`### Check-out` comment. Issues already closed by a merge keyword cannot be checked out with `done`;
+reconcile their Project Status with `reconcile-status.mjs` (REFERENCE §5.8). It does not run the
+tracker audit; run `audit.mjs`/release gates separately.
 
 ## Ownership and comments
 
