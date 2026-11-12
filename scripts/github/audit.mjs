@@ -124,6 +124,21 @@ export function auditTracker({ config, data, strict = false }) {
   const dependencies = normalizeDependencies(data.dependencies);
   const parentOf = new Map();
   for (const [parent, children] of subIssues) for (const child of children) parentOf.set(child, parent);
+  const ancestorKindsCache = new Map();
+  const ancestorKindsFor = (number) => {
+    if (ancestorKindsCache.has(number)) return ancestorKindsCache.get(number);
+    const kinds = new Set();
+    let current = number;
+    const seen = new Set();
+    while (parentOf.has(current) && !seen.has(current)) {
+      seen.add(current);
+      current = parentOf.get(current);
+      const parent = issueByNumber.get(current);
+      if (parent) kinds.add(issueKind(parent.title));
+    }
+    ancestorKindsCache.set(number, kinds);
+    return kinds;
+  };
   const evidenceRules = closedEvidenceRules(profile);
   const ancestryRequirements = taskAncestryRequirements(profile);
 
@@ -141,6 +156,7 @@ export function auditTracker({ config, data, strict = false }) {
     if (issue.state !== 'OPEN') {
       for (const rule of evidenceRules) {
         if (!rule.kinds.includes(kind)) continue;
+        if (rule.requiresStreamAncestry && !ancestorKindsFor(issue.number).has('stream')) continue;
         if (!hasEvidence(issue.number, rule.pattern)) add(rule.code, issue, rule.message);
       }
       continue;
@@ -152,16 +168,7 @@ export function auditTracker({ config, data, strict = false }) {
       for (const section of missingTaskSections(issue.body)) {
         add('TASK_SECTION_MISSING', issue, `task body is missing required section: ## ${section}`);
       }
-      let current = issue.number;
-      const seen = new Set();
-      const ancestorKinds = new Set();
-      while (parentOf.has(current) && !seen.has(current)) {
-        seen.add(current);
-        current = parentOf.get(current);
-        const parent = issueByNumber.get(current);
-        if (!parent) continue;
-        ancestorKinds.add(issueKind(parent.title));
-      }
+      const ancestorKinds = ancestorKindsFor(issue.number);
       for (const requirement of ancestryRequirements) {
         if (!ancestorKinds.has(requirement.kind))
           add(requirement.code, issue, `open task has no ${requirement.noun} tracker ancestor`);

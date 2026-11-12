@@ -202,6 +202,8 @@ node scripts/github/bootstrap.mjs --config tracker.config.json --json
 ```
 Default dry-run. Creates/updates project, fields/statuses/options, milestones, labels, roadmap/release/sprint/task skeletons, native types, project items/fields, sub-issues. Never deletes user data; resource matching is by **exact generated title**, so mismatched existing titles create new resources — reuse generated titles or update the config before re-running. Manual checklist for UI-only views/workflows at end.
 
+In the **tooling work profile** (`workProfile: "tooling"`) bootstrap ensures project fields (including `fields.Stream`), status options, labels and milestones only: the product release → sprint → task skeleton is not created, because deliveries are `[Stream]` containers created with `stream.mjs open`.
+
 ### 5.2 audit
 
 ```bash
@@ -372,6 +374,10 @@ Work profiles: `product` (default) uses `[Release]` → `[Sprint]` → Task with
 `tooling` uses `[Stream]` → Task with the Stream field and the tag as version record. Absent
 `workProfile` means `product`; a declared `Stream` field in product mode is ignored.
 
+**Tracker OS itself** flips to `tooling` from v1.3.0 onward via a post-tag config PR: the v1.3.0 tag
+records the contract and release history, and deliveries after the tag are `[Stream]` → Task (the
+tag remains the version record). Adopters keep `product` as the default unless they opt in per repo.
+
 ### Transition table
 | From | To | Entry condition | Exit evidence |
 |---|---|---|---|
@@ -434,7 +440,9 @@ valid). The invariant list (`--json` reports `workProfile`):
 6. Blocked has reason + dependency.
 7. No duplicate dimension labels (retired-label cleanup is manual).
 8. Sprint/release Done has exit evidence (product profile); closed stream has
-   `### Stream close evidence` and closed tooling tasks have `### Check-out` evidence (tooling profile).
+   `### Stream close evidence` and closed tooling tasks under a `[Stream]` have `### Check-out`
+   evidence (tooling profile). Historical product-tracked tasks keep their product rules — the
+   profile flip does not retroactively invalidate old records.
 9. Pinned `automation.templateVersion`; downstream context complete.
 10. No secrets in config/artifacts — **manual review; the audit does not scan issue bodies/comments for secrets**.
 11. Open tasks contain required issue-template/DoR sections.

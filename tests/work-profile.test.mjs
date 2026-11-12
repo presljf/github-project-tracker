@@ -887,6 +887,24 @@ test('product-profile audit fixture is unchanged (default profile)', () => {
   assert.equal(result.ok, true, JSON.stringify(result.violations));
 });
 
+test('tooling audit exempts historical closed tasks that are not under a Stream', () => {
+  const data = toolingAuditData();
+  // Historical product record: closed task #12, no check-out comment, not a [Stream] sub-issue.
+  data.comments[12] = [];
+  data.subIssues[10] = [11];
+  const codes = auditTracker({ config: auditToolingConfig(), data }).violations.map((v) => v.code);
+  assert.ok(
+    !codes.includes('TASK_CHECKOUT_EVIDENCE_MISSING'),
+    'historical product task must stay valid after the profile flip',
+  );
+
+  // A closed task INSIDE a Stream still needs tooling check-out evidence.
+  const streamTask = toolingAuditData();
+  streamTask.comments[12] = [];
+  const streamCodes = auditTracker({ config: auditToolingConfig(), data: streamTask }).violations.map((v) => v.code);
+  assert.ok(streamCodes.includes('TASK_CHECKOUT_EVIDENCE_MISSING'));
+});
+
 test('tooling profile skips Release/Sprint and milestone requirements but keeps type/sections', () => {
   const data = toolingAuditData();
   data.issues[1].issueType = null;

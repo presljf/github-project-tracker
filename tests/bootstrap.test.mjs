@@ -89,6 +89,26 @@ test('apply creates once and is idempotent on re-run', async () => {
   assert.ok(github.subIssues.get(2)?.includes(3), 'sprint should parent task');
 });
 
+test('tooling-profile bootstrap ensures fields but skips the product plan skeleton', async () => {
+  const github = new FakeGitHub();
+  const tooling = config({
+    workProfile: 'tooling',
+    releases: [],
+    fields: {
+      Stream: { options: ['v1.3.1-maintenance'] },
+      Area: { options: ['docs', 'ci'] },
+      Kind: { options: ['feature', 'fix', 'infra'] },
+      Estimate: { options: ['S', 'M', 'L'] },
+      Source: { options: ['Internal', 'CastDeck', 'Other'] },
+    },
+  });
+  assert.deepEqual(buildIssueSpecs(tooling), [], 'tooling deliveries are Streams, not release/sprint skeletons');
+  const result = await runBootstrap({ config: tooling, github, apply: true, logger: silent });
+  assert.equal(result.ok, true);
+  assert.equal(github.issues.length, 0, 'bootstrap must not create product-tracker skeleton issues in tooling mode');
+  assert.ok(github.fields.some((field) => field.name === 'Stream'));
+});
+
 test('apply adds missing options to an existing field without recreating it', async () => {
   const github = new FakeGitHub();
   await runBootstrap({ config: config(), github, apply: true, logger: silent });

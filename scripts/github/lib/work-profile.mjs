@@ -91,6 +91,10 @@ export function closedEvidenceRules(profile) {
         code: 'TASK_CHECKOUT_EVIDENCE_MISSING',
         message: 'closed tooling task has no "### Check-out" evidence comment',
         pattern: /###\s*Check-?out/i,
+        // Historical product-tracked tasks are exempt: the tooling evidence rule applies only to
+        // tasks that belong to a [Stream] delivery (see T06 pilot: profile flip must not invalidate
+        // historical records).
+        requiresStreamAncestry: true,
       },
     ];
   }

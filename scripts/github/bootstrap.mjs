@@ -10,10 +10,14 @@ import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from './lib/github.mjs';
 import { UsageError, parseArgs } from './lib/cli.mjs';
+import { getWorkProfileAdapter } from './lib/work-profile.mjs';
 
 const DEFAULT_CONFIG = 'tracker.config.json';
 
 export function buildIssueSpecs(config) {
+  // The tooling profile plans deliveries as [Stream] containers (stream.mjs), not as a
+  // release → sprint → task skeleton, so bootstrap only ensures fields/labels/milestones.
+  if (getWorkProfileAdapter(config).isTooling) return [];
   const specs = [];
   const roadmapTitle = config.roadmap ? `[Roadmap] ${config.roadmap.title || 'Program roadmap'}` : null;
   if (roadmapTitle) {
