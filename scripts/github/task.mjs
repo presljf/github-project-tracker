@@ -133,8 +133,8 @@ function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
   }
 }
 
-export async function startTask({ config, github, issueNumber, owner, executor, branch, dryRun = false, repoRoot = process.cwd(), gitExec = null, allowDirty = false, dirtyReason = '' }) {
-  const status = gitExec ? gitExec(['status', '--porcelain']) : gitStatus(repoRoot);
+export async function startTask({ config, github, issueNumber, owner, executor, branch, dryRun = false, repoRoot = process.cwd(), gitExec = null, allowDirty = false, dirtyReason = '', preflightStatus = null }) {
+  const status = preflightStatus ?? (gitExec ? '' : gitStatus(repoRoot));
   const preflight = evaluateCleanTree({ statusText: status, allowDirty, reason: dirtyReason });
   if (!preflight.ok) throw new UsageError(`preflight: ${preflight.violations.join('; ')}`);
   const { ctx, warning } = await checkDoR({ config, github, issueNumber, owner, dryRun });
