@@ -36,7 +36,7 @@ Every release pipeline in this repo follows one model, regardless of profile:
 | Profile | Canonical / aliases | Runner | Artifacts | Publish target | Job permissions |
 |---|---|---|---|---|---|
 | `generic` | `generic`, `github-release` | `ubuntu-latest` | build outputs + `SHA256SUMS` | GitHub Release assets | build/checksum `contents: read`; publish `contents: write` |
-| `macos` | `macos`, `desktop`, `macos-app-github-release` | `macos-14` (input `macos-runner`) | dmg/zip/app + `SHA256SUMS` | GitHub Release assets | signing/publish `contents: write` (+`contents: read` elsewhere) |
+| `macos` | `macos`, `desktop`, `macos-app-github-release` | `macos-15` (input `macos-runner`) | dmg/zip/app + `SHA256SUMS` | GitHub Release assets | signing/publish `contents: write` (+`contents: read` elsewhere) |
 | `container` | `container`, `ghcr`, `image` | `ubuntu-latest` | image tar + metadata + `SHA256SUMS` | GHCR image tags | build `contents: read`; publish `packages: write` |
 | `package` | `package`, `npm`, `pypi`, `packages` | `ubuntu-latest` | npm tarball and/or wheel+sdist + `SHA256SUMS` | npm / PyPI | build `contents: read`; publish `id-token: write` (+`contents: read`) |
 
@@ -60,7 +60,7 @@ File: `.github/workflows/reusable-release.yml` · trigger: `workflow_call` only.
 | `build-command` | string | `''` | Shell command run from `working-directory`; empty uses the profile default |
 | `working-directory` | string | `.` | Build command directory (artifact globs stay repo-root-relative) |
 | `node-version` | string | `22` | Empty skips `setup-node` |
-| `macos-runner` | string | `macos-14` | Runner label for the macos profile |
+| `macos-runner` | string | `macos-15` | Runner label for the macos profile |
 | `macos-team-id` | string | `''` | Non-secret Apple team ID, required for notarization |
 | `macos-signing-identity` | string | `Developer ID Application` | codesign identity |
 | `image-name` | string | `''` | Empty → `ghcr.io/<owner>/<repo>` (lowercase); no tag |
@@ -101,7 +101,7 @@ The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`ver
 
 - Workflow-level `permissions: {}`. Callers must grant the union needed by the called jobs: `contents: write` for generic/macos; `contents: read` + `packages: write` for container; `contents: read` + `id-token: write` for package. Called jobs can only reduce the caller grant.
 - Called publish/signing jobs run with `environment: release`. Callers cannot set the environment on a reusable-workflow job (GitHub restriction) — it is declared inside the reusable workflow, which is why the environment name is part of the contract.
-- Runners: `ubuntu-latest` except the macos profile (`macos-14` by default; override with `macos-runner`).
+- Runners: `ubuntu-latest` except the macos profile (`macos-15` by default; override with `macos-runner`).
 - No concurrency is set on the reusable workflow; callers set `concurrency: release-${{ github.ref }}` with `cancel-in-progress: false` (never cancel a publish halfway).
 
 ### 3.5 Pipeline shape
@@ -314,7 +314,10 @@ T02 dispatched the merged profiles on branch ref `task/40-release-validation` wi
 | generic | [43116072920](https://github.com/presljf/github-project-tracker/actions/runs/43116072920) | **success** | prepare → build → checksum; sign/publish jobs `skipped`; downloaded `release-bundle/SHA256SUMS` verified locally with `shasum -a 256 -c` (tar.gz + manifest both OK) |
 | container | [43115918788](https://github.com/presljf/github-project-tracker/actions/runs/43115918788) | **success** | saved image tar + `container-metadata.json` artifact; `publish-container` skipped; no GHCR login/push |
 | package | [43115911314](https://github.com/presljf/github-project-tracker/actions/runs/43115911314) | **success** | `project-tracker-os-0.0.0-dryrun.tgz` + `SHA256SUMS` verified locally; `publish-package` skipped; no registry publish |
-| macos | [43116256069](https://github.com/presljf/github-project-tracker/actions/runs/43116256069) (and 43115926883) | **cancelled by platform** | `prepare` passed; `build` on `macos-14` was cancelled with the annotation "The configuration 'macos-14-arm64-us-default' is not supported" — macOS hosted runners are unavailable on this private personal-repo plan. No signing/publish attempted (dry-run). Adopters with macOS-runner support must re-run this row. |
+
+> **2026-11-11 migration note:** GitHub retired the `macos-14` image on 2026-11-02; the cancellation below was a retired-label error, not a private-plan limitation. Defaults/callers now use `macos-15` (`macos-15-arm64-us-default` at the platform level); a fresh macOS dry-run is required.
+
+| macos | [43116256069](https://github.com/presljf/github-project-tracker/actions/runs/43116256069) (and 43115926883) | **cancelled — retired runner label** | `prepare` passed; `build` on the retired `macos-14` image was cancelled with "The configuration 'macos-14-arm64-us-default' is not supported". This was a GitHub runner-image retirement, not a private-plan limitation. Re-run on `macos-15`; publish was never attempted. |
 
 Live findings fixed in this change:
 

@@ -19,7 +19,7 @@ this directory ships the **copy-mode** equivalents and the shared profile refere
 | Profile (canonical / aliases) | Runner | Artifacts | Publish target | Required secrets (all optional, empty = skip) | Permissions |
 |---|---|---|---|---|---|
 | `generic` / `github-release` | `ubuntu-latest` | build outputs matching `artifact-globs` + `SHA256SUMS` | GitHub Release assets (draft by default) | `RELEASE_TOKEN` only if the default token is not allowed | `contents: write` (publish job only) |
-| `macos` / `desktop` / `macos-app-github-release` | `macos-14` (override `macos-runner`) | `.dmg`/`.zip`/`.app` + `SHA256SUMS` | GitHub Release assets (draft by default) | `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD`; `macos-team-id` is non-secret | `contents: write` (publish job only) |
+| `macos` / `desktop` / `macos-app-github-release` | `macos-15` (override `macos-runner`) | `.dmg`/`.zip`/`.app` + `SHA256SUMS` | GitHub Release assets (draft by default) | `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD`; `macos-team-id` is non-secret | `contents: write` (publish job only) |
 | `container` / `ghcr` | `ubuntu-latest` | image tar + metadata + checksums | GHCR `ghcr.io/<owner>/<repo>:<version>` and `:sha-<short>` | none — uses `github.token` | `contents: read`, `packages: write` |
 | `package` / `npm` / `pypi` | `ubuntu-latest` | npm tarball and/or wheel+sdist + checksums | npm (trusted publishing/OIDC preferred) and/or PyPI (trusted publishing/OIDC preferred) | `NPM_TOKEN`/`PYPI_API_TOKEN` only when OIDC is unavailable | `contents: read`, `id-token: write` |
 
