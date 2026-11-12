@@ -113,7 +113,7 @@ test('real verify-contract CLI passes on the contract repository itself', () => 
   const result = runNodeScript('scripts/github/verify-contract.mjs', []);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /self-repo: downstream contract checks skipped/);
-  assert.match(result.stdout, /Adoption contract OK — tracker v1\.3\.0/);
+  assert.match(result.stdout, /Adoption contract OK — tracker v1\.3\.2/);
 });
 
 // ---------------------------------------------------------------------------

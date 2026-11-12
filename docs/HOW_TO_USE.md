@@ -1,6 +1,6 @@
 # HOW TO USE — exhaustive handbook
 
-**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
+**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
 **Audience:** humans and agents setting up or operating a GitHub project tracker.
 **Companion docs:** [Quickstart](./QUICKSTART.md) · [Reference](./REFERENCE.md) · [Troubleshooting](./TROUBLESHOOTING.md) · [Adoption](./ADOPTION.md) · [Agent guide](./AGENT_GUIDE.md) · [Playbook](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md)
 

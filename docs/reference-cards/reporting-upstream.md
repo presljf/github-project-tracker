@@ -1,6 +1,6 @@
 # Reporting upstream
 
-<!-- Docs version: v1.3.0-docs.1 · Target template: v1.3.0 · print formats: A4, Letter -->
+<!-- Docs version: v1.3.2-docs.1 · Target template: v1.3.2 · print formats: A4, Letter -->
 
 > One page for downstream projects reporting bugs/features upstream. Policy: [DOWNSTREAM FEEDBACK](../DOWNSTREAM_FEEDBACK.md).
 

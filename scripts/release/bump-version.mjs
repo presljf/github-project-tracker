@@ -14,7 +14,9 @@ const ALLOW = [
   'docs/reference-cards/*.md',
   '.github/workflows/*.yml',
   '.github/workflows/*.yaml',
+  '.github/ISSUE_TEMPLATE/*.yml',
   'profiles/**/*.md',
+  'profiles/**/*.json',
   'examples/*.json',
 ];
 const EXCLUDE = [
@@ -22,6 +24,7 @@ const EXCLUDE = [
   '**/node_modules/**',
   '**/.tracker-os/**',
   'CHANGELOG.md',
+  'docs/DOCS_VALIDATION.md',
   'docs/ROADMAP_*.md',
   'docs/RELEASE_NOTES_*.md',
   'tests/**',
@@ -56,7 +59,7 @@ export function versionPattern(from) {
   return new RegExp(`(?:v?${v})(?![.\\d])`, 'g');
 }
 const VERSION_CONTEXT =
-  /(docs version|target template|target\s+v|templateVersion|pinnedVersion|trackerVersion|"ref"\s*:|uses:\s|default:\s*v|latest patch|status:\s*v|release:\s*v|tag\s+v?)/i;
+  /(docs version|target template|target\s+v|templateVersion|pinnedVersion|trackerVersion|"ref"\s*:|uses:\s|default:\s*v|latest patch|status:\s*v|release:\s*v|tag\s+v?|placeholder|upgrade-tracker)/i;
 const HISTORICAL =
   /(released as|result recorded|live t08|historical|remains immutable|superseded|incident|reusable workflow ref parses|composite action ref works)/i;
 export function planVersionBump({ root, from, to }) {

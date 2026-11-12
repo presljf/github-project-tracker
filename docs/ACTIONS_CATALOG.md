@@ -1,6 +1,6 @@
 # ACTIONS CATALOG
 
-**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
+**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
 **Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
 **Availability key:** **shipped** = YAML exists in this repo; **contract-only** = interface documented here but not yet implemented. Contract-only items are never claimed as shipped.
@@ -221,7 +221,7 @@ Label and path rules:
 | Consumer | Identity / token | Permissions or scopes | Storage | Rotation | Notes |
 |---|---|---|---|---|---|
 | CI, E2E, desktop smoke | `GITHUB_TOKEN` | `contents: read` | automatic | per-run, ephemeral | Read-only for fork PRs regardless of declared permissions |
-| Post-merge audit | `GITHUB_TOKEN` | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` | automatic | per-run, ephemeral | Private repos need `checks: read` + `statuses: read` + `actions: read` for `statusCheckRollup` (its GraphQL query resolves `checkSuite.workflowRun`, which needs Actions read); the copied caller must carry the same block. **v1.3.0 tag predates this correction — it ships post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`); adopters add `actions: read` to their copied caller.** Unreadable rollup degrades to warning + closure-only audit (no red X, no false check-related OI) |
+| Post-merge audit | `GITHUB_TOKEN` | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` | automatic | per-run, ephemeral | Private repos need `checks: read` + `statuses: read` + `actions: read` for `statusCheckRollup` (its GraphQL query resolves `checkSuite.workflowRun`, which needs Actions read); the copied caller must carry the same block. **Historical note: fixed in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the tooling stream, `[Stream] v1.3.1-maintenance`) — adopters pinned to v1.3.0 add `actions: read` to their copied caller.** Unreadable rollup degrades to warning + closure-only audit (no red X, no false check-related OI) |
 | Tracker audit (advisory) | `TRACKER_TOKEN` — classic PAT with `project` (+ repo read) or fine-grained Projects read + Metadata read; or a GitHub App installation token with Projects: read (org-owned projects) | project read | repo/org secret, or environment secret for release-gate mode | ≤90 days for PATs; App tokens 1 h | Optional: workflow skips cleanly when absent. User-owned Projects v2 generally need an OAuth/PAT `project` scope; validate App access on your owner type |
 | Tracker audit (strict release gate) | same | project read | `release` environment secret | same | Audit is read-only; no write scopes needed |
 | Release publish (generic) | `GITHUB_TOKEN` | `contents: write` (publish job only) | automatic | per-run | Protected tag + `release` environment; never a PAT |
