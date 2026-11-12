@@ -32,7 +32,7 @@ The repo config selects the enforced lifecycle (`workProfile`; absent means `pro
 Confirm the profile in the task issue/config before checking in; a product config rejects
 `--stream` and a tooling config rejects a start without it. Do not mix lifecycles in one delivery.
 
-**Tracker OS repo:** `workProfile: "tooling"` is live from v1.3.0 onward (the flip lands post-tag by
+**Tracker OS repo:** `workProfile: "tooling"` is live from v1.3.0 onward (historical: the flip lands post-tag by
 design: the tag records the contract, subsequent deliveries are `[Stream]` → Task). Start new
 delivery work with `stream.mjs open` + `task.mjs start --stream`; product history stays valid.
 Adopters keep `product` as the default unless they opt in per repo.

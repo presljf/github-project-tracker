@@ -514,7 +514,7 @@ Work profiles: `product` (default) uses `[Release]` → `[Sprint]` → Task with
 `tooling` uses `[Stream]` → Task with the Stream field and the tag as version record. Absent
 `workProfile` means `product`; a declared `Stream` field in product mode is ignored.
 
-**Tracker OS itself** flips to `tooling` from v1.3.0 onward via a post-tag config PR: the v1.3.0 tag
+**Tracker OS itself** flips to `tooling` from v1.3.0 onward via a historical post-tag config PR: the v1.3.0 tag
 records the contract and release history, and deliveries after the tag are `[Stream]` → Task (the
 tag remains the version record). Adopters keep `product` as the default unless they opt in per repo.
 
@@ -689,7 +689,7 @@ closing-keyword/partial-PR rules. Required check-run names resolve from
 `checks: read` + `statuses: read` + **`actions: read`** to read `statusCheckRollup` — its GraphQL
 query also resolves `checkSuite.workflowRun`, which needs Actions read (checks+statuses alone still
 degrade; observed on CastDeck run 43276236147). The copied caller must carry the same permissions
-block. The fix ships in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the
+block. Historical note: the fix ships in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the
 tooling stream, `[Stream] v1.3.1-maintenance`), so adopters pinned to v1.3.0 add `actions: read` to
 their copied caller.
 

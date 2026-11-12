@@ -23,7 +23,7 @@
 | Branch protection / rulesets | Available now that the repo is public; **pending T03 ([#41](https://github.com/presljf/github-project-tracker/issues/41) is Blocked)** | [CI/security profile §3](./CI_SECURITY_PROFILE.md#3-required-check-and-branch-protection-contract) |
 | GitHub Releases | None published yet; tags `v1.0.0`, `v1.3.0` and `v1.3.2` exist | `gh release list` (empty); `git tag` |
 | Release gate | **No public release/announcement without explicit maintainer approval** | [Release tracker #45](https://github.com/presljf/github-project-tracker/issues/45) gates |
-| Generic tag Release workflow | Intentionally `disabled_manually` in this template repository (tag-only contract releases; tag + CHANGELOG + release-gate output are the release record) | Actions UI; v1.3.0 release evidence on [#116](https://github.com/presljf/github-project-tracker/issues/116) |
+| Generic tag Release workflow | Intentionally `disabled_manually` in this template repository (tag-only contract releases; tag + CHANGELOG + release-gate output are the release record) | Actions UI; historical v1.3.0 release evidence on [#116](https://github.com/presljf/github-project-tracker/issues/116) |
 
 ---
 
@@ -142,7 +142,7 @@ Record the results here (dated) whenever publication/security settings change; T
 | `tracker.config.json` governance still says `publication.status: "private"` and `security.privateVulnerabilityReporting: false` | Config examples understate current state | Config owner (out of T04 write scope): update config/docs pin follow-up; schema already supports both fields |
 | Secret scanning + push protection disabled | Leaked-secret detection relies on review/docs scan | Maintainer: enable GitHub secret scanning/push protection (free for public repos) and record here |
 | Branch protection/rulesets not enabled | Required checks/reviews not platform-enforced | T03 [#41](https://github.com/presljf/github-project-tracker/issues/41) once unblocked; contract in CI/security profile §3 |
-| No GitHub Releases for `v1.0.0`/`v1.3.0`/`v1.3.2` tags | Tag exists without release notes/artifacts | Release task per [#45](https://github.com/presljf/github-project-tracker/issues/45); do not publish without approval |
+| Historical tag-only releases: no GitHub Releases for `v1.0.0`/`v1.3.0`/`v1.3.2` tags | Tag exists without release notes/artifacts | Release task per [#45](https://github.com/presljf/github-project-tracker/issues/45); do not publish without approval |
 | `docs/README.md` index does not list this page | Discoverability | Docs-index owner (out of T04 write scope) |
 | Community files: CONTRIBUTING/CODE_OF_CONDUCT absent (community health 71%) | Lower contributor guidance | Maintainer decision; not a security blocker |
 | Default workflow token is read-only (good) but SHA-pinning is convention-only | Action refs verified by review, not platform policy | Maintainer may enable the SHA-pinning requirement; record here if enabled |

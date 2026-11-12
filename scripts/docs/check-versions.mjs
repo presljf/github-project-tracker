@@ -24,6 +24,8 @@ function main() {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'tracker.config.json'), 'utf8'));
   const current = String(config.automation.templateVersion || '');
   const files = execFileSync('git', ['ls-files', '*.md', '*.yml', '*.yaml', '*.json', '*.mjs'], { cwd: root, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  // 1.3.0 is intentionally not treated as stale: active docs retain historical v1.3.0 records
+  // (release evidence, incident notes, version-record statements) that must stay literal.
   const violations = findStaleVersions({ files, stale: ['1.0.1', '1.0.2', '1.2.0', '1.2.1', '1.2.2'], allow: ['CHANGELOG.md', 'docs/ROADMAP_v1.1.0.md', 'docs/DOCS_VALIDATION.md', 'docs/ACTIONS_CATALOG.md', 'docs/FRESH_EYES_T12.md', 'docs/RELEASE_PROFILES.md', 'docs/TEMPLATE_REPO.md', 'package-lock.json'] });
   if (violations.length) {
     console.error(`Version consistency FAILED — ${violations.length} file(s) still reference an older version:`);

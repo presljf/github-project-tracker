@@ -31,7 +31,7 @@ stream close gate are enforced by the same engine. See
 Existing `product` configs are unchanged; a declared `Stream` field in product mode is ignored.
 
 This template repository itself runs the `tooling` profile from v1.3.0 onward as the live pilot
-(flip lands post-tag; the tag is the v1.3.0 version record). New adopters default to `product` and
+(flip lands post-tag; the tag is the v1.3.0 historical version record). New adopters default to `product` and
 opt in per repo when tooling-style deliveries fit.
 
 ## 1. Preconditions

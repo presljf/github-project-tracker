@@ -61,7 +61,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
 1. **Read** target changelog + diff/overrides.
 2. **Dry-run** in a branch:
    ```bash
-   git checkout -b chore/upgrade-tracker-1.3.0
+   git checkout -b chore/upgrade-tracker-1.3.2
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);
