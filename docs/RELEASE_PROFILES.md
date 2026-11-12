@@ -330,6 +330,23 @@ Live findings fixed in this change:
 
 Residual follow-ups: adopters/pilot must confirm macOS runner availability and environment protection (`release` environment with required reviewers) before enabling publishing; the two stale tag-triggered queued runs and the remaining zombie queue entries need an owner cancellation (or GitHub support ticket) to fully close the queue item.
 
+## 11.1 Environment-protection fallback (private/personal plan)
+
+The protected `release` environment's required-reviewer rule is unsupported on the current private/personal plan (`422: billing plan does not support required reviewers`). Do not retry that setup or claim it is enforced.
+
+**Supported fallback for macOS:**
+
+1. Run the hosted `macos-15` workflow in dry-run mode and record the run URL.
+2. Download the workflow artifact; keep the draft-release behavior.
+3. Verify every asset against `SHA256SUMS` with `npm run verify:checksums -- --dir <artifact-dir>`.
+4. Create or update a **draft** GitHub Release from the verified assets.
+5. Have a second reviewer compare the checksums and approve publishing the draft.
+6. Publish; retain the checksum evidence and run URL in the release record.
+
+Limits: this fallback has manual approval, not a platform-enforced protected environment. Branch protection is also unavailable on the private repo; use contract/release gates and record exceptions. Never expose signing/secrets in logs.
+
+**Evidence:** hosted desktop smoke `43146534643`; hosted release dry-run `43147293714`; CastDeck v0.4.6 verify 100/100.
+
 ## 12. Related documents
 
 | Document | Why it matters here |

@@ -508,3 +508,8 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 ### Preflight and dependency approval
 
 `task.mjs start` rejects a dirty worktree unless `--allow-dirty --dirty-reason "..."` is supplied. `npm run guard:deps` requires dependency/lockfile changes to be listed in `tracker.dependencies.json` with an issue, reason, and expiry; script-only `package.json` edits are allowed.
+
+
+### Manual release checksum gate
+
+`npm run verify:checksums -- --dir <artifact-dir>` verifies `SHA256SUMS` before a manual draft release; asset/checksum mismatch fails closed.

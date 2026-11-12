@@ -179,3 +179,7 @@ Before releasing, run `npm run gate:release -- --root . --repo owner/repo`; it v
 ## Preflight and dependency approval
 
 Start tasks only on a clean worktree. Dependency changes require an approved `tracker.dependencies.json` entry (issue/reason/expiry); CI runs `guard:deps`. Local installs should still pause for explicit human approval.
+
+## Manual release fallback
+
+When a protected environment is unsupported, use hosted macOS dry-run → download artifacts → `verify:checksums` → draft release → second-reviewer checksum comparison → publish, retaining run/checksum evidence. The fallback is manual approval, not platform-enforced protection.
