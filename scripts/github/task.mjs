@@ -181,7 +181,9 @@ export async function startTask({
       const hooksPath = execFileSync('git', ['config', 'core.hooksPath'], { cwd: repoRoot, encoding: 'utf8' }).trim();
       if (hooksPath !== '.githooks') hooksWarning = 'git hooks not installed; run npm run hooks:install';
     }
-  } catch { hooksWarning = 'git hooks not installed; run npm run hooks:install'; }
+  } catch {
+    hooksWarning = 'git hooks not installed; run npm run hooks:install';
+  }
   const { ctx, warning } = await checkDoR({ config, github, issueNumber, owner, dryRun });
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
   const comment = [
