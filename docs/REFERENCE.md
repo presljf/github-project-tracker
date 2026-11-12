@@ -363,6 +363,12 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### Adoption contract verifier
+
+`npm run verify:contract -- --root <downstream> --contract contract/adoption-contract.json`
+checks the pinned template version, required config paths/profiles/docs, exact reusable workflow
+refs, and OI-linked overrides (`tracker.overrides.json`). Missing/expired overrides or stale refs fail.
+
 ### No-admin merge wrapper
 
 Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch` (or `node scripts/github/merge-pr.mjs`).
