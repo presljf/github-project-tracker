@@ -200,3 +200,5 @@ optional standard field; project-specific forbidden fields are rejected. Open/cu
 ## Metadata reconciliation
 
 Run report-first (`--repair=none`), review the plan, then apply open-only or selected repairs. Closed history is report-only by default; exceptions/OIs are recorded for issues not safely changed.
+
+Historical metadata exceptions are explicit, OI-linked, and expiring. They are reserved for artifacts that cannot be safely repaired, such as duplicate closed issues; open/current issues are always strict.

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Reconcile project metadata to the Tracker OS canonical contract. */
+import fs from 'node:fs';
 import { GitHubCli } from './lib/github.mjs';
 
 const RELEASE_LEGACY = /^\[([^\]]+)\]\s+Release\b(.*)$/i;
@@ -26,10 +27,21 @@ export function expectedType(title = '') {
   if (TASK.test(title)) return 'Feature';
   return null;
 }
-export function buildReconciliationPlan({ issues = [], selected = [], includeClosed = false } = {}) {
+export function buildReconciliationPlan({ issues = [], selected = [], includeClosed = false, exceptions = [] } = {}) {
   const selectedSet = new Set(selected.map(Number));
+  const ignored = new Set(exceptions.flatMap((entry) => entry.issues || []));
+  const working = issues.map((issue) => ({ ...issue, title: canonicalTitle(issue.title) || issue.title }));
+  const sprints = new Map();
+  const releases = new Map();
+  for (const issue of working) {
+    const sprint = issue.title.match(/^\[Sprint\]\s+([^\s—-]+)/i);
+    if (sprint) sprints.set(sprint[1], issue.number);
+    const release = issue.title.match(/^\[Release\]\s+([^\s—-]+)/i);
+    if (release) releases.set(release[1], issue.number);
+  }
   const plan = [];
   for (const issue of issues) {
+    if (ignored.has(issue.number)) continue;
     if (!includeClosed && issue.state === 'CLOSED') continue;
     if (selectedSet.size && !selectedSet.has(Number(issue.number))) continue;
     const nextTitle = canonicalTitle(issue.title);
@@ -40,10 +52,25 @@ export function buildReconciliationPlan({ issues = [], selected = [], includeClo
     if (nextTitle && nextTitle !== issue.title) actions.push({ type: 'rename', from: issue.title, to: nextTitle });
     if (expected && actualType !== expected)
       actions.push({ type: 'type', from: actualType || 'missing', to: expected });
+    const taskKey = title.match(/^\[([^\]]*?-T\d+)\]/i);
+    const sprintKey = title.match(/^\[Sprint\]\s+([^\s—-]+)/i);
+    if (taskKey) {
+      const key = taskKey[1].replace(/-T\d+$/i, '');
+      const parent = sprints.get(key);
+      if (parent && issue.parent?.number !== parent)
+        actions.push({ type: 'parent', from: issue.parent?.number || 'none', to: parent });
+    } else if (sprintKey) {
+      const [major, minor] = sprintKey[1].split('.');
+      const releaseKey = `v${major}.${minor}.0`;
+      const parent = releases.get(releaseKey);
+      if (parent && issue.parent?.number !== parent)
+        actions.push({ type: 'parent', from: issue.parent?.number || 'none', to: parent });
+    }
     if (actions.length) plan.push({ number: issue.number, state: issue.state, actions });
   }
   return plan;
 }
+
 export function applyPlan({ github, owner, repo, plan, dryRun = true }) {
   const applied = [];
   for (const entry of plan) {
@@ -51,6 +78,7 @@ export function applyPlan({ github, owner, repo, plan, dryRun = true }) {
       if (!dryRun) {
         if (action.type === 'rename') github.updateIssueTitle(owner, repo, entry.number, action.to);
         if (action.type === 'type') github.setIssueType(owner, repo, entry.number, action.to);
+        if (action.type === 'parent') github.addSubIssue(owner, repo, action.to, entry.number);
       }
       applied.push({ number: entry.number, ...action });
     }
@@ -81,9 +109,18 @@ function main() {
   }
   const gh = new GitHubCli();
   const issues = gh.listIssues(owner, name, { state: includeClosed ? 'all' : 'open', limit: 1000 });
-  let plan = buildReconciliationPlan({ issues, selected, includeClosed });
+  const parsedExceptions = (() => {
+    try {
+      const file = get('exceptions', null);
+      if (!file) return [];
+      return JSON.parse(fs.readFileSync(file, 'utf8')).exceptions || [];
+    } catch {
+      return [];
+    }
+  })();
+  let plan = buildReconciliationPlan({ issues, selected, includeClosed, exceptions: parsedExceptions });
   if (repair === 'open-only') plan = plan.filter((p) => p.state !== 'CLOSED');
-  if (repair === 'all-safe') plan = plan.filter((p) => p.actions.every((a) => ['rename', 'type'].includes(a.type)));
+  if (repair === 'all-safe') plan = plan.filter((p) => p.actions.every((a) => ['rename', 'type', 'parent'].includes(a.type)));
   console.log(
     `Metadata reconciliation (${repair}${includeClosed ? ', include-closed' : ''}): ${plan.length} issue(s) require action.`,
   );
