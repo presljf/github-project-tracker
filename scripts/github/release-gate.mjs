@@ -9,7 +9,7 @@ export function evaluateReleaseGate({ contractResult, bypasses = [] }) {
   const violations = [...(contractResult?.violations || [])];
   if (bypasses.length)
     violations.push(`open tracker-contract-exception OI(s): ${bypasses.map((b) => `#${b.number}`).join(', ')}`);
-  return { ok: violations.length === 0, violations };
+  return { ok: violations.length === 0, selfRepo: Boolean(contractResult?.selfRepo), violations };
 }
 function main() {
   const args = process.argv.slice(2);
@@ -32,7 +32,12 @@ function main() {
     bypasses = new GitHubCli().listOpenIssuesByLabel(owner, name, label);
   }
   const result = evaluateReleaseGate({ contractResult, bypasses });
-  if (result.ok) console.log('Release gate OK — contract verified; no open bypass OIs.');
+  if (result.ok)
+    console.log(
+      result.selfRepo
+        ? 'Release gate OK — self-repo: downstream contract checks skipped (version/config verified); no open bypass OIs.'
+        : 'Release gate OK — contract verified; no open bypass OIs.',
+    );
   else {
     console.error(`Release gate FAILED (${result.violations.length}):`);
     for (const v of result.violations) console.error(`- ${v}`);

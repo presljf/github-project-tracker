@@ -9,7 +9,7 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
-## v1.3.0 — Verification & documentation contract (in progress)
+## v1.3.0 — Verification & documentation contract
 
 - Add the enforced **tooling work profile** (`workProfile: "product" | "tooling"`, default
   `product`; absent config keeps `product`): `[Stream]` container → Task lifecycle with a `Stream`
@@ -34,7 +34,13 @@ All notable changes to Project Tracker OS are documented here. The format follow
   unreadable `statusCheckRollup` degrades loudly to a metadata-only closure audit (warning + job
   summary, advisory exit 0, no false check-related OI; real closing-keyword violations still open an
   OI; other errors still fail).
-- Remaining v1.3.0 item (release metadata/tag) lands in T05 and is recorded at release close.
+- Fix contract verification for the **contract's own repository**: `verify-contract`/`release-gate`
+  detect `config.repository === contract.repository`, print an explicit
+  `self-repo: downstream contract checks skipped` result, keep version/config alignment enforced, and
+  let `stream.mjs close`'s default gate command work for Tracker OS Streams (T06 prerequisite).
+  Downstream repositories keep the full downstream-adopter checks.
+- Release housekeeping: version plus docs/cards/contract pins bumped to **v1.3.0**; no downstream
+  adoption in this release (CastDeck pins v1.3.0 separately in Sprint 0.5.7).
 
 ## v1.2.2 — Qualified release tooling
 

@@ -1,6 +1,6 @@
 # ACTIONS CATALOG
 
-**Docs version:** v1.2.2-docs.1 · Target template: v1.2.2
+**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
 **Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
 **Availability key:** **shipped** = YAML exists in this repo; **contract-only** = interface documented here but not yet implemented. Contract-only items are never claimed as shipped.

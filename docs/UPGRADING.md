@@ -1,6 +1,6 @@
 # UPGRADING
 
-**Docs version:** v1.2.2-docs.1 · Target template: v1.2.2
+**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
 The tracker is versioned; downstream projects pin an exact version and upgrade deliberately.
 
 ## Version semantics
@@ -33,12 +33,19 @@ The tracker is versioned; downstream projects pin an exact version and upgrade d
 
 Never edit a reusable workflow in the downstream repo; override via inputs/config. For copied files, record the template version used.
 
+**Self-repo mode:** when the verifier/gate runs in the contract's own repository
+(`config.repository === contract.repository`), it prints
+`self-repo: downstream contract checks skipped`, skips the downstream-adopter checks (required
+profile/docs/workflow pins) and still checks `templateVersion`/required-config alignment. Downstream
+behaviour is unchanged, so `release:bump` + `gate:release` work for tracker releases (v1.3.0
+evidence) and `stream.mjs close`'s default gate command works for Tracker OS Streams (T06).
+
 ## Upgrade procedure
 
 1. **Read** target changelog + diff/overrides.
 2. **Dry-run** in a branch:
    ```bash
-   git checkout -b chore/upgrade-tracker-1.2.2
+   git checkout -b chore/upgrade-tracker-1.3.0
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);

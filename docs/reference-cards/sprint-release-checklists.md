@@ -1,6 +1,6 @@
 # Sprint & release checklists
 
-<!-- Docs version: v1.2.2-docs.1 · Target template: v1.2.2 · print formats: A4, Letter -->
+<!-- Docs version: v1.3.0-docs.1 · Target template: v1.3.0 · print formats: A4, Letter -->
 
 > Printable close gates for sprints and releases. Full lifecycle: [HOW TO USE §11–12](../HOW_TO_USE.md#11-sprint-lifecycle).
 

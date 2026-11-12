@@ -25,13 +25,37 @@ function usesRefs(files) {
   }
   return refs;
 }
+/**
+ * The contract's own repository ships the contract, reusable workflows and adopter docs rather than
+ * consuming them. Downstream-adopter checks (required profile/docs/workflow pins) are skipped there;
+ * version/config alignment is still verified.
+ */
+export function isSelfRepo({ contract, config }) {
+  return (
+    Boolean(contract?.repository && config?.repository) && String(config.repository) === String(contract.repository)
+  );
+}
+
 export function verifyContract({ root, contract, config, overrides = {} }) {
   const violations = [];
   const version = String(contract.trackerVersion);
+  const selfRepo = isSelfRepo({ contract, config });
   if (String(config?.automation?.templateVersion) !== version)
     violations.push(`templateVersion=${config?.automation?.templateVersion} expected ${version}`);
   for (const key of contract.requiredConfig || [])
     if (getPath(config, key) === undefined) violations.push(`required config missing: ${key}`);
+  if (selfRepo) {
+    return {
+      ok: violations.length === 0,
+      version,
+      selfRepo: true,
+      skipped: ['requiredProfiles', 'requiredDocs', 'requiredWorkflows'],
+      notes: [
+        `self-repo: downstream contract checks skipped (${['requiredProfiles', 'requiredDocs', 'requiredWorkflows'].join(', ')}) — this repository owns the contract and reusable workflows`,
+      ],
+      violations,
+    };
+  }
   for (const profile of contract.requiredProfiles || [])
     if (!config?.profiles?.[profile]) violations.push(`required profile missing: ${profile}`);
   for (const doc of contract.requiredDocs || [])
@@ -62,7 +86,7 @@ export function verifyContract({ root, contract, config, overrides = {} }) {
       }
     }
   }
-  return { ok: violations.length === 0, version, violations };
+  return { ok: violations.length === 0, version, selfRepo: false, skipped: [], notes: [], violations };
 }
 function main() {
   const args = process.argv.slice(2);
@@ -77,7 +101,13 @@ function main() {
   const overridePath = path.join(root, contract.overrideManifest || 'tracker.overrides.json');
   const overrides = fs.existsSync(overridePath) ? readJson(overridePath) : {};
   const result = verifyContract({ root, contract, config, overrides });
-  if (result.ok) console.log(`Adoption contract OK — tracker v${result.version}.`);
+  for (const note of result.notes) console.log(note);
+  if (result.ok)
+    console.log(
+      result.selfRepo
+        ? `Adoption contract OK — tracker v${result.version} (self-repo: downstream contract checks skipped).`
+        : `Adoption contract OK — tracker v${result.version}.`,
+    );
   else {
     console.error(`Adoption contract FAILED (${result.violations.length}):`);
     for (const v of result.violations) console.error(`- ${v}`);

@@ -1,6 +1,6 @@
 # Docs validation report (T12)
 
-**Docs version:** v1.2.2-docs.1 · **Target template:** v1.0.0
+**Docs version:** v1.3.0-docs.1 · **Target template:** v1.0.0
 **Status:** T12 docs QA evidence complete; v1.0.0 tag follows T08 live validation + release close
 **Rule:** docs must match implemented commands/config/workflows; stale docs are defects.
 

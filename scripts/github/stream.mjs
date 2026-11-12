@@ -20,6 +20,11 @@ import { ensureSingleSelectOption } from './project-field-option.mjs';
 
 export const DEFAULT_GATE_COMMAND = 'node scripts/github/release-gate.mjs';
 
+/** Default release-gate command used by `stream.mjs close` (self-repo safe via release-gate). */
+export function defaultGateCommand(config = {}) {
+  return `${DEFAULT_GATE_COMMAND} --repo ${config.repository}`;
+}
+
 export function streamTitle(name, delivery) {
   return `[Stream] ${name} — ${delivery}`;
 }
@@ -98,7 +103,7 @@ function tail(text, lines = 6) {
 }
 
 export function runReleaseGate({ command, config, repoRoot = process.cwd(), timeoutMs = 600000 }) {
-  const resolved = command || `${DEFAULT_GATE_COMMAND} --repo ${config.repository}`;
+  const resolved = command || defaultGateCommand(config);
   try {
     const output = execFileSync('bash', ['-c', resolved], {
       cwd: repoRoot,
@@ -270,8 +275,7 @@ export async function closeStream({
   }
   let gate;
   if (gateRunner) gate = await gateRunner({ config, repoRoot, streamNumber });
-  else if (dryRun)
-    gate = { ok: true, skipped: true, command: gateCommand || `${DEFAULT_GATE_COMMAND} --repo ${config.repository}` };
+  else if (dryRun) gate = { ok: true, skipped: true, command: gateCommand || defaultGateCommand(config) };
   else gate = runReleaseGate({ command: gateCommand, config, repoRoot, timeoutMs: gateTimeoutMs });
   if (!gate.ok) {
     const detail = tail(gate.output);

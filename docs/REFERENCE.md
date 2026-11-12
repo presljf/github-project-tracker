@@ -1,6 +1,6 @@
 # REFERENCE
 
-**Docs version:** v1.2.2-docs.1 · Target template: v1.2.2
+**Docs version:** v1.3.0-docs.1 · Target template: v1.3.0
 **Scope:** commands, config, fields/statuses, labels, templates, audit rules, workflows, tokens, runners, release profiles, and expected outputs.
 
 > **Availability key:** **now** = shipped and validated in this template; **planned** = contract/example only, not claimed as implemented. Manual fallbacks remain in [HOW TO USE](./HOW_TO_USE.md).
@@ -492,7 +492,7 @@ Task context uses a targeted `issue.projectItems` lookup (and batched WIP item l
 
 ### Qualified version bump
 
-Use `npm run release:bump -- --from 1.2.2 --to 1.2.2` (dry-run) or add `--apply`.
+Use `npm run release:bump -- --from 1.3.0 --to 1.3.0` (dry-run) or add `--apply`.
 It uses an explicit allowlist, excludes lockfiles/history/tests/submodules/binaries, reports exact
 line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards and run guards after applying.
 
@@ -500,7 +500,9 @@ line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards
 
 `npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract and
 refuses release when any open `tracker-contract-exception` OI exists. Downstream release workflows
-must run this gate before a dispatch/tag publish.
+must run this gate before a dispatch/tag publish. In the contract's own repository the gate prints
+`self-repo: downstream contract checks skipped` (see the adoption contract verifier above) and is
+used for the v1.3.0 release evidence.
 
 ### Post-merge bypass audit
 
@@ -536,6 +538,14 @@ the board's linked PRs consistent.
 `npm run verify:contract -- --root <downstream> --contract contract/adoption-contract.json`
 checks the pinned template version, required config paths/profiles/docs, exact reusable workflow
 refs, and OI-linked overrides (`tracker.overrides.json`). Missing/expired overrides or stale refs fail.
+
+When the repo under inspection **is the contract's own repository**
+(`config.repository === contract.repository`), the verifier prints an explicit
+`self-repo: downstream contract checks skipped` result, skips the downstream-adopter checks
+(required profile/docs/workflow pins) and still enforces `templateVersion`/`requiredConfig`
+alignment. Downstream repositories keep the full check set; `release-gate` passes the self-repo
+result through with the same note. This is what lets `release:bump` + `gate:release` (and
+`stream.mjs close`'s default gate command) run inside the tracker repo (T06 prerequisite).
 
 ### No-admin merge wrapper
 
@@ -644,7 +654,7 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 
 ## 20. Versioning
 
-- Docs version: `v1.2.2-docs.1` for this target; update with each template release.
+- Docs version: `v1.3.0-docs.1` for this target; update with each template release.
 - Template/config: exact `vX.Y.Z`; patch/minor/major meanings in [UPGRADING](./UPGRADING.md).
 - Reference is normative for commands; handbook is task-oriented; playbook is conceptual; T12 validates the docs set before release.
 
