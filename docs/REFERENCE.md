@@ -556,3 +556,4 @@ Run `npm run hooks:install` to set `core.hooksPath=.githooks`. The hooks block c
 block direct pushes to main/master, and warn on checkout to main. `main-history-guard` opens a
 `tracker-contract-exception` OI when a main commit has no merged PR. Explicit env overrides are
 warned and must be recorded; they do not bypass remote protection.
+
