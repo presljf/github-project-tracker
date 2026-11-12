@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "trackerVersion": "1.0.2",
+  "repository": "presljf/github-project-tracker",
+  "requiredConfig": [
+    "trackerVersion",
+    "repository",
+    "project",
+    "statuses",
+    "fields",
+    "releases",
+    "automation.templateRepo",
+    "automation.templateVersion"
+  ],
+  "requiredWorkflows": [
+    {
+      "id": "ci",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-ci.yml"
+    },
+    {
+      "id": "security",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-security.yml"
+    },
+    {
+      "id": "release",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-release.yml"
+    },
+    {
+      "id": "desktop-smoke",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-desktop-smoke.yml"
+    }
+  ],
+  "requiredProfiles": ["node"],
+  "requiredDocs": ["docs/TRACKER.md"],
+  "overrideManifest": "tracker.overrides.json"
+}

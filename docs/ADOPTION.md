@@ -159,3 +159,7 @@ Do not start feature work until the first task proves the loop.
 ## No-admin merges
 
 Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch`; it refuses `--admin` and requires `ci / ci-gate` + `docs-guard` SUCCESS. Downstream private repos without branch protection must rely on contract/release gates instead.
+
+## Adoption contract verify
+
+Run `npm run verify:contract` against `contract/adoption-contract.json`. Required workflows must be pinned to the exact tracker tag; a bespoke workflow or missing capability requires an OI-linked `tracker.overrides.json` entry with reason and expiry.

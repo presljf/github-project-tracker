@@ -1,51 +1,120 @@
 {
   "version": 1,
-  "ignore": ["tests/", "docs/", ".git/", "node_modules/", "dist/", "coverage/"],
+  "ignore": [
+    "tests/",
+    "docs/",
+    ".git/",
+    "node_modules/",
+    "dist/",
+    "coverage/"
+  ],
   "rules": [
     {
       "id": "github-automation",
-      "paths": ["scripts/github/"],
-      "docs": ["docs/REFERENCE.md", "docs/TASK_CLI.md", "docs/ADOPTION.md"]
+      "paths": [
+        "scripts/github/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/TASK_CLI.md",
+        "docs/ADOPTION.md"
+      ]
     },
     {
       "id": "docs-tooling",
-      "paths": ["scripts/docs/"],
-      "docs": ["docs/DOCS_VALIDATION.md", "docs/DOCS_STYLE_GUIDE.md", "docs/GUARD_DISTRIBUTION.md", "docs/DOCS_COVERAGE.md"]
+      "paths": [
+        "scripts/docs/"
+      ],
+      "docs": [
+        "docs/DOCS_VALIDATION.md",
+        "docs/DOCS_STYLE_GUIDE.md",
+        "docs/GUARD_DISTRIBUTION.md",
+        "docs/DOCS_COVERAGE.md"
+      ]
     },
     {
       "id": "all-scripts",
-      "paths": ["scripts/"],
-      "docs": ["docs/REFERENCE.md", "docs/HOW_TO_USE.md"]
+      "paths": [
+        "scripts/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/HOW_TO_USE.md"
+      ]
     },
     {
       "id": "workflows",
-      "paths": [".github/workflows/"],
-      "docs": ["docs/CI_SECURITY_PROFILE.md", "docs/ACTIONS_CATALOG.md", "docs/RELEASE_PROFILES.md"]
+      "paths": [
+        ".github/workflows/"
+      ],
+      "docs": [
+        "docs/CI_SECURITY_PROFILE.md",
+        "docs/ACTIONS_CATALOG.md",
+        "docs/RELEASE_PROFILES.md"
+      ]
     },
     {
       "id": "actions",
-      "paths": [".github/actions/"],
-      "docs": ["docs/ACTIONS_CATALOG.md", "docs/CI_SECURITY_PROFILE.md"]
+      "paths": [
+        ".github/actions/"
+      ],
+      "docs": [
+        "docs/ACTIONS_CATALOG.md",
+        "docs/CI_SECURITY_PROFILE.md"
+      ]
     },
     {
       "id": "issue-forms",
-      "paths": [".github/ISSUE_TEMPLATE/"],
-      "docs": ["docs/DOWNSTREAM_FEEDBACK.md", "docs/HOW_TO_USE.md"]
+      "paths": [
+        ".github/ISSUE_TEMPLATE/"
+      ],
+      "docs": [
+        "docs/DOWNSTREAM_FEEDBACK.md",
+        "docs/HOW_TO_USE.md"
+      ]
     },
     {
       "id": "config-schema",
-      "paths": ["schemas/", "tracker.config.json", "tracker.config.example.json", "examples/"],
-      "docs": ["docs/REFERENCE.md", "docs/UPGRADING.md", "docs/ADOPTION.md"]
+      "paths": [
+        "schemas/",
+        "tracker.config.json",
+        "tracker.config.example.json",
+        "examples/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/UPGRADING.md",
+        "docs/ADOPTION.md"
+      ]
     },
     {
       "id": "profiles",
-      "paths": ["profiles/"],
-      "docs": ["docs/RELEASE_PROFILES.md"]
+      "paths": [
+        "profiles/"
+      ],
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ]
     },
     {
       "id": "package",
-      "paths": ["package.json"],
-      "docs": ["docs/REFERENCE.md", "docs/UPGRADING.md"]
+      "paths": [
+        "package.json"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/UPGRADING.md"
+      ]
+    },
+    {
+      "id": "adoption-contract",
+      "paths": [
+        "contract/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/ADOPTION.md"
+      ]
     }
   ]
 }

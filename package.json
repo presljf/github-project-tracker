@@ -16,6 +16,7 @@
     "guard:gh": "node scripts/github/guard-gh-transport.mjs",
     "guard:scope": "node scripts/github/guard-scope.mjs",
     "guard:docs": "node scripts/docs/guard-docs.mjs",
-    "merge-pr": "node scripts/github/merge-pr.mjs"
+    "merge-pr": "node scripts/github/merge-pr.mjs",
+    "verify:contract": "node scripts/github/verify-contract.mjs"
   }
 }
