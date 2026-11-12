@@ -19,6 +19,7 @@
     "merge-pr": "node scripts/github/merge-pr.mjs",
     "verify:contract": "node scripts/github/verify-contract.mjs",
     "guard:pr-close": "node scripts/github/guard-pr-close.mjs",
-    "audit:post-merge": "node scripts/github/post-merge-audit.mjs"
+    "audit:post-merge": "node scripts/github/post-merge-audit.mjs",
+    "gate:release": "node scripts/github/release-gate.mjs"
   }
 }
