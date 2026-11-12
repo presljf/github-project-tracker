@@ -30,7 +30,86 @@
       "reusable": "presljf/github-project-tracker/.github/workflows/reusable-desktop-smoke.yml"
     }
   ],
-  "requiredProfiles": ["node"],
-  "requiredDocs": ["docs/TRACKER.md"],
-  "overrideManifest": "tracker.overrides.json"
+  "requiredProfiles": [
+    "node"
+  ],
+  "requiredDocs": [
+    "docs/TRACKER.md"
+  ],
+  "overrideManifest": "tracker.overrides.json",
+  "metadata": {
+    "requiredIssueTypes": [
+      "Task",
+      "Bug",
+      "Feature"
+    ],
+    "typeMapping": {
+      "release": "Task",
+      "sprint": "Task",
+      "task": "Feature"
+    },
+    "requiredFields": [
+      "Status",
+      "Release",
+      "Sprint",
+      "Area",
+      "Kind",
+      "Estimate",
+      "Source"
+    ],
+    "optionalFields": {
+      "Priority": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "forbiddenFields": [],
+    "requiredOptions": {
+      "Status": [
+        "Todo",
+        "In Progress",
+        "In Review",
+        "Blocked",
+        "Done"
+      ],
+      "Kind": [
+        "feature",
+        "fix",
+        "ux",
+        "spike",
+        "test",
+        "infra"
+      ],
+      "Estimate": [
+        "S",
+        "M",
+        "L"
+      ],
+      "Source": [
+        "Internal"
+      ]
+    },
+    "hierarchy": {
+      "release": [
+        "sprint"
+      ],
+      "sprint": [
+        "task"
+      ]
+    },
+    "uniqueKeys": true,
+    "acceptedTitlePatterns": {
+      "release": [
+        "[Release] <version> \u2014 ..."
+      ],
+      "sprint": [
+        "[Sprint] <sprint> \u2014 ..."
+      ],
+      "task": [
+        "[<sprint>-T<nn>] ..."
+      ]
+    }
+  }
 }

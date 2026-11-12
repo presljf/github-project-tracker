@@ -27,7 +27,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.mjs\" \"package.json\" \".github/**/*.{yml,yaml}\"",
-    "format:check": "prettier --check \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.mjs\" \"package.json\" \".github/**/*.{yml,yaml}\""
+    "format:check": "prettier --check \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.mjs\" \"package.json\" \".github/**/*.{yml,yaml}\"",
+    "verify:metadata": "node scripts/github/verify-metadata.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

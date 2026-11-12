@@ -416,6 +416,10 @@ export class GitHubCli {
     );
   }
 
+  getIssueTypes(owner, repo) {
+    return this.run(['api', `repos/${owner}/${repo}/issue-types`], { json: true });
+  }
+
   getIssue(owner, repo, number) {
     return this.run(
       ['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'],
@@ -489,7 +493,8 @@ export class GitHubCli {
     return result;
   }
 
-  listIssues(owner, repo, state = 'all') {
+  listIssues(owner, repo, options = 'all') {
+    const { state = 'all', limit = 1000 } = typeof options === 'string' ? { state: options } : options;
     const result = this.run(
       [
         'issue',
@@ -499,9 +504,9 @@ export class GitHubCli {
         '--state',
         state,
         '--json',
-        'number,title,body,state,assignees,labels,milestone,issueType,url',
+        'number,title,body,state,assignees,labels,milestone,issueType,parent,url',
         '--limit',
-        '100',
+        String(limit),
       ],
       { json: true },
     );

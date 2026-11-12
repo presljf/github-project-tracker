@@ -520,3 +520,13 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
 `npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
 as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
+
+### Project metadata verifier
+
+`npm run verify:metadata -- --repo owner/repo --project <number>` checks native issue types,
+required/optional/forbidden project fields, options, release → sprint → task hierarchy, unique
+keys, and type mapping. Default is open/current strict; `--include-closed` audits history;
+`--warn-only` reports without failing during migration. Canonical title format is `[Release] <version> — ...`, `[Sprint] <key> — ...`, and `[<sprint>-T<nn>] ...`. Legacy formats fail verification and require T20 migration or an approved exception.
+
+**Standard fields:** required Status/Release/Sprint/Area/Kind/Estimate/Source; optional
+Priority (P0–P3 when present); forbidden fields are project-specific only.
