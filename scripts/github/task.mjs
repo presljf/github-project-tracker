@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
+import { evaluateCleanTree, gitStatus } from './lib/preflight.mjs';
 import { issueKind } from './audit.mjs';
 import { createGitHub } from './lib/github.mjs';
 import { parseArgs, UsageError } from './lib/cli.mjs';
@@ -132,7 +133,10 @@ function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
   }
 }
 
-export async function startTask({ config, github, issueNumber, owner, executor, branch, dryRun = false, repoRoot = process.cwd(), gitExec = null }) {
+export async function startTask({ config, github, issueNumber, owner, executor, branch, dryRun = false, repoRoot = process.cwd(), gitExec = null, allowDirty = false, dirtyReason = '' }) {
+  const status = gitExec ? gitExec(['status', '--porcelain']) : gitStatus(repoRoot);
+  const preflight = evaluateCleanTree({ statusText: status, allowDirty, reason: dirtyReason });
+  if (!preflight.ok) throw new UsageError(`preflight: ${preflight.violations.join('; ')}`);
   const { ctx, warning } = await checkDoR({ config, github, issueNumber, owner, dryRun });
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
   const comment = [
@@ -144,6 +148,7 @@ export async function startTask({ config, github, issueNumber, owner, executor, 
     `- **Starting HEAD:** \`${git.head}\``,
     `- **Scope confirmed:** ${ctx.issue.title}`,
     '- **DoR:** type/milestone/fields/acceptance/dependencies checked',
+    ...(allowDirty ? [`- **Dirty-worktree exception:** ${dirtyReason}`] : []),
     '- **Evidence planned:** attach at check-out',
     `- **Risks/blockers:** ${warning || 'none'}`,
     '',
@@ -296,8 +301,8 @@ if (isMain) {
         return;
       }
       const args = parseArgs(raw.slice(1), {
-        flags: ['dry-run', 'json', 'force', 'help'],
-        options: ['config', 'issue', 'owner', 'executor', 'branch', 'message', 'message-file', 'pr', 'evidence', 'evidence-file', 'reason', 'blocked-by'],
+        flags: ['dry-run', 'json', 'force', 'help', 'allow-dirty'],
+        options: ['config', 'issue', 'owner', 'executor', 'branch', 'message', 'message-file', 'pr', 'evidence', 'evidence-file', 'reason', 'blocked-by', 'dirty-reason'],
       });
       if (args.help) {
         console.log(usage());
@@ -315,7 +320,7 @@ if (isMain) {
       const dryRun = Boolean(args['dry-run']);
       const github = createGitHub();
       let result;
-      if (command === 'start') result = await startTask({ config, github, issueNumber, owner, executor, branch: args.branch, dryRun });
+      if (command === 'start') result = await startTask({ config, github, issueNumber, owner, executor, branch: args.branch, dryRun, allowDirty: Boolean(args['allow-dirty']), dirtyReason: args['dirty-reason'] });
       else if (command === 'checkpoint') result = await checkpointTask({ config, github, issueNumber, message: messageFrom(args), dryRun });
       else if (command === 'review') result = await reviewTask({ config, github, issueNumber, pr: args.pr, evidence: args.evidence, dryRun });
       else if (command === 'block') result = await blockTask({ config, github, issueNumber, reason: args.reason, blockedBy: args['blocked-by'], dryRun });

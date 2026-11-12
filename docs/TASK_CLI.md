@@ -83,3 +83,8 @@ Exit 1 with an actionable message on: missing/invalid config, missing issue, tra
 ## Availability
 
 The task CLI is covered by `npm test` (mock adapter, happy/error/WIP/DoR/DoD/dry-run paths). T12 validates the real end-to-end lifecycle on a scratch issue before release.
+
+
+### Preflight
+
+`start` blocks on uncommitted changes. Deliberate exception: `--allow-dirty --dirty-reason "why"`, recorded in the check-in comment.
