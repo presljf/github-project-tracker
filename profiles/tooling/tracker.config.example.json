@@ -1,0 +1,72 @@
+{
+  "$schema": "../../schemas/tracker.config.schema.json",
+  "trackerVersion": 1,
+  "repository": "owner/repo",
+  "project": {
+    "owner": "owner",
+    "title": "Project Tracker",
+    "number": 1
+  },
+  "workProfile": "tooling",
+  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
+  "fields": {
+    "Stream": {
+      "options": ["v1.3.1"]
+    },
+    "Area": {
+      "options": ["docs", "ci", "code", "process"]
+    },
+    "Kind": {
+      "options": ["feature", "fix", "infra", "test", "docs"]
+    },
+    "Estimate": {
+      "options": ["S", "M", "L"]
+    },
+    "Source": {
+      "options": ["Internal", "Other"]
+    }
+  },
+  "issueTypes": {
+    "task": "Task",
+    "bug": "Bug",
+    "feature": "Feature",
+    "fallback": "Use project Kind if native issue types are unavailable."
+  },
+  "labels": {
+    "risk": ["risk:low", "risk:medium", "risk:high"],
+    "process": ["plan-change", "source:downstream", "status:needs-triage"]
+  },
+  "releases": [],
+  "automation": {
+    "defaultAssignee": "owner",
+    "branchPrefix": "task/",
+    "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
+    "templateRepo": "presljf/github-project-tracker",
+    "templateVersion": "1.2.2",
+    "inReviewMode": "manual",
+    "autoAddIssues": true,
+    "closeToDone": true,
+    "bot": {
+      "enabled": false
+    }
+  },
+  "workflows": {
+    "ci": {
+      "mode": "copy",
+      "requiredChecks": ["lint", "format", "test"]
+    },
+    "audit": {
+      "mode": "advisory",
+      "tokenSecret": "TRACKER_TOKEN"
+    },
+    "release": {
+      "profile": "generic",
+      "dryRun": true
+    }
+  },
+  "feedback": {
+    "upstreamRepo": "presljf/github-project-tracker",
+    "issueForm": "downstream-bug.yml",
+    "pinnedVersion": "1.2.2"
+  }
+}

@@ -33,6 +33,17 @@ export function parseArgs(argv, spec) {
   return out;
 }
 
+/** Parse `#123`, `123`, or an issue URL into a positive issue number. */
+export function parseIssueRef(value, flag = '--issue') {
+  if (value === undefined || value === null || String(value).trim() === '') throw new UsageError(`${flag} is required`);
+  const text = String(value).trim();
+  const url = /^https?:\/\/github\.com\/[^/]+\/[^/]+\/issues\/(\d+)\/?$/.exec(text);
+  const number = url ? Number(url[1]) : Number(text.replace(/^#/, ''));
+  if (!Number.isInteger(number) || number <= 0)
+    throw new UsageError(`${flag} must be an issue number, #number, or issue URL (got ${JSON.stringify(text)})`);
+  return number;
+}
+
 export function fail(message, code = 1) {
   console.error(`error: ${message}`);
   process.exitCode = code;

@@ -265,10 +265,11 @@ export class GitHubCli {
     const existing = node?.data?.node?.options || [];
     const byName = new Map(existing.map((option) => [option.name, option]));
     const merged = options.map((option) => {
-      const current = byName.get(option.name || option);
+      const spec = typeof option === 'string' ? { name: option } : option;
+      const current = byName.get(spec.name);
       return current
         ? { id: current.id, name: current.name, color: current.color, description: current.description || '' }
-        : { name: typeof option === 'string' ? option : option.name, color: 'BLUE', description: '' };
+        : { name: spec.name, color: spec.color || 'BLUE', description: spec.description || '' };
     });
     const mutation =
       'mutation($input: UpdateProjectV2FieldInput!) { updateProjectV2Field(input: $input) { projectV2Field { ... on ProjectV2SingleSelectField { options { id name } } } } }';

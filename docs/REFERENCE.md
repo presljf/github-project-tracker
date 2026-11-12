@@ -56,9 +56,13 @@
 | `schemas/tracker.config.schema.json` | config contract | now |
 | `scripts/github/validate-config.mjs` | config validation | now |
 | `scripts/github/bootstrap.mjs` | idempotent repo/project setup | now |
-| `scripts/github/audit.mjs` | tracker audit (advisory/strict/JSON) | now |
+| `scripts/github/audit.mjs` | tracker audit (advisory/strict/JSON), mode-aware | now |
 | `scripts/github/task.mjs` | start/checkpoint/review/block/done/status | now |
+| `scripts/github/stream.mjs` | tooling-profile `[Stream]` open/close lifecycle | now |
+| `scripts/github/project-field-option.mjs` | safe single-select option append (preserves ids/item values) | now |
+| `scripts/github/lib/work-profile.mjs` | product/tooling enforcement adapters (shared engine) | now |
 | `profiles/node/` | generic lint/format profile | now |
+| `profiles/tooling/` | tooling work-profile selection + example config | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
 | `.github/workflows/`, `.github/actions/` | reusable CI/release/security/audit workflows + composite actions | now |
@@ -203,13 +207,49 @@ Advisory default: prints violations, exit 0. `--strict` exits 1 on violations fo
 
 ```bash
 node scripts/github/task.mjs start --issue 123 [--owner LOGIN] [--executor TEXT] [--branch NAME] [--dry-run]
+node scripts/github/task.mjs start --issue 123 --stream STREAM_ISSUE   # tooling profile only
 node scripts/github/task.mjs checkpoint --issue 123 (--message TEXT | --message-file FILE)
 node scripts/github/task.mjs review --issue 123 [--pr URL] [--evidence TEXT]
 node scripts/github/task.mjs block --issue 123 --reason TEXT [--blocked-by URL]
 node scripts/github/task.mjs done --issue 123 (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]
 node scripts/github/task.mjs status --issue 123
 ```
-Enforces DoR/WIP on start and evidence/acceptance on done; `--dry-run` makes no mutations. Full behavior: [TASK CLI](./TASK_CLI.md).
+Enforces DoR/WIP on start and evidence/acceptance on done; `--dry-run` makes no mutations. The
+enforcement matrix follows `config.workProfile`:
+
+| Check | `product` (default) | `tooling` |
+|---|---|---|
+| Start container | Release/Sprint fields | `--stream` required; task must be a sub-issue with a matching `Stream` field |
+| Required item fields | Area/Kind/Estimate/Release/Sprint | Area/Kind/Estimate/Stream |
+| Milestone | required | optional (tag is the version record) |
+| WIP/assignee/check-in | WIP = 1, assignee + `### Check-in` | identical |
+| Done | evidence + checked acceptance | **PR required** + evidence + checked acceptance; posts `### Check-out` |
+
+Full behavior: [TASK CLI](./TASK_CLI.md). Tooling-profile checks are rejected for product configs
+and product mode ignores every tooling flag.
+
+### 5.4 stream (tooling profile)
+
+```bash
+node scripts/github/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance" [--dry-run]
+node scripts/github/stream.mjs close --stream STREAM_ISSUE (--evidence TEXT | --evidence-file FILE) [--tag vX.Y.Z] [--dry-run]
+```
+`open` creates `[Stream] <name> — <delivery>`, safely appends the per-delivery `Stream` option,
+adds the container to the project with Status/Stream/Area/Kind/Estimate, and posts
+`### Stream opened`. `close` refuses while child tasks are open, requires the release gate green
+(`gate:release`; override with `--gate-command`), validates `--tag` against
+`automation.tagPattern`, posts `### Stream close evidence`, sets Status Done, and closes the
+container. Tag creation stays with the release flow. Product configs are rejected.
+
+### 5.5 project-field-option
+
+```bash
+node scripts/github/project-field-option.mjs --config tracker.config.json --field Stream --option v1.3.2 \
+  [--color BLUE] [--description TEXT] [--dry-run] [--json]
+```
+Reads the current options first, preserves every existing id/colour/description (so item values
+that reference those ids are unchanged), appends only a new name, and is idempotent on re-run.
+Used by `stream.mjs open` and handy when creating per-delivery options by hand.
 
 ## 6. Config reference
 
@@ -223,20 +263,21 @@ node scripts/github/validate-config.mjs tracker.config.json
 |---|---|---|
 | `$schema` | no | path/URL to schema |
 | `trackerVersion` | yes | `1`; bump only with migration |
+| `workProfile` | no | `product` (default) or `tooling`; selects the enforced lifecycle; absent means `product` |
 | `repository` | yes | `owner/repo` |
 | `project` | yes | `owner`, `title`, `number` (required by audit/task CLI) |
 | `statuses` | yes | 5+ unique, standard set recommended |
-| `fields` | yes | Release/Sprint/Area/Kind/Estimate required; Source recommended |
+| `fields` | yes | Release/Sprint (product profile), Stream (tooling profile), Area/Kind/Estimate required; Source recommended |
 | `issueTypes` | no | task/bug/feature + fallback notes |
 | `labels` | no | risk/process only; no dimension labels |
-| `releases` | yes | key, milestone, sprints (key/title/estimate/tasks) |
+| `releases` | yes | key, milestone, sprints (key/title/estimate/tasks); may be empty only for tooling configs |
 | `automation` | no | defaultAssignee, branchPrefix, tagPattern, templateRepo/version, inReviewMode, autoAddIssues, closeToDone, bot |
 | `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
 | `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode (secret name fixed `TRACKER_TOKEN`); release profile/ref/dryRun |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
-Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version. Exit 1 with `$path: message`.
+Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version, and profile-aware field rules: the `product` profile (default) requires `fields.Release`/`fields.Sprint` and at least one release; the `tooling` profile requires a `fields.Stream` declaration and allows `releases: []`. Exit 1 with `$path: message`.
 
 ## 7. Fields, statuses, transitions
 
@@ -244,12 +285,17 @@ Validation behaviors: required/missing keys, type mismatches, disallowed extra k
 | Field | Values | Applies to |
 |---|---|---|
 | Status | Todo/In Progress/In Review/Blocked/Done | all work items |
-| Release | version keys (+ pre-release if documented) | release work |
-| Sprint | sprint keys | release work |
+| Release | version keys (+ pre-release if documented) | release work (product profile) |
+| Sprint | sprint keys | release work (product profile) |
+| Stream | per-delivery options (e.g. `v1.3.1`) | `[Stream]` containers + tasks (tooling profile) |
 | Area | stable areas | all |
 | Kind | feature/fix/ux/spike/test/infra | all |
 | Estimate | S/M/L or numeric | all |
 | Source | Internal/downstream/Other | all; downstream required during triage |
+
+Work profiles: `product` (default) uses `[Release]` → `[Sprint]` → Task with Release/Sprint fields;
+`tooling` uses `[Stream]` → Task with the Stream field and the tag as version record. Absent
+`workProfile` means `product`; a declared `Stream` field in product mode is ignored.
 
 ### Transition table
 | From | To | Entry condition | Exit evidence |
@@ -300,20 +346,25 @@ Do not add `area:*`, `release:*`, `sprint:*`, `type:*` labels when the field/typ
 
 ## 12. Audit invariants
 
-Run `audit.mjs` advisory first; `--strict` for release gates. Invariants:
+Run `audit.mjs` advisory first; `--strict` for release gates. Invariants follow
+`config.workProfile` (`product` default; `tooling` uses Stream rules; historical records stay
+valid). The invariant list (`--json` reports `workProfile`):
 
-1. Open release work has milestone + native type.
-2. Project fields complete (Release/Sprint for release work; Area/Kind/Estimate; Source downstream).
-3. No Done parent with open children unless deferral.
+1. Open release work has milestone + native type (milestone optional in the tooling profile).
+2. Project fields complete: Area/Kind/Estimate always; Release/Sprint in the product profile;
+   Stream in the tooling profile; Source for downstream items.
+3. No Done parent with open children unless deferral (also enforces the stream close gate).
 4. No In Progress without assignee + check-in.
 5. WIP ≤ 1 In Progress per owner (or documented exception).
 6. Blocked has reason + dependency.
 7. No duplicate dimension labels (retired-label cleanup is manual).
-8. Sprint/release Done has exit evidence.
+8. Sprint/release Done has exit evidence (product profile); closed stream has
+   `### Stream close evidence` and closed tooling tasks have `### Check-out` evidence (tooling profile).
 9. Pinned `automation.templateVersion`; downstream context complete.
 10. No secrets in config/artifacts — **manual review; the audit does not scan issue bodies/comments for secrets**.
 11. Open tasks contain required issue-template/DoR sections.
-12. Open tasks have both a release tracker and sprint tracker ancestor.
+12. Open tasks have both a release tracker and sprint tracker ancestor (product profile) or a
+    `[Stream]` ancestor (tooling profile).
 
 Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
 

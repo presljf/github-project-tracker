@@ -6,6 +6,7 @@ const CLOSING = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)\b/gi;
 const PARTIAL = /\b(?:refs?|part of)\s+#(\d+)\b/i;
 function issueKind(title = '') {
   if (/^\[Roadmap\]/i.test(title)) return 'roadmap';
+  if (/^\[Stream\]/i.test(title)) return 'stream';
   if (/^\[Release\]/i.test(title)) return 'release';
   if (/^\[Sprint\]/i.test(title)) return 'sprint';
   return 'task';

@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_WORK_PROFILE, WORK_PROFILES } from './lib/work-profile.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SCHEMA_PATH = path.join(ROOT, 'schemas', 'tracker.config.schema.json');
@@ -113,6 +114,35 @@ function crossChecks(config, errors) {
   for (const required of ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done']) {
     if (!statuses.includes(required)) validationError(errors, '$.statuses', `should include ${required}`);
   }
+  const workProfile = config.workProfile === undefined ? DEFAULT_WORK_PROFILE : config.workProfile;
+  if (WORK_PROFILES.includes(workProfile)) {
+    if (workProfile === 'tooling') {
+      if (!config.fields?.Stream) {
+        validationError(
+          errors,
+          '$.fields.Stream',
+          'is required when workProfile is "tooling"; declare the Stream field and its per-delivery options',
+        );
+      }
+    } else {
+      for (const fieldName of ['Release', 'Sprint']) {
+        if (!config.fields?.[fieldName]) {
+          validationError(
+            errors,
+            `$.fields.${fieldName}`,
+            `is required for the ${DEFAULT_WORK_PROFILE} work profile (the default); declare it or set workProfile to "tooling"`,
+          );
+        }
+      }
+      if (Array.isArray(config.releases) && config.releases.length === 0) {
+        validationError(
+          errors,
+          '$.releases',
+          `the ${DEFAULT_WORK_PROFILE} work profile requires at least one release; declare one or set workProfile to "tooling"`,
+        );
+      }
+    }
+  }
   const seenReleases = new Set();
   const seenMilestones = new Set();
   const seenSprints = new Set();
@@ -151,6 +181,16 @@ export function validateConfigFile(file) {
   return validateConfig(config);
 }
 
+function collectProfileExamples(dir, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectProfileExamples(full, out);
+    else if (entry.name === 'tracker.config.example.json') out.push(full);
+  }
+  return out;
+}
+
 function defaultFiles() {
   const files = [path.join(ROOT, 'tracker.config.example.json')];
   const dir = path.join(ROOT, 'examples');
@@ -159,7 +199,7 @@ function defaultFiles() {
       if (name.endsWith('.json')) files.push(path.join(dir, name));
     }
   }
-  return files;
+  return [...files, ...collectProfileExamples(path.join(ROOT, 'profiles')).sort()];
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

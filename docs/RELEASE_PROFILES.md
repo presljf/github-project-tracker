@@ -363,6 +363,22 @@ Limits: this fallback has manual approval, not a platform-enforced protected env
 
 | macos | [43146125258](https://github.com/presljf/github-project-tracker/actions/runs/43146125258) | **success** | `macos-15` runner; build/checksum passed; sign/publish skipped (dry-run, no secrets). Bash 3.2 portable artifact matching. |
 
+## Work profile vs release profile (tooling streams)
+
+A **release profile** (this page) selects how a versioned delivery publishes artifacts. A **work
+profile** (`tracker.config.json` `workProfile`) selects how work is tracked and enforced:
+
+| | Release profile | Work profile |
+|---|---|---|
+| Selects | publish pipeline (`generic`/`macos`/`container`/`package`) | lifecycle (`product` default, or `tooling`) |
+| Config | `workflows.release.profile` | `workProfile` |
+| Applies to | release runs/tags | board hierarchy, DoR/WIP/close gates, audit |
+
+Tooling streams do not need a release until the tag is cut: they use `[Stream]` → Task with the
+`Stream` project field, and `stream.mjs close` records the optional tag after the release gate is
+green. See [profiles/tooling](../profiles/tooling/README.md) for selection and lifecycle commands;
+tag creation/publishing still follows the release profile documented here.
+
 ## Desktop smoke profile
 
 Desktop smoke is a separate reusable profile:

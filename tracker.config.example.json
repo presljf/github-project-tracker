@@ -1,6 +1,7 @@
 {
   "$schema": "./schemas/tracker.config.schema.json",
   "trackerVersion": 1,
+  "workProfile": "product",
   "repository": "owner/repo",
   "project": {
     "owner": "owner",

@@ -68,6 +68,31 @@ Never edit a reusable workflow in the downstream repo; override via inputs/confi
 - **Verification:** config validate + CI + audit + smoke
 ```
 
+## Optional: adopt the tooling work profile
+
+v1.3.0 adds an optional `workProfile` (`product` default, or `tooling`) plus an optional
+`fields.Stream` declaration. No action is required for existing adopters: absent `workProfile`
+keeps the current Release → Sprint behaviour, and a declared `Stream` field is ignored in
+`product` mode.
+
+To adopt `tooling`:
+
+1. Set `"workProfile": "tooling"` and declare `"fields": { "Stream": { "options": ["vX.Y.Z"] } }`.
+   Tooling-only repos may drop Release/Sprint fields and use `"releases": []` (the tag is the
+   version record); mixed repos may keep both declarations.
+2. Validate and bootstrap:
+   ```bash
+   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+   ```
+3. Open deliveries with `node scripts/github/stream.mjs open --name vX.Y.Z --delivery "..."` and
+   start tasks with `node scripts/github/task.mjs start --issue N --stream S`.
+4. Historical product records keep working: audit rules follow `workProfile`, so Release/Sprint
+   exit-evidence and hierarchy rules do not apply to a tooling profile.
+5. Rollback: set `workProfile` back to `product` (or remove it); no data migration is needed.
+
+See [profiles/tooling](../profiles/tooling/README.md) and [REFERENCE §5.3–5.5](./REFERENCE.md#5-tracker-cli).
+
 ## Rollback
 
 - Revert the upgrade PR **or** restore the previous tag/commit for copied files.
