@@ -65,9 +65,6 @@ function main() {
   };
   const repo = get('repo', 'presljf/castdeck');
   const [owner, name] = repo.split('/');
-  const contract = JSON.parse(
-    fs.readFileSync(get('contract', path.join(root, 'contract/adoption-contract.json')), 'utf8'),
-  );
   const includeClosed = args.includes('--include-closed');
   const repair = get('repair', 'none');
   const selected = String(get('issues', ''))
