@@ -1,6 +1,7 @@
 {
   "$schema": "./schemas/tracker.config.schema.json",
   "trackerVersion": 1,
+  "workProfile": "tooling",
   "repository": "presljf/github-project-tracker",
   "project": {
     "owner": "presljf",
@@ -13,6 +14,9 @@
   },
   "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
   "fields": {
+    "Stream": {
+      "options": ["v1.3.1-maintenance"]
+    },
     "Release": {
       "options": ["v1.0.0", "v1.1.0"]
     },
