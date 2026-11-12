@@ -10,12 +10,18 @@ const opt = (name, fallback) => {
 };
 const base = opt('base', 'origin/main');
 const scopeArg = opt('scope', '');
-const scopes = scopeArg.split(',').map((s) => s.trim()).filter(Boolean);
+const scopes = scopeArg
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 if (!scopes.length) {
   console.error('usage: guard-scope.mjs --base origin/main --scope "path1,path2"');
   process.exitCode = 2;
 } else {
-  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { encoding: 'utf8' })
+    .trim()
+    .split('\n')
+    .filter(Boolean);
   const outside = changedFilesOutsideScope({ changedFiles: changed, scopes });
   if (outside.length) {
     console.error(`Scope guard FAILED (${outside.length} outside ${scopeArg}):`);

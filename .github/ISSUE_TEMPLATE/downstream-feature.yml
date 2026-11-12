@@ -1,7 +1,7 @@
 name: Downstream feature request
 description: Request a feature/improvement in the Project Tracker OS from an adopting/downstream project
-title: "[Downstream feature] "
-labels: ["source:downstream", "status:needs-triage"]
+title: '[Downstream feature] '
+labels: ['source:downstream', 'status:needs-triage']
 body:
   - type: markdown
     attributes:
@@ -12,7 +12,7 @@ body:
     attributes:
       label: Originating project/program
       description: Project and repository that adopted the tracker.
-      placeholder: "project-name (https://github.com/owner/repo)"
+      placeholder: 'project-name (https://github.com/owner/repo)'
     validations:
       required: true
   - type: input
@@ -20,7 +20,7 @@ body:
     attributes:
       label: Pinned tracker version
       description: Exact `automation.templateVersion` in use (e.g. 1.0.2). Supported versions are listed in SECURITY.md.
-      placeholder: "1.0.2"
+      placeholder: '1.0.2'
     validations:
       required: true
   - type: textarea

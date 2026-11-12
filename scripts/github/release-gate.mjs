@@ -7,12 +7,16 @@ import { GitHubCli } from './lib/github.mjs';
 
 export function evaluateReleaseGate({ contractResult, bypasses = [] }) {
   const violations = [...(contractResult?.violations || [])];
-  if (bypasses.length) violations.push(`open tracker-contract-exception OI(s): ${bypasses.map((b) => `#${b.number}`).join(', ')}`);
+  if (bypasses.length)
+    violations.push(`open tracker-contract-exception OI(s): ${bypasses.map((b) => `#${b.number}`).join(', ')}`);
   return { ok: violations.length === 0, violations };
 }
 function main() {
   const args = process.argv.slice(2);
-  const get = (name, fallback = null) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : fallback; };
+  const get = (name, fallback = null) => {
+    const i = args.indexOf(`--${name}`);
+    return i >= 0 ? args[i + 1] : fallback;
+  };
   const root = path.resolve(get('root', '.'));
   const contractPath = path.resolve(get('contract', path.join(root, 'contract', 'adoption-contract.json')));
   const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));

@@ -89,9 +89,19 @@ test('detects missing type, milestone, project item, and fields', () => {
   const data = baseData();
   data.issues[4].issueType = null;
   data.issues[4].milestone = null;
-  data.projectItems = data.projectItems.filter((entry) => entry.content.number !== 5).concat([
-    { content: { number: 5 }, status: 'Todo', release: 'v1.0.0', sprint: '1.0.0.1', area: '', kind: '', estimate: '' },
-  ]);
+  data.projectItems = data.projectItems
+    .filter((entry) => entry.content.number !== 5)
+    .concat([
+      {
+        content: { number: 5 },
+        status: 'Todo',
+        release: 'v1.0.0',
+        sprint: '1.0.0.1',
+        area: '',
+        kind: '',
+        estimate: '',
+      },
+    ]);
   const result = auditTracker({ config: config(), data });
   const codes = result.violations.map((violation) => violation.code);
   assert.ok(codes.includes('TYPE_MISSING'));
@@ -108,7 +118,9 @@ test('detects WIP limit, missing check-in, and blocked without dependency', () =
   data.issues[4].assignees = [{ login: 'owner' }];
   data.projectItems.push(item(4, { status: 'In Progress' }));
   // make #5 and #6 In Progress, both owned by owner, only #5 checked in
-  data.projectItems = data.projectItems.filter((entry) => entry.content.number !== 5).concat([item(5, { status: 'In Progress' }), item(7, { status: 'In Progress' })]);
+  data.projectItems = data.projectItems
+    .filter((entry) => entry.content.number !== 5)
+    .concat([item(5, { status: 'In Progress' }), item(7, { status: 'In Progress' })]);
   data.comments[5] = [{ body: '### Check-in\n- Owner: owner' }];
   data.issues[4].assignees = [{ login: 'owner' }];
   data.issues.push(issue(8, '[Task] Blocked task', 'OPEN', { assignees: [] }));
@@ -140,7 +152,6 @@ test('detects missing template version and strict flag', () => {
   assert.ok(result.violations.some((violation) => violation.code === 'TEMPLATE_VERSION_MISSING'));
   assert.equal(result.strict, true);
 });
-
 
 test('detects missing required task sections and release/sprint ancestry', () => {
   const missing = baseData();

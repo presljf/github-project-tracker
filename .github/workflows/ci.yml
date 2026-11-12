@@ -38,8 +38,9 @@ jobs:
       # should pass real commands, for example:
       #   lint-command: 'npm run lint'
       #   format-command: 'npm run format:check'
-      lint-command: ''
-      format-command: ''
+      install-command: 'npm ci'
+      lint-command: 'npm run lint'
+      format-command: 'npm run format:check'
       test-command: 'npm test'
       # `build` is the generic build/verification slot; for this docs/config template it
       # validates the example tracker configs.

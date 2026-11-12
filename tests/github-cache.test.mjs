@@ -8,7 +8,7 @@ test('listFields is cached and cleared by field mutations', () => {
   let remaining = 4000;
   const exec = (args) => {
     if (args[0] === 'api' && args[1] === '--include') {
-      return `HTTP/2.0 200 OK\nx-ratelimit-limit: 5000\nx-ratelimit-remaining: ${remaining}\nx-ratelimit-used: ${5000-remaining}\nx-ratelimit-reset: ${Math.floor(Date.now()/1000)+3600}\nx-ratelimit-resource: graphql\n\n{"data":{"rateLimit":{"limit":5000,"remaining":${remaining},"used":${5000-remaining},"resetAt":"2099-01-01T00:00:00Z","cost":1}}}`;
+      return `HTTP/2.0 200 OK\nx-ratelimit-limit: 5000\nx-ratelimit-remaining: ${remaining}\nx-ratelimit-used: ${5000 - remaining}\nx-ratelimit-reset: ${Math.floor(Date.now() / 1000) + 3600}\nx-ratelimit-resource: graphql\n\n{"data":{"rateLimit":{"limit":5000,"remaining":${remaining},"used":${5000 - remaining},"resetAt":"2099-01-01T00:00:00Z","cost":1}}}`;
     }
     if (args[0] === 'project' && args[1] === 'field-list') {
       calls += 1;
@@ -32,10 +32,14 @@ test('batchIssueActivity parses aliases into comments/subIssues', async () => {
   let input;
   const exec = (args) => {
     if (args[0] === 'api' && args[1] === 'graphql') input = JSON.parse(fs.readFileSync(args[3], 'utf8'));
-    return JSON.stringify({ data: { repository: {
-      i0: { comments: { nodes: [{ body: '### Check-in' }] }, subIssues: { nodes: [{ number: 2, state: 'OPEN' }] } },
-      i1: { comments: { nodes: [] }, subIssues: { nodes: [] } },
-    } } });
+    return JSON.stringify({
+      data: {
+        repository: {
+          i0: { comments: { nodes: [{ body: '### Check-in' }] }, subIssues: { nodes: [{ number: 2, state: 'OPEN' }] } },
+          i1: { comments: { nodes: [] }, subIssues: { nodes: [] } },
+        },
+      },
+    });
   };
   const gh = new GitHubCli({ exec, retries: 0, sleep: () => {} });
   const out = await gh.batchIssueActivity('o', 'r', [1, 2], { chunkSize: 2 });

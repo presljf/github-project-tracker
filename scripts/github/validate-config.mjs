@@ -99,7 +99,8 @@ const SECRET_PATTERNS = [
 
 function scanSecrets(value, p, errors) {
   if (typeof value === 'string') {
-    if (SECRET_PATTERNS.some((rx) => rx.test(value))) validationError(errors, p, 'looks like a secret value; keep secrets out of config');
+    if (SECRET_PATTERNS.some((rx) => rx.test(value)))
+      validationError(errors, p, 'looks like a secret value; keep secrets out of config');
   } else if (Array.isArray(value)) {
     value.forEach((item, i) => scanSecrets(item, `${p}[${i}]`, errors));
   } else if (value && typeof value === 'object') {

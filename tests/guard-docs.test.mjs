@@ -30,7 +30,13 @@ test('ignored tests/docs do not require coverage', () => {
 });
 
 test('auditable docs:no-change exception suppresses docs violations', () => {
-  const result = evaluateCoverage({ changedFiles: ['scripts/github/x.mjs'], rules, ignore, labels: ['docs:no-change'], exceptionReason: 'no user-facing change' });
+  const result = evaluateCoverage({
+    changedFiles: ['scripts/github/x.mjs'],
+    rules,
+    ignore,
+    labels: ['docs:no-change'],
+    exceptionReason: 'no user-facing change',
+  });
   assert.equal(result.ok, true);
   assert.ok(result.skipped);
 });

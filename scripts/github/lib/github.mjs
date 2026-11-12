@@ -4,13 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
-const TRANSIENT = /connection refused|timed out|TLS|502|503|ECONNRESET|EOF|Something went wrong|GraphQL.*(timeout|unavailable)/i;
+const TRANSIENT =
+  /connection refused|timed out|TLS|502|503|ECONNRESET|EOF|Something went wrong|GraphQL.*(timeout|unavailable)/i;
 
 export class GhError extends Error {
   constructor(args, err) {
     const stderr = (err?.stderr || '').toString().trim();
     const stdout = (err?.stdout || '').toString().trim();
-    super(`gh ${args.join(' ')} failed${stderr ? `: ${stderr.split('\n')[0]}` : ''}${stdout && !stderr ? `: ${stdout.split('\n')[0]}` : ''}`);
+    super(
+      `gh ${args.join(' ')} failed${stderr ? `: ${stderr.split('\n')[0]}` : ''}${stdout && !stderr ? `: ${stdout.split('\n')[0]}` : ''}`,
+    );
     this.name = 'GhError';
     this.args = args;
     this.exitCode = err?.status ?? 1;
@@ -45,12 +48,25 @@ export function parseIncludeOutput(text) {
     if (m) headers[m[1].toLowerCase()] = m[2];
   }
   let json = null;
-  try { json = body ? JSON.parse(body) : null; } catch { /* keep null */ }
+  try {
+    json = body ? JSON.parse(body) : null;
+  } catch {
+    /* keep null */
+  }
   return { headers, body, json };
 }
 
 export class GitHubCli {
-  constructor({ exec = defaultExec, retries = 3, sleep = sleepSync, minMutationSpacingMs = 1100, budgetFloor = 25, maxWaitMs = 60000, rateState = null, command = 'tracker' } = {}) {
+  constructor({
+    exec = defaultExec,
+    retries = 3,
+    sleep = sleepSync,
+    minMutationSpacingMs = 1100,
+    budgetFloor = 25,
+    maxWaitMs = 60000,
+    rateState = null,
+    command = 'tracker',
+  } = {}) {
     this.exec = exec;
     this.retries = retries;
     this.sleep = sleep;
@@ -87,13 +103,20 @@ export class GitHubCli {
       remaining: Number(data?.remaining ?? headers['x-ratelimit-remaining'] ?? 0),
       used: Number(data?.used ?? headers['x-ratelimit-used'] ?? 0),
       resetEpoch: Number(headers['x-ratelimit-reset'] || 0),
-      resetAt: data?.resetAt || (headers['x-ratelimit-reset'] ? new Date(Number(headers['x-ratelimit-reset']) * 1000).toISOString() : null),
+      resetAt:
+        data?.resetAt ||
+        (headers['x-ratelimit-reset'] ? new Date(Number(headers['x-ratelimit-reset']) * 1000).toISOString() : null),
       cost: Number(data?.cost ?? 1),
     };
     this.rateState?.record({
-      resource: this.rate.resource, limit: this.rate.limit, remaining: this.rate.remaining,
-      used: this.rate.used, resetEpoch: this.rate.resetEpoch, resetAt: this.rate.resetAt,
-      cost: 1, command: `${this.command}:refresh`,
+      resource: this.rate.resource,
+      limit: this.rate.limit,
+      remaining: this.rate.remaining,
+      used: this.rate.used,
+      resetEpoch: this.rate.resetEpoch,
+      resetAt: this.rate.resetAt,
+      cost: 1,
+      command: `${this.command}:refresh`,
     });
     return this.rate;
   }
@@ -119,7 +142,10 @@ export class GitHubCli {
     if (this.rate.remaining <= 0) {
       const waitMs = this._waitMsUntilReset();
       if (waitMs > 0 && waitMs <= this.maxWaitMs) this.sleep(waitMs + 250);
-      else throw new Error(`GitHub rate limit exhausted; reset at ${this.rate.resetAt || 'unknown'}; refusing mutation rather than guessing`);
+      else
+        throw new Error(
+          `GitHub rate limit exhausted; reset at ${this.rate.resetAt || 'unknown'}; refusing mutation rather than guessing`,
+        );
     }
     const since = Date.now() - this.lastMutationAt;
     if (since < this.minMutationSpacingMs) this.sleep(this.minMutationSpacingMs - since);
@@ -143,9 +169,16 @@ export class GitHubCli {
         const message = `${err?.stderr || ''}\n${err?.message || ''}`;
         if (/API rate limit exceeded|secondary rate limit/i.test(message)) {
           let status = null;
-          try { status = this.refreshRateLimit(); } catch { /* best effort */ }
+          try {
+            status = this.refreshRateLimit();
+          } catch {
+            /* best effort */
+          }
           const reset = status?.resetAt || 'unknown';
-          throw new Error(`GitHub rate limit hit (${status ? `${status.remaining}/${status.limit} remaining` : 'budget unknown'}; resets ${reset}). Not retrying blindly; wait for reset or reduce request bursts.`);
+          throw new Error(
+            `GitHub rate limit hit (${status ? `${status.remaining}/${status.limit} remaining` : 'budget unknown'}; resets ${reset}). Not retrying blindly; wait for reset or reduce request bursts.`,
+            { cause: err },
+          );
         }
         if (attempt >= this.retries || !TRANSIENT.test(message)) break;
         this.sleep(500 * (attempt + 1));
@@ -161,7 +194,9 @@ export class GitHubCli {
 
   listProjects(owner) {
     return this._cached(`projects:${owner}`, () => {
-      const result = this.run(['project', 'list', '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
+      const result = this.run(['project', 'list', '--owner', owner, '--format', 'json', '--limit', '100'], {
+        json: true,
+      });
       return result?.projects || [];
     });
   }
@@ -174,7 +209,9 @@ export class GitHubCli {
 
   linkProject(owner, number, repo) {
     this._beforeMutation();
-    const result = this.run(['project', 'link', String(number), '--owner', owner, '--repo', repo], { allowFailure: true });
+    const result = this.run(['project', 'link', String(number), '--owner', owner, '--repo', repo], {
+      allowFailure: true,
+    });
     if (result && result.error) {
       const text = `${result.error?.stderr || ''}\n${result.error?.message || ''}`;
       if (/already|linked/i.test(text)) return { alreadyLinked: true };
@@ -185,7 +222,9 @@ export class GitHubCli {
 
   listFields(owner, number) {
     return this._cached(`fields:${owner}:${number}`, () => {
-      const result = this.run(['project', 'field-list', String(number), '--owner', owner, '--format', 'json'], { json: true });
+      const result = this.run(['project', 'field-list', String(number), '--owner', owner, '--format', 'json'], {
+        json: true,
+      });
       return result?.fields || [];
     });
   }
@@ -193,9 +232,19 @@ export class GitHubCli {
   createField(owner, number, name, options) {
     this._beforeMutation();
     const args = [
-      'project', 'field-create', String(number), '--owner', owner,
-      '--name', name, '--data-type', 'SINGLE_SELECT',
-      '--single-select-options', options.join(','), '--format', 'json',
+      'project',
+      'field-create',
+      String(number),
+      '--owner',
+      owner,
+      '--name',
+      name,
+      '--data-type',
+      'SINGLE_SELECT',
+      '--single-select-options',
+      options.join(','),
+      '--format',
+      'json',
     ];
     this.clearCache('fields:');
     return this.run(args, { json: true });
@@ -204,9 +253,15 @@ export class GitHubCli {
   updateFieldOptions(fieldId, options) {
     this._beforeMutation();
     this.clearCache('fields:');
-    const query = 'query($id: ID!) { node(id: $id) { ... on ProjectV2SingleSelectField { id options { id name color description } } } }';
-    fs.writeFileSync(path.join(os.tmpdir(), 'tracker-field-query.json'), JSON.stringify({ query, variables: { id: fieldId } }));
-    const node = this.run(['api', 'graphql', '--input', path.join(os.tmpdir(), 'tracker-field-query.json')], { json: true });
+    const query =
+      'query($id: ID!) { node(id: $id) { ... on ProjectV2SingleSelectField { id options { id name color description } } } }';
+    fs.writeFileSync(
+      path.join(os.tmpdir(), 'tracker-field-query.json'),
+      JSON.stringify({ query, variables: { id: fieldId } }),
+    );
+    const node = this.run(['api', 'graphql', '--input', path.join(os.tmpdir(), 'tracker-field-query.json')], {
+      json: true,
+    });
     const existing = node?.data?.node?.options || [];
     const byName = new Map(existing.map((option) => [option.name, option]));
     const merged = options.map((option) => {
@@ -215,9 +270,13 @@ export class GitHubCli {
         ? { id: current.id, name: current.name, color: current.color, description: current.description || '' }
         : { name: typeof option === 'string' ? option : option.name, color: 'BLUE', description: '' };
     });
-    const mutation = 'mutation($input: UpdateProjectV2FieldInput!) { updateProjectV2Field(input: $input) { projectV2Field { ... on ProjectV2SingleSelectField { options { id name } } } } }';
+    const mutation =
+      'mutation($input: UpdateProjectV2FieldInput!) { updateProjectV2Field(input: $input) { projectV2Field { ... on ProjectV2SingleSelectField { options { id name } } } } }';
     const inputPath = path.join(os.tmpdir(), 'tracker-field-update.json');
-    fs.writeFileSync(inputPath, JSON.stringify({ query: mutation, variables: { input: { fieldId, singleSelectOptions: merged } } }));
+    fs.writeFileSync(
+      inputPath,
+      JSON.stringify({ query: mutation, variables: { input: { fieldId, singleSelectOptions: merged } } }),
+    );
     return this.run(['api', 'graphql', '--input', inputPath], { json: true });
   }
 
@@ -230,17 +289,29 @@ export class GitHubCli {
 
   createMilestone(owner, repo, title, description) {
     this._beforeMutation();
-    const result = this.run([
-      'api', '--method', 'POST', `repos/${owner}/${repo}/milestones`,
-      '-f', `title=${title}`, '-f', `description=${description || ''}`,
-    ], { json: true });
+    const result = this.run(
+      [
+        'api',
+        '--method',
+        'POST',
+        `repos/${owner}/${repo}/milestones`,
+        '-f',
+        `title=${title}`,
+        '-f',
+        `description=${description || ''}`,
+      ],
+      { json: true },
+    );
     this.clearCache('milestones:');
     return result;
   }
 
   listLabels(owner, repo) {
     return this._cached(`labels:${owner}:${repo}`, () => {
-      const result = this.run(['label', 'list', '--repo', `${owner}/${repo}`, '--limit', '100', '--json', 'name,color,description'], { json: true });
+      const result = this.run(
+        ['label', 'list', '--repo', `${owner}/${repo}`, '--limit', '100', '--json', 'name,color,description'],
+        { json: true },
+      );
       return result || [];
     });
   }
@@ -248,8 +319,15 @@ export class GitHubCli {
   createLabel(owner, repo, name, color, description) {
     this._beforeMutation();
     const result = this.run([
-      'label', 'create', name, '--repo', `${owner}/${repo}`,
-      '--color', color, '--description', description || '',
+      'label',
+      'create',
+      name,
+      '--repo',
+      `${owner}/${repo}`,
+      '--color',
+      color,
+      '--description',
+      description || '',
     ]);
     this.clearCache('labels:');
     return result;
@@ -257,20 +335,40 @@ export class GitHubCli {
 
   findIssue(owner, repo, title) {
     const search = `in:title "${title}"`;
-    const result = this.run([
-      'issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all',
-      '--search', search, '--json', 'number,title,state,url', '--limit', '100',
-    ], { json: true });
+    const result = this.run(
+      [
+        'issue',
+        'list',
+        '--repo',
+        `${owner}/${repo}`,
+        '--state',
+        'all',
+        '--search',
+        search,
+        '--json',
+        'number,title,state,url',
+        '--limit',
+        '100',
+      ],
+      { json: true },
+    );
     const matches = (result || []).filter((issue) => issue.title === title);
     return matches.find((issue) => issue.state === 'OPEN') || matches[0] || null;
   }
 
-
   getIssueView(owner, repo, number) {
-    return this.run([
-      'issue', 'view', String(number), '--repo', `${owner}/${repo}`,
-      '--json', 'number,title,state,assignees,milestone,issueType,body,url,labels',
-    ], { json: true });
+    return this.run(
+      [
+        'issue',
+        'view',
+        String(number),
+        '--repo',
+        `${owner}/${repo}`,
+        '--json',
+        'number,title,state,assignees,milestone,issueType,body,url,labels',
+      ],
+      { json: true },
+    );
   }
 
   addAssignee(owner, repo, number, login) {
@@ -300,13 +398,29 @@ export class GitHubCli {
     return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--add-blocked-by', blockedByUrl]);
   }
 
-
   listOpenIssuesByLabel(owner, repo, label) {
-    return this.run(['issue', 'list', '--repo', `${owner}/${repo}`, '--label', label, '--state', 'open', '--json', 'number,title,url'], { json: true });
+    return this.run(
+      [
+        'issue',
+        'list',
+        '--repo',
+        `${owner}/${repo}`,
+        '--label',
+        label,
+        '--state',
+        'open',
+        '--json',
+        'number,title,url',
+      ],
+      { json: true },
+    );
   }
 
   getIssue(owner, repo, number) {
-    return this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'], { json: true });
+    return this.run(
+      ['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'],
+      { json: true },
+    );
   }
 
   createIssue(owner, repo, { title, body, milestone, labels = [] }) {
@@ -325,7 +439,9 @@ export class GitHubCli {
 
   setIssueType(owner, repo, number, type) {
     this._beforeMutation();
-    return this.run(['api', `repos/${owner}/${repo}/issues/${number}`, '--method', 'PATCH', '-f', `type=${type}`], { json: true });
+    return this.run(['api', `repos/${owner}/${repo}/issues/${number}`, '--method', 'PATCH', '-f', `type=${type}`], {
+      json: true,
+    });
   }
 
   listSubIssues(owner, repo, parent) {
@@ -336,7 +452,14 @@ export class GitHubCli {
   addSubIssue(owner, repo, parent, child) {
     this._beforeMutation();
     const childId = this.run(['api', `repos/${owner}/${repo}/issues/${child}`, '--jq', '.id']);
-    const args = ['api', '--method', 'POST', `repos/${owner}/${repo}/issues/${parent}/sub_issues`, '-F', `sub_issue_id=${childId}`];
+    const args = [
+      'api',
+      '--method',
+      'POST',
+      `repos/${owner}/${repo}/issues/${parent}/sub_issues`,
+      '-F',
+      `sub_issue_id=${childId}`,
+    ];
     const result = this.run(args, { allowFailure: true });
     if (result && result.error) {
       const text = `${result.error?.stderr || ''}\n${result.error?.message || ''}`;
@@ -348,32 +471,47 @@ export class GitHubCli {
 
   listProjectItems(owner, number) {
     return this._cached(`items:${owner}:${number}`, () => {
-      const result = this.run(['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100'], { json: true });
+      const result = this.run(
+        ['project', 'item-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100'],
+        { json: true },
+      );
       return result?.items || [];
     });
   }
 
   addProjectItem(owner, number, url) {
     this._beforeMutation();
-    const result = this.run(['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'], { json: true });
+    const result = this.run(
+      ['project', 'item-add', String(number), '--owner', owner, '--url', url, '--format', 'json'],
+      { json: true },
+    );
     this.clearCache('items:');
     return result;
   }
 
-
   listIssues(owner, repo, state = 'all') {
-    const result = this.run([
-      'issue', 'list', '--repo', `${owner}/${repo}`, '--state', state,
-      '--json', 'number,title,body,state,assignees,labels,milestone,issueType,url',
-      '--limit', '100',
-    ], { json: true });
+    const result = this.run(
+      [
+        'issue',
+        'list',
+        '--repo',
+        `${owner}/${repo}`,
+        '--state',
+        state,
+        '--json',
+        'number,title,body,state,assignees,labels,milestone,issueType,url',
+        '--limit',
+        '100',
+      ],
+      { json: true },
+    );
     return result || [];
   }
 
   issueComments(owner, repo, number) {
-    const result = this.run([
-      'issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'comments',
-    ], { json: true });
+    const result = this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'comments'], {
+      json: true,
+    });
     return result?.comments || [];
   }
 
@@ -385,16 +523,34 @@ export class GitHubCli {
   setProjectItemField(projectId, itemId, fieldId, optionId) {
     this._beforeMutation();
     const result = this.run([
-      'project', 'item-edit', '--id', itemId, '--project-id', projectId,
-      '--field-id', fieldId, '--single-select-option-id', optionId,
+      'project',
+      'item-edit',
+      '--id',
+      itemId,
+      '--project-id',
+      projectId,
+      '--field-id',
+      fieldId,
+      '--single-select-option-id',
+      optionId,
     ]);
     this.clearCache('items:');
     return result;
   }
 
-
   getPullRequest(owner, repo, number) {
-    return this.run(['pr', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefName,body,labels'], { json: true });
+    return this.run(
+      [
+        'pr',
+        'view',
+        String(number),
+        '--repo',
+        `${owner}/${repo}`,
+        '--json',
+        'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefName,body,labels',
+      ],
+      { json: true },
+    );
   }
 
   mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true } = {}) {
@@ -408,7 +564,10 @@ export class GitHubCli {
   }
 
   _graphql(query, variables) {
-    const inputPath = path.join(os.tmpdir(), `tracker-graphql-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+    const inputPath = path.join(
+      os.tmpdir(),
+      `tracker-graphql-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.json`,
+    );
     fs.writeFileSync(inputPath, JSON.stringify({ query, variables }));
     try {
       return this.run(['api', 'graphql', '--input', inputPath], { json: true });
@@ -454,17 +613,26 @@ export class GitHubCli {
     const result = {};
     for (let start = 0; start < numbers.length; start += chunkSize) {
       const chunk = numbers.slice(start, start + chunkSize);
-      const aliases = chunk.map((_, i) => `i${i}: issue(number: $n${i}) { projectItems(first: 20) { nodes { id project { number } fieldValues(first: 50) { nodes {
+      const aliases = chunk
+        .map(
+          (
+            _,
+            i,
+          ) => `i${i}: issue(number: $n${i}) { projectItems(first: 20) { nodes { id project { number } fieldValues(first: 50) { nodes {
         ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name id } } }
         ... on ProjectV2ItemFieldTextValue { text field { ... on ProjectV2FieldCommon { name id } } }
         ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2FieldCommon { name id } } }
         ... on ProjectV2ItemFieldDateValue { date field { ... on ProjectV2FieldCommon { name id } } }
-      } } } } }`).join('\n');
+      } } } } }`,
+        )
+        .join('\n');
       const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) {
         repository(owner: $owner, name: $name) { ${aliases} }
       }`;
       const variables = { owner: repoOwner, name: repoName };
-      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      chunk.forEach((n, i) => {
+        variables[`n${i}`] = n;
+      });
       const data = this._graphql(query, variables);
       const repoData = data?.data?.repository || {};
       chunk.forEach((n, i) => {
@@ -479,13 +647,19 @@ export class GitHubCli {
     const result = {};
     for (let start = 0; start < numbers.length; start += chunkSize) {
       const chunk = numbers.slice(start, start + chunkSize);
-      const aliases = chunk.map((_, i) => `i${i}: issue(number: $n${i}) { blockedBy(first: 100) { nodes { number } } }`).join('\n');
+      const aliases = chunk
+        .map((_, i) => `i${i}: issue(number: $n${i}) { blockedBy(first: 100) { nodes { number } } }`)
+        .join('\n');
       const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) { repository(owner: $owner, name: $name) { ${aliases} } }`;
       const variables = { owner, name: repo };
-      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      chunk.forEach((n, i) => {
+        variables[`n${i}`] = n;
+      });
       const data = this._graphql(query, variables);
       const repoData = data?.data?.repository || {};
-      chunk.forEach((n, i) => { result[n] = (repoData[`i${i}`]?.blockedBy?.nodes || []).map((x) => x.number); });
+      chunk.forEach((n, i) => {
+        result[n] = (repoData[`i${i}`]?.blockedBy?.nodes || []).map((x) => x.number);
+      });
     }
     return result;
   }
@@ -493,11 +667,13 @@ export class GitHubCli {
   setProjectItemFieldValues(projectId, itemId, updates) {
     this._beforeMutation();
     const variables = { projectId, itemId };
-    const aliases = updates.map((update, i) => {
-      variables[`field${i}`] = update.fieldId;
-      variables[`option${i}`] = update.optionId;
-      return `u${i}: updateProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $field${i}, value: { singleSelectOptionId: $option${i} } }) { projectV2Item { id } }`;
-    }).join('\n');
+    const aliases = updates
+      .map((update, i) => {
+        variables[`field${i}`] = update.fieldId;
+        variables[`option${i}`] = update.optionId;
+        return `u${i}: updateProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $field${i}, value: { singleSelectOptionId: $option${i} } }) { projectV2Item { id } }`;
+      })
+      .join('\n');
     const query = `mutation($projectId: ID!, $itemId: ID!${updates.map((_, i) => `, $field${i}: ID!, $option${i}: String!`).join('')}) { ${aliases} }`;
     const data = this._graphql(query, variables);
     this.clearCache('items:');
@@ -510,9 +686,16 @@ export class GitHubCli {
     const subIssues = {};
     for (let start = 0; start < numbers.length; start += chunkSize) {
       const chunk = numbers.slice(start, start + chunkSize);
-      const aliases = chunk.map((n, i) => `i${i}: issue(number: $n${i}) { comments(first: 100) { nodes { body } } subIssues(first: 100) { nodes { number state } } }`).join('\n');
+      const aliases = chunk
+        .map(
+          (n, i) =>
+            `i${i}: issue(number: $n${i}) { comments(first: 100) { nodes { body } } subIssues(first: 100) { nodes { number state } } }`,
+        )
+        .join('\n');
       const variables = { owner, name: repo };
-      chunk.forEach((n, i) => { variables[`n${i}`] = n; });
+      chunk.forEach((n, i) => {
+        variables[`n${i}`] = n;
+      });
       const query = `query($owner: String!, $name: String!${chunk.map((_, i) => `, $n${i}: Int!`).join('')}) { repository(owner: $owner, name: $name) { ${aliases} } }`;
       const inputPath = path.join(os.tmpdir(), `tracker-activity-${process.pid}-${start}.json`);
       fs.writeFileSync(inputPath, JSON.stringify({ query, variables }));
@@ -532,7 +715,10 @@ export class GitHubCli {
   }
 }
 
-
 export function createGitHub(options = {}) {
-  return new GitHubCli({ rateState: new RateState(), command: path.basename(process.argv[1] || 'tracker'), ...options });
+  return new GitHubCli({
+    rateState: new RateState(),
+    command: path.basename(process.argv[1] || 'tracker'),
+    ...options,
+  });
 }

@@ -24,11 +24,17 @@ export function verifyChecksums({ dir, checksumFile = 'SHA256SUMS' } = {}) {
 }
 function main() {
   const args = process.argv.slice(2);
-  const get = (n, d = null) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
+  const get = (n, d = null) => {
+    const i = args.indexOf(`--${n}`);
+    return i >= 0 ? args[i + 1] : d;
+  };
   try {
     const results = verifyChecksums({ dir: path.resolve(get('dir', '.')), checksumFile: get('file', 'SHA256SUMS') });
     console.log(`Checksums OK — ${results.length} asset(s).`);
     for (const r of results) console.log(`${r.sha256}  ${r.name}`);
-  } catch (err) { console.error(`error: ${err.message}`); process.exitCode = 1; }
+  } catch (err) {
+    console.error(`error: ${err.message}`);
+    process.exitCode = 1;
+  }
 }
 if (process.argv[1] && process.argv[1].endsWith('verify-checksums.mjs')) main();

@@ -11,14 +11,50 @@ test('dirty tree blocks unless exception has reason', () => {
 test('dependency change requires OI approval', () => {
   const changed = ['package.json', 'package-lock.json'];
   assert.equal(evaluateDependencyChanges({ changedFiles: changed }).ok, false);
-  assert.equal(evaluateDependencyChanges({ changedFiles: changed, approvals: { approvals: [{ paths: ['package-lock.json'], issue: 'https://github.com/o/r/issues/1', reason: 'upgrade', expires: '2099-01-01' }] } }).ok, false); // package.json approval missing
-  assert.equal(evaluateDependencyChanges({ changedFiles: changed, approvals: { approvals: [
-    { paths: ['package.json'], issue: 'https://github.com/o/r/issues/1', reason: 'upgrade', expires: '2099-01-01' },
-    { paths: ['package-lock.json'], issue: 'https://github.com/o/r/issues/1', reason: 'upgrade', expires: '2099-01-01' },
-  ] } }).ok, true);
+  assert.equal(
+    evaluateDependencyChanges({
+      changedFiles: changed,
+      approvals: {
+        approvals: [
+          {
+            paths: ['package-lock.json'],
+            issue: 'https://github.com/o/r/issues/1',
+            reason: 'upgrade',
+            expires: '2099-01-01',
+          },
+        ],
+      },
+    }).ok,
+    false,
+  ); // package.json approval missing
+  assert.equal(
+    evaluateDependencyChanges({
+      changedFiles: changed,
+      approvals: {
+        approvals: [
+          {
+            paths: ['package.json'],
+            issue: 'https://github.com/o/r/issues/1',
+            reason: 'upgrade',
+            expires: '2099-01-01',
+          },
+          {
+            paths: ['package-lock.json'],
+            issue: 'https://github.com/o/r/issues/1',
+            reason: 'upgrade',
+            expires: '2099-01-01',
+          },
+        ],
+      },
+    }).ok,
+    true,
+  );
 });
 test('script-only package change is not a dependency change', () => {
   const base = { dependencies: { a: '1' }, scripts: { test: 'old' } };
   const current = { dependencies: { a: '1' }, scripts: { test: 'new' } };
-  assert.equal(evaluateDependencyChanges({ changedFiles: ['package.json'], basePackage: base, currentPackage: current }).ok, true);
+  assert.equal(
+    evaluateDependencyChanges({ changedFiles: ['package.json'], basePackage: base, currentPackage: current }).ok,
+    true,
+  );
 });

@@ -11,7 +11,9 @@ let allow = [];
 try {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   allow = config.guard?.allow || [];
-} catch { /* use defaults */ }
+} catch {
+  /* use defaults */
+}
 const violations = findTransportViolations({ root, allow });
 if (violations.length) {
   console.error(`GitHub transport guard FAILED (${violations.length}):`);

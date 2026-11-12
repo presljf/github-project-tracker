@@ -1,6 +1,6 @@
 name: Spike
 description: A timeboxed research task with a clear decision
-title: "[Spike] "
+title: '[Spike] '
 body:
   - type: markdown
     attributes:
@@ -17,7 +17,7 @@ body:
     id: timebox
     attributes:
       label: Timebox
-      placeholder: "2h"
+      placeholder: '2h'
     validations:
       required: true
   - type: textarea

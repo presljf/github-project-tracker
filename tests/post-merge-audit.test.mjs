@@ -10,7 +10,13 @@ const green = [
 const base = { statusCheckRollup: green, labels: [], headRefName: 'task/x', body: 'Closes #1' };
 test('clean merged PR has no bypass', () => assert.equal(evaluateBypass({ pull: base }).ok, true));
 test('failed required check is a bypass', () => {
-  const pull = { ...base, statusCheckRollup: [{ name: 'docs-guard', conclusion: 'FAILURE' }, ...green.filter((c) => c.name !== 'docs-guard' && c.name !== 'ci / ci-gate')] };
+  const pull = {
+    ...base,
+    statusCheckRollup: [
+      { name: 'docs-guard', conclusion: 'FAILURE' },
+      ...green.filter((c) => c.name !== 'docs-guard' && c.name !== 'ci / ci-gate'),
+    ],
+  };
   assert.ok(evaluateBypass({ pull }).violations.some((v) => v.code === 'CHECKS_FAILED'));
 });
 test('task merge without closing keyword is a bypass', () => {

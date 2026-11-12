@@ -12,7 +12,16 @@ function tempState() {
 
 test('shared state records resources and consumes estimated cost', () => {
   const state = tempState();
-  state.record({ resource: 'graphql', limit: 5000, remaining: 100, used: 4900, resetEpoch: 2000, resetAt: '1970-01-01T00:33:20Z', cost: 1, command: 'task:refresh' });
+  state.record({
+    resource: 'graphql',
+    limit: 5000,
+    remaining: 100,
+    used: 4900,
+    resetEpoch: 2000,
+    resetAt: '1970-01-01T00:33:20Z',
+    cost: 1,
+    command: 'task:refresh',
+  });
   state.consume(5, 'task:mutation');
   const report = state.report();
   assert.equal(report.resources.graphql.remaining, 95);

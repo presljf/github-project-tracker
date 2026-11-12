@@ -13,5 +13,13 @@ function fixture() {
   return dir;
 }
 test('verifies matching checksums', () => assert.equal(verifyChecksums({ dir: fixture() }).length, 1));
-test('fails missing asset', () => { const dir = fixture(); fs.rmSync(path.join(dir, 'artifact.dmg')); assert.throws(() => verifyChecksums({ dir }), /asset missing/); });
-test('fails mismatched checksum', () => { const dir = fixture(); fs.writeFileSync(path.join(dir, 'artifact.dmg'), 'tampered'); assert.throws(() => verifyChecksums({ dir }), /mismatch/); });
+test('fails missing asset', () => {
+  const dir = fixture();
+  fs.rmSync(path.join(dir, 'artifact.dmg'));
+  assert.throws(() => verifyChecksums({ dir }), /asset missing/);
+});
+test('fails mismatched checksum', () => {
+  const dir = fixture();
+  fs.writeFileSync(path.join(dir, 'artifact.dmg'), 'tampered');
+  assert.throws(() => verifyChecksums({ dir }), /mismatch/);
+});

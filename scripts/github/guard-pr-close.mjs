@@ -19,9 +19,11 @@ export function evaluateClosing({ body = '', branch = '', labels = [], lookup = 
   const labelsSet = new Set(labels.map((l) => String(l).toLowerCase()));
   const isTaskBranch = branch.startsWith('task/');
   const partial = labelsSet.has('partial');
-  if (isTaskBranch && !partial && closing.length === 0) violations.push('task PR must contain a closing keyword (Closes/Fixes/Resolves #N)');
+  if (isTaskBranch && !partial && closing.length === 0)
+    violations.push('task PR must contain a closing keyword (Closes/Fixes/Resolves #N)');
   if (partial && closing.length > 0) violations.push('partial PR must not use a closing keyword; use Refs/Part of');
-  if (isTaskBranch && partial && !PARTIAL.test(body)) violations.push('partial task PR must reference the parent with Refs/Part of');
+  if (isTaskBranch && partial && !PARTIAL.test(body))
+    violations.push('partial task PR must reference the parent with Refs/Part of');
   for (const n of closing) {
     const issue = lookup(n);
     if (!issue) violations.push(`closing references missing issue #${n}`);
@@ -40,8 +42,13 @@ async function main() {
   const pull = gh.getPullRequest(owner, name, pr);
   const body = process.env.PR_BODY || pull.body || '';
   const branch = process.env.PR_BRANCH || pull.headRefName || '';
-  const eventLabels = (process.env.PR_LABELS || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const labels = eventLabels.length ? eventLabels : (pull.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
+  const eventLabels = (process.env.PR_LABELS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const labels = eventLabels.length
+    ? eventLabels
+    : (pull.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
   const lookup = (n) => gh.getIssue(owner, name, n);
   const result = evaluateClosing({ body, branch, labels, lookup });
   if (result.ok) console.log('PR closing-keyword guard OK.');

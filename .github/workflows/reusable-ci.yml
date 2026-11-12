@@ -20,12 +20,12 @@ on:
         required: false
         default: '22'
       working-directory:
-        description: "Directory containing package.json, relative to the repository root."
+        description: 'Directory containing package.json, relative to the repository root.'
         type: string
         required: false
         default: '.'
       tracker-config:
-        description: "Optional tracker config path used for profiles.node.commands / workflows.ci.commands mappings."
+        description: 'Optional tracker config path used for profiles.node.commands / workflows.ci.commands mappings.'
         type: string
         required: false
         default: ''
@@ -35,22 +35,22 @@ on:
         required: false
         default: ''
       lint-command:
-        description: "Lint command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        description: 'Lint command. Empty resolves from tracker config/package.json scripts, then no-ops successfully.'
         type: string
         required: false
         default: ''
       format-command:
-        description: "Format-check command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        description: 'Format-check command. Empty resolves from tracker config/package.json scripts, then no-ops successfully.'
         type: string
         required: false
         default: ''
       test-command:
-        description: "Test command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        description: 'Test command. Empty resolves from tracker config/package.json scripts, then no-ops successfully.'
         type: string
         required: false
         default: ''
       build-command:
-        description: "Build or verification command. Empty resolves from tracker config/package.json scripts, then no-ops successfully."
+        description: 'Build or verification command. Empty resolves from tracker config/package.json scripts, then no-ops successfully.'
         type: string
         required: false
         default: ''

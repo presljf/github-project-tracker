@@ -80,7 +80,8 @@
         "tracker.config.json",
         "tracker.config.example.json",
         "examples/",
-        "tracker.dependencies.example.json"
+        "tracker.dependencies.example.json",
+        "tracker.dependencies.json"
       ],
       "docs": [
         "docs/REFERENCE.md",
