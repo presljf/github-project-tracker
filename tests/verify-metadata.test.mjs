@@ -69,3 +69,12 @@ test('accepts canonical and flags legacy title formats', () => {
   assert.deepEqual(classifyTitle('[0.5.6] Sprint — sprint'), { kind: 'legacy', key: null });
   assert.deepEqual(classifyTitle('[v0.5.0] Release tracking — release'), { kind: 'legacy', key: null });
 });
+
+test('explicit issue exceptions are excluded from metadata checks', () => {
+  const issues = [
+    { number: 1, title: '[Release] v1.0.0 — x', issueType: { name: 'Task' }, parent: null },
+    { number: 2, title: '[Release] v1.0.0 — duplicate', issueType: { name: 'Task' }, parent: null },
+  ];
+  const exceptions = [{ issues: [2], repo: 'o/r' }];
+  assert.equal(evaluateMetadata({ contract, issueTypes, fields, issues, exceptions }).ok, true);
+});

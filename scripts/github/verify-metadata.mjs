@@ -20,7 +20,7 @@ export function classifyTitle(title = '') {
   if (LEGACY_RELEASE.test(title) || LEGACY_SPRINT.test(title)) return { kind: 'legacy', key: null };
   return { kind: 'other', key: null };
 }
-export function evaluateMetadata({ contract, issueTypes = [], fields = [], issues = [] }) {
+export function evaluateMetadata({ contract, issueTypes = [], fields = [], issues = [], exceptions = [] }) {
   const meta = contract.metadata || {};
   const violations = [];
   const typeNames = new Set(issueTypes.map((t) => t.name || t));
@@ -45,9 +45,11 @@ export function evaluateMetadata({ contract, issueTypes = [], fields = [], issue
     for (const option of required)
       if (!options.has(option)) violations.push(`project field ${name} missing option: ${option}`);
   }
-  const byNumber = new Map(issues.map((i) => [i.number, i]));
+  const ignored = new Set(exceptions.flatMap((entry) => entry.issues || []));
+  const considered = issues.filter((issue) => !ignored.has(issue.number));
+  const byNumber = new Map(considered.map((i) => [i.number, i]));
   const seen = { release: new Map(), sprint: new Map(), task: new Map() };
-  for (const issue of issues) {
+  for (const issue of considered) {
     const { kind, key } = classifyTitle(issue.title);
     if (!['release', 'sprint', 'task'].includes(kind)) continue;
     const expected = meta.typeMapping?.[kind];
@@ -90,7 +92,15 @@ function main() {
   const issueTypes = gh.getIssueTypes(owner, name);
   const fields = projectNumber ? gh.listFields(owner, projectNumber) : [];
   const issues = gh.listIssues(owner, name, { state: args.includes('--include-closed') ? 'all' : 'open', limit: 1000 });
-  const result = evaluateMetadata({ contract, issueTypes, fields, issues });
+  const exceptionsPath =
+    get('exceptions', null) ||
+    (contract.metadata?.exceptionsFile ? path.join(root, contract.metadata.exceptionsFile) : null);
+  let exceptions = [];
+  if (exceptionsPath && fs.existsSync(exceptionsPath)) {
+    const parsed = JSON.parse(fs.readFileSync(exceptionsPath, 'utf8'));
+    exceptions = (parsed.exceptions || []).filter((entry) => entry.repo === repo);
+  }
+  const result = evaluateMetadata({ contract, issueTypes, fields, issues, exceptions });
   if (result.ok) console.log('Project metadata OK.');
   else {
     console.error(`Project metadata FAILED (${result.violations.length}):`);

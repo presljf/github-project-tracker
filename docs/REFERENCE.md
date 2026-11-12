@@ -539,3 +539,7 @@ Priority (P0–P3 when present); forbidden fields are project-specific only.
 Inline repair examples: `--repair=open-only`, `--repair=selected --issues 3,4`, `--repair=all-safe`.
 
 Metadata reconciliation uses `updateIssueTitle` and `setIssueType` transport methods; each mutation is explicit and dry-run/report-first by default.
+
+### Metadata exceptions
+
+`contract/exceptions/metadata-exceptions.json` records historical anomalies with repo, issue numbers, reason, upstream issue, and expiry. `verify:metadata --exceptions <file>` excludes only those recorded issues; exceptions are visible in the contract and cannot hide open/current drift. CastDeck #61–#68 are closed duplicate tracker-authoring artifacts; #69–#76 parent links were backfilled to their real sprints.

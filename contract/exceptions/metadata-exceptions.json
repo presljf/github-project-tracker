@@ -1,0 +1,11 @@
+{
+  "exceptions": [
+    {
+      "repo": "presljf/castdeck",
+      "issues": [61, 62, 63, 64, 65, 66, 67, 68],
+      "reason": "Closed duplicate tracker-authoring artifacts created during CastDeck adoption; superseded by the real release/sprint/task records. Preserved for history, excluded from duplicate-key and hierarchy checks.",
+      "issue": "https://github.com/presljf/github-project-tracker/issues/94",
+      "expires": "2027-01-01"
+    }
+  ]
+}
