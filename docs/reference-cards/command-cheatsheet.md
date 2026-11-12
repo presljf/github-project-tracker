@@ -1,6 +1,6 @@
 # Command cheat sheet
 
-<!-- Docs version: v1.0.1-docs.1 · Target template: v1.0.1 · print formats: A4, Letter -->
+<!-- Docs version: v1.0.2-docs.1 · Target template: v1.0.2 · print formats: A4, Letter -->
 
 > Daily `gh`, task-CLI, and tracker commands. Full flags and expected output: [REFERENCE](../REFERENCE.md) · [TASK CLI](../TASK_CLI.md).
 

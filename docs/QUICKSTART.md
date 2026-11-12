@@ -1,6 +1,6 @@
 # Quickstart — first tracker in ~10 minutes
 
-**Docs version:** v1.0.1-docs.1 · Full handbook: [HOW TO USE](./HOW_TO_USE.md) · Reference: [REFERENCE](./REFERENCE.md)
+**Docs version:** v1.0.2-docs.1 · Full handbook: [HOW TO USE](./HOW_TO_USE.md) · Reference: [REFERENCE](./REFERENCE.md)
 
 > Automation note: `bootstrap.mjs` is available now and defaults to dry-run. This quickstart uses the GitHub UI and `gh` commands so every step is visible; use bootstrap as a shortcut once you have a config.
 

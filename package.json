@@ -21,6 +21,7 @@
     "guard:pr-close": "node scripts/github/guard-pr-close.mjs",
     "audit:post-merge": "node scripts/github/post-merge-audit.mjs",
     "gate:release": "node scripts/github/release-gate.mjs",
-    "guard:deps": "node scripts/github/guard-dependencies.mjs"
+    "guard:deps": "node scripts/github/guard-dependencies.mjs",
+    "guard:versions": "node scripts/docs/check-versions.mjs"
   }
 }
