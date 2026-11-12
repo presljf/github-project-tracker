@@ -500,7 +500,12 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 
 ## Post-merge bypass audit
 
-`.github/workflows/post-merge-audit.yml` detects merged PRs with failed/missing required checks or invalid closing-keyword usage. It opens a `tracker-contract-exception` OI; release must not proceed until resolved. Required checks now include `pr-close-guard`.
+`.github/workflows/post-merge-audit.yml` detects merged PRs with failed/missing required checks or invalid closing-keyword usage. It opens a `tracker-contract-exception` OI; release must not proceed until resolved.
+
+- **Caller permissions (least privilege):** `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`. The copied caller must carry the same block; private repos require `checks: read` (check runs) and `statuses: read` (commit statuses) for `statusCheckRollup`.
+- **Required check names:** resolve from `guard.requiredChecks[]` in `tracker.config.json`; absent config keeps the backwards-compatible default (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). Adopters must set their real check contexts (e.g. CastDeck: `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard`).
+- **Degraded mode:** if `statusCheckRollup` is unreadable due to a permission/API error, the audit prints a loud warning + job summary (`checks: read`/`statuses: read` guidance), retries a metadata-only PR fetch, enforces the closing-keyword/partial rules only, and exits 0 in advisory mode — it does not fail red and does not open a false check-related OI. Real closing-keyword/partial violations still open an OI; non-permission errors still fail.
+- **Evidence:** after private-repo adoption, verify a merged PR run completes green (degraded warning acceptable only until the permissions are applied) and record the run URL.
 
 
 **Dependency approval guard:** `guard:deps` fails dependency/lockfile changes unless `tracker.dependencies.json` contains an OI-linked, reasoned, unexpired approval. Clean-tree preflight blocks task start on uncommitted work; `--allow-dirty` requires a recorded reason.

@@ -349,6 +349,7 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `verification` | no | optional `remoteOnly[]` suite policy: `id`, `workflow`, `prLabel`, `localMode` (`hidden`/`forbidden`, default forbidden), `overrideEnv`, `docs`; absent or empty = no-op |
 | `docs.counts` | no | optional verified PASS/FAIL/SKIP contract: `baseline`, `generated`, `markers[]`, `inventoryCommand`, `updateCommand`; absent = no-op |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
+| `guard` | no | `transportOnly`, `allow[]`, `requiredChecks[]` (post-merge audit check-run names; absent = default `ci / ci-gate`, `docs-guard`, `pr-close-guard`) |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
 Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version, and profile-aware field rules: the `product` profile (default) requires `fields.Release`/`fields.Sprint` and at least one release; the `tooling` profile requires a `fields.Stream` declaration and allows `releases: []`. `verification.remoteOnly[]` entries require `id`/`workflow`, reject unknown keys, enforce the `localMode` enum and env-var-name shape for `overrideEnv`, and require unique suite ids. Exit 1 with `$path: message`.
@@ -476,6 +477,7 @@ Enforcement: advisory CI first; required at release gates once stable. Audit tok
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
 | Tracker audit | PAT or GitHub App installation token | project read/write (or read advisory) | store as secret; never print; project-scoped |
+| Post-merge audit | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read | least privilege; the copied caller must carry the same block; private repos need `checks:read`/`statuses:read` for `statusCheckRollup` |
 | Release publish | `GITHUB_TOKEN`/environment secrets | contents:write | protected tag/environment |
 | Package/cloud publish | OIDC or environment secrets | least privilege | prefer short-lived |
 | Signing/notarization/container | project secrets/OIDC | minimal | skip cleanly if absent |
@@ -502,10 +504,21 @@ must run this gate before a dispatch/tag publish.
 
 ### Post-merge bypass audit
 
-`.github/workflows/post-merge-audit.yml` runs when a PR is merged. It checks required checks
-(`ci / ci-gate`, `docs-guard`, `pr-close-guard`) and closing-keyword/partial-PR rules. A merged PR
-with a failed/missing required check or invalid closure opens an OI labeled
-`tracker-contract-exception` and must be resolved before release.
+`.github/workflows/post-merge-audit.yml` runs when a PR is merged. It checks required checks and
+closing-keyword/partial-PR rules. Required check-run names resolve from
+`guard.requiredChecks[]` in `tracker.config.json` (default when absent:
+`ci / ci-gate`, `docs-guard`, `pr-close-guard` — adopters must set their real names, e.g. CastDeck:
+`ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard`). The workflow token needs
+`contents: read`, `issues: write`, `pull-requests: read`, and (on private repos)
+`checks: read` + `statuses: read` to read `statusCheckRollup`; the copied caller must carry the
+same permissions block.
+
+A merged PR with a failed/missing required check or invalid closure opens an OI labeled
+`tracker-contract-exception` and must be resolved before release. If `statusCheckRollup` is
+unreadable because of a permission/API error, the audit degrades loudly (warning + job summary +
+`checks: read`/`statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
+closing-keyword/partial-PR rules only, and exits 0 in advisory mode — no false check-related OI.
+Real closing violations still open an OI; non-permission errors still fail.
 
 ### PR closing-keyword guard
 

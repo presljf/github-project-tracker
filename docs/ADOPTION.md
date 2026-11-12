@@ -249,6 +249,17 @@ Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` wi
 
 Merged PRs with failed/missing required checks or invalid closure open a `tracker-contract-exception` OI. The next release must block until resolved.
 
+Set your **real check names** (not the tracker's own) so the audit does not open false bypass OIs:
+
+```json
+"guard": { "requiredChecks": ["ci / ci-gate", "tracker-guard / guard", "pr-close-guard"] }
+```
+
+Absent config keeps the default (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). The copied caller
+workflow must grant `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`,
+`statuses: read`; without `checks: read`/`statuses: read` on a private repo the audit degrades to a
+warning + closure-only audit (no false check OI) instead of failing red.
+
 ## Release gate
 
 Before releasing, run `npm run gate:release -- --root . --repo owner/repo`; it verifies the pinned contract and fails on any open `tracker-contract-exception` OI.

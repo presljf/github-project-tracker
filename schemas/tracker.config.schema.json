@@ -27,7 +27,7 @@
         "product",
         "tooling"
       ],
-      "description": "Enforced work lifecycle: product = Release → Sprint → Task with Release/Sprint fields (default); tooling = [Stream] container → Task with a Stream field and the tag as the version record. Absent means product."
+      "description": "Enforced work lifecycle: product = Release \u2192 Sprint \u2192 Task with Release/Sprint fields (default); tooling = [Stream] container \u2192 Task with a Stream field and the tag as the version record. Absent means product."
     },
     "repository": {
       "type": "string",
@@ -252,7 +252,7 @@
     "releases": {
       "type": "array",
       "minItems": 0,
-      "description": "Product-profile plan skeleton (releases → sprints → tasks). The product profile requires at least one release; tooling-profile repos may leave it empty because the tag is the version record.",
+      "description": "Product-profile plan skeleton (releases \u2192 sprints \u2192 tasks). The product profile requires at least one release; tooling-profile repos may leave it empty because the tag is the version record.",
       "items": {
         "type": "object",
         "required": [
@@ -556,6 +556,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "requiredChecks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Check-run names required by the post-merge bypass audit (GitHub check context names, e.g. 'ci / ci-gate'). Absent keeps the backwards-compatible default list; adopters set their real check names."
         }
       }
     },

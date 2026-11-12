@@ -4,10 +4,19 @@ on:
   pull_request:
     types: [closed]
 
+# Least privilege for the audit:
+# - contents: read  -> checkout the repo under audit
+# - issues: write   -> open the tracker-contract-exception OI/label
+# - pull-requests: read -> read the merged PR metadata
+# - checks/statuses: read -> read statusCheckRollup.check_runs + statuses (REQUIRED on private repos;
+#   without them the rollup is unreadable and the audit degrades to closure-only). The copied caller
+#   workflow must carry the same permissions block.
 permissions:
   contents: read
   issues: write
   pull-requests: read
+  checks: read
+  statuses: read
 
 jobs:
   audit:
