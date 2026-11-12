@@ -10,7 +10,9 @@ const contract = {
     config: 'profiles/node/eslint.config.mjs',
   },
 };
-const pkg = { devDependencies: { eslint: '^10.14.0', '@eslint/js': '^10.0.1', globals: '^17.14.0' } };
+const pkg = {
+  devDependencies: { eslint: '^10.14.0', '@eslint/js': '^10.0.1', globals: '^17.14.0', prettier: '^3.10.0' },
+};
 test('major parses ranges', () => assert.equal(major('^10.14.0'), 10));
 test('clean tooling passes', () =>
   assert.equal(
