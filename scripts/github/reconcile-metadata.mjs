@@ -60,6 +60,9 @@ export function applyPlan({ github, owner, repo, plan, dryRun = true }) {
 function main() {
   const args = process.argv.slice(2);
   const get = (n, d = null) => {
+    const prefix = `--${n}=`;
+    const inline = args.find((a) => a.startsWith(prefix));
+    if (inline) return inline.slice(prefix.length);
     const i = args.indexOf(`--${n}`);
     return i >= 0 ? args[i + 1] : d;
   };
