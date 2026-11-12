@@ -79,6 +79,33 @@ Enable native Task/Bug/Feature. If unavailable, document the fallback (Kind) in 
 ### 2.6 Labels
 Create only `risk:low|medium|high`, `plan-change`, `source:downstream`, `status:needs-triage`. No dimension labels.
 
+### 2.7 Remote-only verification suites (optional)
+
+Disruptive GUI suites (desktop smoke/native windows) should be declared remote-only so local runs
+cannot spawn visible windows without evidence. Add to config — absent/empty block is a no-op:
+
+```json
+"verification": {
+  "remoteOnly": [
+    {
+      "id": "desktop-smoke",
+      "workflow": ".github/workflows/reusable-desktop-smoke.yml",
+      "prLabel": "run-desktop-smoke",
+      "localMode": "hidden",
+      "overrideEnv": "TRACKER_ALLOW_VISIBLE_GUI",
+      "docs": "profiles/desktop/README.md"
+    }
+  ]
+}
+```
+
+`localMode: hidden` allows a hidden local run only when explicitly requested (`--hidden`); the
+default `forbidden` allows no local run. Wire the offline guard into the suite script
+(`guard:local-suite`) and/or Playwright `globalSetup` (`playwright-remote-guard.mjs`); the remote
+visible run is the evidence, hidden local is non-authoritative. Agents must never set the override
+env. See [profiles/desktop](../profiles/desktop/README.md) and
+[REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
+
 ## 3. Install template/config
 
 Copy from the tracker template (copy mode requires the full set):
@@ -168,6 +195,7 @@ stream after the release gate passes. Do not start feature work until the first 
 - [ ] Config validated and pinned exactly.
 - [ ] Audit token scoped/stored; audit advisory; manual checklist run.
 - [ ] Branch protection/required checks documented; expensive jobs advisory.
+- [ ] Remote-only GUI suites declared in `verification.remoteOnly` and wired to the local guard/Playwright globalSetup (optional; absent = no-op).
 - [ ] First task completed through the full lifecycle.
 - [ ] Docs pinned/versioned; downstream feedback channel linked.
 - [ ] Program-level gate closed (if applicable); upgrade policy understood.

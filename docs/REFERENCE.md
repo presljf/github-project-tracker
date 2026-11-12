@@ -60,8 +60,12 @@
 | `scripts/github/task.mjs` | start/checkpoint/review/block/done/status | now |
 | `scripts/github/stream.mjs` | tooling-profile `[Stream]` open/close lifecycle | now |
 | `scripts/github/project-field-option.mjs` | safe single-select option append (preserves ids/item values) | now |
+| `scripts/github/guard-local-suite.mjs` | remote-only suite guard (enforce/report, offline) | now |
+| `scripts/github/playwright-remote-guard.mjs` | dependency-free Playwright `globalSetup` factory for the remote-only policy | now |
 | `scripts/github/lib/work-profile.mjs` | product/tooling enforcement adapters (shared engine) | now |
+| `scripts/github/lib/verification-policy.mjs` | remote-only policy resolution/evaluation (shared, offline) | now |
 | `profiles/node/` | generic lint/format profile | now |
+| `profiles/desktop/` | desktop smoke caller + remote-only local guard | now |
 | `profiles/tooling/` | tooling work-profile selection + example config | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
@@ -251,6 +255,34 @@ Reads the current options first, preserves every existing id/colour/description 
 that reference those ids are unchanged), appends only a new name, and is idempotent on re-run.
 Used by `stream.mjs open` and handy when creating per-delivery options by hand.
 
+### 5.6 guard-local-suite (remote-only verification policy)
+
+```bash
+node scripts/github/guard-local-suite.mjs --suite desktop-smoke [--mode enforce|report] [--hidden] [--json]
+node scripts/github/guard-local-suite.mjs --root . --config tracker.config.json --suite <id> --mode enforce
+```
+Enforces `verification.remoteOnly[]` from `tracker.config.json` before a disruptive suite spawns.
+Remote detection is **`GITHUB_ACTIONS === 'true'`** only (a local `CI=true` is not remote):
+
+| Situation | `--mode enforce` (default) | `--mode report` |
+|---|---|---|
+| Remote runner (`GITHUB_ACTIONS=true`) | allowed (`REMOTE_ALLOWED`) | allowed (`REMOTE_ALLOWED`) |
+| Local + override env set | allowed with a loud warning (`LOCAL_OVERRIDE_ALLOWED`) | allowed with a loud warning |
+| Local + `--hidden` and suite `localMode: hidden` | allowed, non-authoritative (`LOCAL_HIDDEN_ALLOWED`) | allowed |
+| Local + `localMode: forbidden` (or hidden not requested) | **exit 1** (`BLOCKED_LOCAL_VISIBLE`) with workflow/label/hidden/override/docs instructions | `DEFERRED_REMOTE` line, exit 0 |
+| Unknown suite id | exit 1 with known suite ids | exit 1 |
+| No `verification.remoteOnly` | no-op (`NO_POLICY`, exit 0) | no-op |
+
+`--json` prints a machine-readable result; `--mode report` prints a single machine-readable
+`DEFERRED_REMOTE suite=<id> workflow=<...> prLabel=<...> overrideEnv=<...> docs=<...>` line for
+verify aggregators. Hidden local mode is non-authoritative; the remote visible run is the evidence.
+The override env is for deliberate human debugging only — **agents must never set it**.
+
+`playwright-remote-guard.mjs` exposes `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })`,
+which returns a Playwright `globalSetup` function; it throws with the same instructions before any
+window is created. It imports no `@playwright/test` so adopters wire it from their own config (see
+[profiles/desktop](../profiles/desktop/README.md)).
+
 ## 6. Config reference
 
 Validate:
@@ -274,10 +306,11 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `automation` | no | defaultAssignee, branchPrefix, tagPattern, templateRepo/version, inReviewMode, autoAddIssues, closeToDone, bot |
 | `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
 | `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode (secret name fixed `TRACKER_TOKEN`); release profile/ref/dryRun |
+| `verification` | no | optional `remoteOnly[]` suite policy: `id`, `workflow`, `prLabel`, `localMode` (`hidden`/`forbidden`, default forbidden), `overrideEnv`, `docs`; absent or empty = no-op |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
-Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version, and profile-aware field rules: the `product` profile (default) requires `fields.Release`/`fields.Sprint` and at least one release; the `tooling` profile requires a `fields.Stream` declaration and allows `releases: []`. Exit 1 with `$path: message`.
+Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version, and profile-aware field rules: the `product` profile (default) requires `fields.Release`/`fields.Sprint` and at least one release; the `tooling` profile requires a `fields.Stream` declaration and allows `releases: []`. `verification.remoteOnly[]` entries require `id`/`workflow`, reject unknown keys, enforce the `localMode` enum and env-var-name shape for `overrideEnv`, and require unique suite ids. Exit 1 with `$path: message`.
 
 ## 7. Fields, statuses, transitions
 

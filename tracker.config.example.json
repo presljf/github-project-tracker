@@ -168,6 +168,18 @@
       "privateVulnerabilityReporting": false
     }
   },
+  "verification": {
+    "remoteOnly": [
+      {
+        "id": "desktop-smoke",
+        "workflow": ".github/workflows/reusable-desktop-smoke.yml",
+        "prLabel": "run-desktop-smoke",
+        "localMode": "hidden",
+        "overrideEnv": "TRACKER_ALLOW_VISIBLE_GUI",
+        "docs": "profiles/desktop/README.md"
+      }
+    ]
+  },
   "guard": {
     "transportOnly": true,
     "allow": []
