@@ -15,6 +15,7 @@
     "rate-limit": "node scripts/github/rate-limit.mjs",
     "guard:gh": "node scripts/github/guard-gh-transport.mjs",
     "guard:scope": "node scripts/github/guard-scope.mjs",
-    "guard:docs": "node scripts/docs/guard-docs.mjs"
+    "guard:docs": "node scripts/docs/guard-docs.mjs",
+    "merge-pr": "node scripts/github/merge-pr.mjs"
   }
 }

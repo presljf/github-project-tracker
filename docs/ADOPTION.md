@@ -155,3 +155,7 @@ Do not start feature work until the first task proves the loop.
 - Record local overrides; never fork silently.
 
 **Estimate:** small project first task 1–2h; full adoption 3–6h (excluding project-specific plan/content).
+
+## No-admin merges
+
+Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch`; it refuses `--admin` and requires `ci / ci-gate` + `docs-guard` SUCCESS. Downstream private repos without branch protection must rely on contract/release gates instead.
