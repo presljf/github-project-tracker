@@ -1,6 +1,6 @@
 # Downstream feedback
 
-**Docs version:** v1.0.2-docs.1 · Target template: v1.0.2
+**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
 
 This repository is the **upstream source of truth** for the Project Tracker OS. If your project adopts the tracker template, you are a **downstream project**. Report bugs and feature requests here — do not fork the template or keep fixes only in your project. The intake path (forms → labels → Project → triage → close) is validated end to end; see [Publication and security checklist](./PUBLICATION.md) and [T04](#validation-v11) below.
 
@@ -16,7 +16,7 @@ This repository is the **upstream source of truth** for the Project Tracker OS. 
 Open a **[downstream bug report](https://github.com/presljf/github-project-tracker/issues/new?template=downstream-bug.yml)** and include:
 
 - originating project/program and repository
-- pinned `automation.templateVersion` (exact, e.g. `1.0.2`)
+- pinned `automation.templateVersion` (exact, e.g. `1.2.0`)
 - environment/runtime versions (`gh`, Node, OS, shell)
 - what you did, expected vs actual behavior
 - reproduction steps or minimal example

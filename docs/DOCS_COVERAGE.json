@@ -149,6 +149,17 @@
         "docs/AGENT_GUIDE.md",
         "docs/REFERENCE.md"
       ]
+    },
+    {
+      "id": "root-docs",
+      "paths": [
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "docs": [
+        "docs/README.md",
+        "docs/REFERENCE.md"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Task lifecycle
 
-<!-- Docs version: v1.0.2-docs.1 · Target template: v1.0.2 · print formats: A4, Letter -->
+<!-- Docs version: v1.2.0-docs.1 · Target template: v1.2.0 · print formats: A4, Letter -->
 
 > Move a task from Todo to Done without hidden work. Full procedure: [HOW TO USE §7–10](../HOW_TO_USE.md#7-find-work-and-definition-of-ready).
 
