@@ -1,0 +1,10 @@
+{
+  "status": "FAIL",
+  "checks": [
+    { "name": "lint", "status": "PASS" },
+    { "name": "unit", "status": "PASS" },
+    { "name": "e2e", "status": "SKIP" },
+    { "name": "desktop-smoke", "status": "DEFERRED_REMOTE" },
+    { "name": "docs", "status": "FAIL" }
+  ]
+}

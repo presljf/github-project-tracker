@@ -612,6 +612,53 @@
           }
         }
       }
+    },
+    "docs": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional docs contracts. Absent means no extra docs policy.",
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": [
+            "baseline",
+            "generated"
+          ],
+          "additionalProperties": false,
+          "description": "Verified PASS/FAIL/SKIP counts contract: committed baseline + generated doc + marker-bearing current-state docs. Absent means no counts policy.",
+          "properties": {
+            "baseline": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Path (repo-relative) to the committed test-counts baseline JSON."
+            },
+            "generated": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Path (repo-relative) to the generated canonical docs/TEST_COUNTS.md."
+            },
+            "markers": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Current-state docs that may carry inline <!-- counts:<suite>/<mode>[/<metric>] --> markers. Historical docs are never listed here."
+            },
+            "inventoryCommand": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Command that produces the counted runner output (shown in drift guidance)."
+            },
+            "updateCommand": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Command that records new counts and regenerates the baseline/docs/markers (shown in drift guidance)."
+            }
+          }
+        }
+      }
     }
   }
 }

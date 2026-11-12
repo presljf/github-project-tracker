@@ -22,8 +22,14 @@ All notable changes to Project Tracker OS are documented here. The format follow
   human-only override env, `DEFERRED_REMOTE` aggregator output, a dependency-free Playwright
   `globalSetup` factory (`playwright-remote-guard.mjs`), schema/validate-config/verify-tooling
   validation, and docs for the hidden-local (non-authoritative) vs remote-visible (evidence) split.
-- Remaining v1.3.0 items (verified PASS/FAIL/SKIP counts contract, post-merge-audit hardening,
-  release metadata/tag) land in their own tasks and are recorded at release close.
+- Add the **verified PASS/FAIL/SKIP counts contract** (`docs.counts`, absent = no-op): committed
+  per-suite/mode baseline with named+agreed `knownSkips` and `reviewed` evidence, counted-runner
+  parsers (Playwright JSON, node-test summary/TAP, verify-json), `compareResults` drift on counts and
+  skip identity, flaky>0/hard-fail policy, `check`/`record`/`render` CLI with deterministic
+  `docs/TEST_COUNTS.md` + inline markers, and `guard:docs:counts` docs/staleness guard with historical
+  exemption.
+- Remaining v1.3.0 items (post-merge-audit hardening, release metadata/tag) land in their own tasks
+  and are recorded at release close.
 
 ## v1.2.2 — Qualified release tooling
 

@@ -64,9 +64,13 @@
 | `scripts/github/playwright-remote-guard.mjs` | dependency-free Playwright `globalSetup` factory for the remote-only policy | now |
 | `scripts/github/lib/work-profile.mjs` | product/tooling enforcement adapters (shared engine) | now |
 | `scripts/github/lib/verification-policy.mjs` | remote-only policy resolution/evaluation (shared, offline) | now |
+| `scripts/github/suite-counts.mjs` | counted-runner parsers/compare + counts `check\|record\|render` CLI | now |
+| `scripts/github/guard-docs-counts.mjs` | counts baseline/agreement + generated-doc/marker guard | now |
+| `schemas/test-counts.baseline.schema.json` | counts baseline JSON schema | now |
 | `profiles/node/` | generic lint/format profile | now |
 | `profiles/desktop/` | desktop smoke caller + remote-only local guard | now |
 | `profiles/tooling/` | tooling work-profile selection + example config | now |
+| `profiles/counts/` | counts contract wiring + example baseline | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
 | `.github/workflows/`, `.github/actions/` | reusable CI/release/security/audit workflows + composite actions | now |
@@ -283,6 +287,42 @@ which returns a Playwright `globalSetup` function; it throws with the same instr
 window is created. It imports no `@playwright/test` so adopters wire it from their own config (see
 [profiles/desktop](../profiles/desktop/README.md)).
 
+### 5.7 Verified counts contract (suite-counts + guard-docs-counts)
+
+```bash
+# compare real runner output with the committed baseline (exit 1 on drift/flaky/malformed output)
+node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
+
+# record new counts + skip identities into the baseline and regenerate docs/markers
+node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap
+
+# regenerate canonical doc + inline markers from the baseline (--check fails when stale)
+node scripts/github/suite-counts.mjs render [--check]
+
+# docs guard: baseline schema/agreement + generated doc + marker freshness (no test execution)
+node scripts/github/guard-docs-counts.mjs [--root DIR] [--config FILE] [--json]
+```
+
+The contract is enabled by `docs.counts` in `tracker.config.json` (`baseline`, `generated`,
+`markers`, `inventoryCommand`, `updateCommand`); absent config is a no-op. Baseline JSON holds one
+entry per suite id + mode (`remote-visible`, `local-hidden`, `offline`, `full`, or repo-specific)
+with `{ collected, passed, failed, skipped, flaky }`, `knownSkips[{ test, reason, coveredBy,
+agreedOn }]`, and `reviewed { on, by, evidence[] }`
+([schema](../schemas/test-counts.baseline.schema.json), [example](../profiles/counts/test-counts.baseline.example.json)).
+
+Parsers (`--runner auto|playwright|node-test|verify`) support Playwright JSON (`stats` + skipped
+titles + flaky; interrupted runs fail), node-test summary/TAP (`skipped`+`todo` -> skipped,
+`cancelled` -> failed; TAP gives skip titles), and verify `--json` statuses
+(`PASS`/`FAIL`/`WARN`/`SKIP`/`DEFERRED_REMOTE` -> counts). `check` is quiet on zero drift
+(`COUNTS_OK suite=... mode=... ...`) and fails on any count drift, added/removed/renamed skip,
+flaky > 0, or unknown/malformed output with exact diff + inventory/update guidance. `record`
+writes counts, adds placeholder `knownSkips` for new skips, and regenerates `docs/TEST_COUNTS.md` +
+every `<!-- counts:<suite>/<mode>[/<metric>] -->...<!-- /counts:... -->` marker; humans fill in
+agreement metadata in the same PR. The guard validates schema/agreement, regenerates the canonical
+doc, and fails stale/missing docs/markers; historical docs are exempt by construction (only
+`docs.counts.markers` files are checked). Full adoption wiring:
+[profiles/counts](../profiles/counts/README.md).
+
 ## 6. Config reference
 
 Validate:
@@ -307,6 +347,7 @@ node scripts/github/validate-config.mjs tracker.config.json
 | `profiles.node.commands` | no | lint/format/test/e2e/verify/build mappings |
 | `workflows` | no | ci mode/ref/requiredChecks/commands; audit mode (secret name fixed `TRACKER_TOKEN`); release profile/ref/dryRun |
 | `verification` | no | optional `remoteOnly[]` suite policy: `id`, `workflow`, `prLabel`, `localMode` (`hidden`/`forbidden`, default forbidden), `overrideEnv`, `docs`; absent or empty = no-op |
+| `docs.counts` | no | optional verified PASS/FAIL/SKIP contract: `baseline`, `generated`, `markers[]`, `inventoryCommand`, `updateCommand`; absent = no-op |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 

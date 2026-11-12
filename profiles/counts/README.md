@@ -1,0 +1,108 @@
+# Counts contract profile (verified PASS/FAIL/SKIP)
+
+Adopter wiring for the **"aware and agree"** counts contract. Numbers become verified machine
+output instead of remembered prose: every suite/mode records `collected / passed / failed /
+skipped / flaky`, every non-zero skip is named and agreed, and CI fails when reality, the baseline,
+the generated doc, or inline markers drift.
+
+Absent `docs.counts` config is a no-op; existing projects keep current behaviour.
+
+## 1. Config
+
+```json
+"docs": {
+  "counts": {
+    "baseline": "docs/test-counts.baseline.json",
+    "generated": "docs/TEST_COUNTS.md",
+    "markers": ["docs/REFERENCE.md"],
+    "inventoryCommand": "npm test -- --test-reporter=tap",
+    "updateCommand": "npm run docs:counts:update"
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `baseline` | committed JSON baseline: one entry per suite id + mode (`remote-visible`, `local-hidden`, `offline`, `full`, or repo-specific) |
+| `generated` | canonical doc regenerated from the baseline (`docs/TEST_COUNTS.md`) |
+| `markers` | current-state docs that may carry inline markers; **historical docs are never listed** (exemption by construction) |
+| `inventoryCommand` | command that produces the counted output (shown in drift guidance) |
+| `updateCommand` | command that records new counts + regenerates docs (shown in drift guidance) |
+
+Validate: `node scripts/github/validate-config.mjs tracker.config.json` and
+`npm run verify:tooling`. Baseline shape:
+[`test-counts.baseline.example.json`](./test-counts.baseline.example.json) /
+[`schemas/test-counts.baseline.schema.json`](../../schemas/test-counts.baseline.schema.json).
+
+## 2. Wire the suite job
+
+The counted-runner CLI parses the output of the suite and compares it with the baseline. Run the
+inventory, then `check`; CI must run both (or the wrapper script):
+
+```json
+"scripts": {
+  "test:counts": "node --test --test-reporter=tap tests/*.test.mjs > test-results/unit.tap",
+  "test:counts:check": "npm run test:counts && node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap",
+  "test:e2e:remote": "playwright test --reporter=json > test-results/e2e.json",
+  "test:e2e:check": "node scripts/github/suite-counts.mjs check --suite e2e --mode remote-visible --results test-results/e2e.json",
+  "docs:counts:update": "node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap",
+  "guard:docs:counts": "node scripts/github/guard-docs-counts.mjs"
+}
+```
+
+Supported result formats (`--runner auto|playwright|node-test|verify`):
+
+| Runner | Input | Notes |
+|---|---|---|
+| Playwright JSON | `npx playwright test --reporter=json` output | `stats` -> counts incl. flaky; skipped **test titles** are extracted from the suite tree (`suite > spec`); interrupted runs fail loudly |
+| node:test | summary or `--test-reporter=tap` | `skipped` + `todo` map to contract `skipped`; `cancelled` maps to `failed`; TAP gives skip/todo titles (summary output cannot name skips) |
+| verify JSON | `verify.mjs --json` (`checks`/`results`/`suites`/`items` with `{name, status}`) | `PASS` -> passed, `FAIL`/`WARN` -> failed, `SKIP`/`DEFERRED_REMOTE` -> skipped |
+
+`check` output: zero drift prints one machine-readable line
+(`COUNTS_OK suite=... mode=... collected=... passed=... failed=... skipped=... flaky=...`) and exits 0;
+drift prints the exact count/skip diff plus `docs:counts:update` guidance and exits 1. `--json`
+gives a machine-readable result. Flaky > 0 always fails. Unknown/malformed runner output fails loudly.
+
+## 3. Update + agree workflow
+
+Counts change => **the same PR** changes the baseline, generated doc, and markers:
+
+1. Run the inventory (e.g. `npm run test:counts`) and then the update command:
+   `node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap`
+   (or `render` to regenerate docs only from the existing baseline).
+2. `record` writes new counts, regenerates `docs/TEST_COUNTS.md` + markers, preserves agreed skips,
+   and adds **placeholder** `knownSkips` for new skips.
+3. Complete the agreement in the baseline: for every new skip fill `reason`, `coveredBy`,
+   `agreedOn`; for a new mode fill `reviewed { on, by, evidence[] }`. Removing a skip removes its
+   entry (the update command drops it).
+4. Review the docs/baseline diff in the PR; `guard-docs-counts` fails until agreement metadata is
+   complete and docs/markers are current.
+
+CI gates for adopters:
+
+- suite job: inventory + `suite-counts check` (fails on drift/flaky/malformed output);
+- docs job: `guard-docs-counts` (baseline schema/agreement + generated doc/marker freshness);
+  it does **not** run tests, so it stays fast and deterministic.
+
+## 4. Inline markers
+
+Current-state docs can quote verified numbers without hardcoding them:
+
+```markdown
+Unit: <!-- counts:unit/full -->156 collected · 156 passed · 0 failed · 0 skipped · 0 flaky<!-- /counts:unit/full -->
+Passed only: <!-- counts:unit/full/passed -->156<!-- /counts:unit/full/passed -->
+```
+
+Marker keys: `<suite>/<mode>` renders the summary line; `<suite>/<mode>/<metric>` renders one
+number (metric: `collected|passed|failed|skipped|flaky`). `render` rewrites every marker in the
+configured marker files; the guard fails on stale/unknown/unclosed markers and on stale
+`docs/TEST_COUNTS.md` (deterministic ordering: suites sorted by id, modes in canonical order
+`remote-visible`, `local-hidden`, `offline`, `full`, then alphabetical).
+
+Historical docs are exempt by construction: only files listed in `docs.counts.markers` are checked,
+so past release/acceptance records are never rewritten.
+
+## 5. Rollback
+
+Delete the `docs.counts` block (and the generated/baseline/marker files if desired). Absent config is
+a no-op; suite jobs and docs return to their previous behaviour.

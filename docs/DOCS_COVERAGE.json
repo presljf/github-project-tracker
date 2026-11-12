@@ -119,6 +119,19 @@
       ]
     },
     {
+      "id": "counts-contract",
+      "paths": [
+        "scripts/github/suite-counts.mjs",
+        "scripts/github/guard-docs-counts.mjs",
+        "profiles/counts/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/AGENT_GUIDE.md",
+        "docs/DOCS_COVERAGE.md"
+      ]
+    },
+    {
       "id": "security-root",
       "paths": [
         "SECURITY.md"

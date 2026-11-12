@@ -168,6 +168,15 @@
       "privateVulnerabilityReporting": false
     }
   },
+  "docs": {
+    "counts": {
+      "baseline": "docs/test-counts.baseline.json",
+      "generated": "docs/TEST_COUNTS.md",
+      "markers": ["docs/REFERENCE.md"],
+      "inventoryCommand": "npm test -- --test-reporter=tap",
+      "updateCommand": "npm run docs:counts:update"
+    }
+  },
   "verification": {
     "remoteOnly": [
       {

@@ -106,11 +106,34 @@ visible run is the evidence, hidden local is non-authoritative. Agents must neve
 env. See [profiles/desktop](../profiles/desktop/README.md) and
 [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
+### 2.8 Verified counts contract (optional)
+
+Declare the pass/fail/skip contract in config (absent = no-op):
+
+```json
+"docs": {
+  "counts": {
+    "baseline": "docs/test-counts.baseline.json",
+    "generated": "docs/TEST_COUNTS.md",
+    "markers": ["docs/REFERENCE.md"],
+    "inventoryCommand": "npm test -- --test-reporter=tap",
+    "updateCommand": "npm run docs:counts:update"
+  }
+}
+```
+
+Wire the suite job to run the counted inventory + `suite-counts check --suite ... --mode ...` (fails
+on drift/flaky/malformed output) and the docs job to run `guard:docs:counts` (baseline schema +
+named-skip/reviewed agreement + generated doc/marker freshness; no test execution). Counts change ⇒
+baseline + `docs/TEST_COUNTS.md` + markers change in the same PR; new skips start as placeholders
+until a human fills `reason/coveredBy/agreedOn`. Full wiring:
+[profiles/counts](../profiles/counts/README.md).
+
 ## 3. Install template/config
 
 Copy from the tracker template (copy mode requires the full set):
 - `scripts/github/**`, `schemas/tracker.config.schema.json`, `package.json`
-- `profiles/node/`, `profiles/release/**` (if used), `tests/**` (optional but recommended)
+- `profiles/node/`, `profiles/release/**` (if used), `profiles/counts/` (if the counts contract is adopted), `tests/**` (optional but recommended)
 - `.github/ISSUE_TEMPLATE/*`
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `docs/comment-templates/*` (or link the upstream docs)
@@ -196,6 +219,7 @@ stream after the release gate passes. Do not start feature work until the first 
 - [ ] Audit token scoped/stored; audit advisory; manual checklist run.
 - [ ] Branch protection/required checks documented; expensive jobs advisory.
 - [ ] Remote-only GUI suites declared in `verification.remoteOnly` and wired to the local guard/Playwright globalSetup (optional; absent = no-op).
+- [ ] Counts contract declared in `docs.counts`, suite workflow runs `suite-counts check`, docs workflow runs `guard:docs:counts` (optional; absent = no-op).
 - [ ] First task completed through the full lifecycle.
 - [ ] Docs pinned/versioned; downstream feedback channel linked.
 - [ ] Program-level gate closed (if applicable); upgrade policy understood.

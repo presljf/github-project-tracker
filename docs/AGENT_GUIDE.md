@@ -14,6 +14,7 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 7. **Plan changes are explicit.** Dated `plan-change` comment + label + tracker/field updates; no silent scope changes.
 8. **No silent WIP.** If a session ends, post a checkpoint and hand off.
 9. **No visible local GUI suites.** Suites declared under `verification.remoteOnly[]` run visibly only on a remote runner (`GITHUB_ACTIONS=true`) or in the documented hidden local mode; agents must never set the override env (human debugging only) and never claim local hidden runs as evidence.
+10. **Counts are verified, not remembered.** Cite test counts only from counted-runner output + `suite-counts check`; counts change ⇒ baseline, generated `docs/TEST_COUNTS.md`, and markers change in the same PR. Never hand-edit generated counts/markers and never leave a non-zero skip unnamed.
 
 ## Work profiles
 
@@ -51,6 +52,18 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - **Override env = human debugging only.** It prints a loud warning; agents must not set it.
 - Playwright suites wire `scripts/github/playwright-remote-guard.mjs` as `globalSetup` so the run
   fails before any window is created. Full reference: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
+
+## Verified counts (aware and agree)
+
+- Cite `collected / passed / failed / skipped / flaky` only from the counted inventory output plus
+  `suite-counts check` (`COUNTS_OK ...`), never from memory or a previous release.
+- Counts change ⇒ the same PR updates the baseline, generated `docs/TEST_COUNTS.md`, and inline
+  markers: run the update command (`record`), then complete `knownSkips` agreement
+  (`reason`/`coveredBy`/`agreedOn`) and `reviewed { on, by, evidence[] }`.
+- `npm run guard:docs:counts` enforces schema/agreement + generated-doc/marker freshness (it does
+  not run tests). Historical docs are exempt by construction; never rewrite past records.
+- Non-zero skips must be named and agreed; flaky > 0 fails — fix flakiness instead of recording it.
+- Full reference: [REFERENCE §5.7](./REFERENCE.md#57-verified-counts-contract-suite-counts-guard-docs-counts).
 
 ## Session start
 
