@@ -441,6 +441,11 @@ export class GitHubCli {
     return { number, title, state: 'OPEN', url };
   }
 
+  updateIssueTitle(owner, repo, number, title) {
+    this._beforeMutation();
+    return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--title', title]);
+  }
+
   setIssueType(owner, repo, number, type) {
     this._beforeMutation();
     return this.run(['api', `repos/${owner}/${repo}/issues/${number}`, '--method', 'PATCH', '-f', `type=${type}`], {
