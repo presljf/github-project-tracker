@@ -494,3 +494,6 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Docs links | relative Markdown links resolved against the repo | all targets exist |
 | Platform settings | `gh api repos/presljf/github-project-tracker/actions/permissions/workflow` | default token permission `read` |
 | Branch protection/rulesets availability | `gh api .../branches/main/protection` | enabled on public repo: `ci / ci-gate`, `docs-guard` required |
+
+
+**PR close guard:** `.github/workflows/pr-close-guard.yml` validates closing keywords vs task issue kind; completion PRs use closing keywords, partial PRs use Refs/Part of and cannot close.

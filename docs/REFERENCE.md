@@ -363,6 +363,17 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### PR closing-keyword guard
+
+`.github/workflows/pr-close-guard.yml` enforces:
+
+- a task PR completes via exactly a closing keyword (`Closes/Fixes/Resolves #N`) targeting a task issue;
+- a PR labeled `partial` must use `Refs #N` / `Part of #N` and must not close the task;
+- closing a sprint/release tracker issue is rejected.
+
+GitHub's project linked-PR field follows closing keywords, so this guard keeps task completion and
+the board's linked PRs consistent.
+
 ### Adoption contract verifier
 
 `npm run verify:contract -- --root <downstream> --contract contract/adoption-contract.json`
