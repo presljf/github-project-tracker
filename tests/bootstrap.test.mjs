@@ -29,9 +29,7 @@ function config(overrides = {}) {
       {
         key: 'v1.0.0',
         milestone: 'v1.0.0',
-        sprints: [
-          { key: '1.0.0.1', title: 'Foundation', estimate: 'M', tasks: ['First task'] },
-        ],
+        sprints: [{ key: '1.0.0.1', title: 'Foundation', estimate: 'M', tasks: ['First task'] }],
       },
     ],
     automation: { templateRepo: 'owner/github-project-tracker', templateVersion: '1.0.0' },
@@ -41,7 +39,10 @@ function config(overrides = {}) {
 
 test('buildIssueSpecs creates roadmap/release/sprint/task hierarchy', () => {
   const specs = buildIssueSpecs(config());
-  assert.deepEqual(specs.map((spec) => spec.kind), ['roadmap', 'release', 'sprint', 'task']);
+  assert.deepEqual(
+    specs.map((spec) => spec.kind),
+    ['roadmap', 'release', 'sprint', 'task'],
+  );
   assert.equal(specs[3].parentTitle, '[Sprint] 1.0.0.1 — Foundation');
   assert.equal(specs[3].release, 'v1.0.0');
   assert.equal(specs[3].sprint, '1.0.0.1');
@@ -124,8 +125,14 @@ test('bootstrap-created task passes DoR, task start, and audit', async () => {
   assert.equal(item.kind, 'feature');
   assert.equal(item.estimate, 'M');
   const start = await startTask({
-    config: cfg, github, issueNumber: task.number, owner: 'owner',
-    executor: 'agent:test', dryRun: true, repoRoot: process.cwd(), gitExec: () => 'abc123',
+    config: cfg,
+    github,
+    issueNumber: task.number,
+    owner: 'owner',
+    executor: 'agent:test',
+    dryRun: true,
+    repoRoot: process.cwd(),
+    gitExec: () => 'abc123',
   });
   assert.equal(start.ok, true);
   const data = await collectAuditData(github, cfg);

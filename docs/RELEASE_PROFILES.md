@@ -375,3 +375,10 @@ Desktop smoke is a separate reusable profile:
 - Failure artifacts (logs/summary) are uploaded when `artifact-path` is set.
 - The downstream contract verifier treats a bespoke desktop-smoke workflow as a contract
   bypass unless an OI-linked override is declared.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

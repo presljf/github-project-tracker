@@ -82,3 +82,10 @@ The downstream intake path was exercised end to end for v1.1.0: a scratch bug re
 - [Security policy](../SECURITY.md) · [Support](../SUPPORT.md)
 - [Playbook](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md) · [Upgrading](./UPGRADING.md)
 - [Issue forms](https://github.com/presljf/github-project-tracker/issues/new/choose)
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

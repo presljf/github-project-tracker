@@ -7,16 +7,34 @@ import { evaluateDependencyChanges } from './lib/preflight.mjs';
 
 function main() {
   const args = process.argv.slice(2);
-  const get = (name, fallback = null) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : fallback; };
+  const get = (name, fallback = null) => {
+    const i = args.indexOf(`--${name}`);
+    return i >= 0 ? args[i + 1] : fallback;
+  };
   const root = path.resolve(get('root', '.'));
   const base = get('base', 'origin/main');
-  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: root, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: root, encoding: 'utf8' })
+    .trim()
+    .split('\n')
+    .filter(Boolean);
   let basePackage = null;
   let currentPackage = null;
-  try { basePackage = JSON.parse(execFileSync('git', ['show', `${base}:package.json`], { cwd: root, encoding: 'utf8' })); } catch { /* no package */ }
-  try { currentPackage = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')); } catch { /* no package */ }
+  try {
+    basePackage = JSON.parse(execFileSync('git', ['show', `${base}:package.json`], { cwd: root, encoding: 'utf8' }));
+  } catch {
+    /* no package */
+  }
+  try {
+    currentPackage = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  } catch {
+    /* no package */
+  }
   let approvals = {};
-  try { approvals = JSON.parse(fs.readFileSync(path.join(root, 'tracker.dependencies.json'), 'utf8')); } catch { /* none */ }
+  try {
+    approvals = JSON.parse(fs.readFileSync(path.join(root, 'tracker.dependencies.json'), 'utf8'));
+  } catch {
+    /* none */
+  }
   const result = evaluateDependencyChanges({ changedFiles: changed, basePackage, currentPackage, approvals });
   if (result.ok) console.log('Dependency approval guard OK.');
   else {

@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       enable-codeql:
-        description: "Run CodeQL for this manual dispatch (requires CodeQL/Code Security availability)."
+        description: 'Run CodeQL for this manual dispatch (requires CodeQL/Code Security availability).'
         type: boolean
         required: false
         default: false

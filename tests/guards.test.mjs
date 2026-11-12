@@ -9,7 +9,9 @@ test('scope matching allows files and directories only', () => {
 });
 
 test('changedFilesOutsideScope reports contamination', () => {
-  assert.deepEqual(changedFilesOutsideScope({ changedFiles: ['docs/a.md', 'package.json'], scopes: ['docs'] }), ['package.json']);
+  assert.deepEqual(changedFilesOutsideScope({ changedFiles: ['docs/a.md', 'package.json'], scopes: ['docs'] }), [
+    'package.json',
+  ]);
 });
 
 test('transport guard finds raw gh in a temp script and honors allowlist', async () => {

@@ -12,7 +12,10 @@ function getPath(obj, dotted) {
 function collectWorkflowFiles(root) {
   const dir = path.join(root, '.github', 'workflows');
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((f) => /\.(ya?ml)$/.test(f)).map((f) => path.join(dir, f));
+  return fs
+    .readdirSync(dir)
+    .filter((f) => /\.(ya?ml)$/.test(f))
+    .map((f) => path.join(dir, f));
 }
 function usesRefs(files) {
   const refs = [];
@@ -25,26 +28,37 @@ function usesRefs(files) {
 export function verifyContract({ root, contract, config, overrides = {} }) {
   const violations = [];
   const version = String(contract.trackerVersion);
-  if (String(config?.automation?.templateVersion) !== version) violations.push(`templateVersion=${config?.automation?.templateVersion} expected ${version}`);
-  for (const key of contract.requiredConfig || []) if (getPath(config, key) === undefined) violations.push(`required config missing: ${key}`);
-  for (const profile of contract.requiredProfiles || []) if (!config?.profiles?.[profile]) violations.push(`required profile missing: ${profile}`);
-  for (const doc of contract.requiredDocs || []) if (!fs.existsSync(path.join(root, doc))) violations.push(`required docs missing: ${doc}`);
+  if (String(config?.automation?.templateVersion) !== version)
+    violations.push(`templateVersion=${config?.automation?.templateVersion} expected ${version}`);
+  for (const key of contract.requiredConfig || [])
+    if (getPath(config, key) === undefined) violations.push(`required config missing: ${key}`);
+  for (const profile of contract.requiredProfiles || [])
+    if (!config?.profiles?.[profile]) violations.push(`required profile missing: ${profile}`);
+  for (const doc of contract.requiredDocs || [])
+    if (!fs.existsSync(path.join(root, doc))) violations.push(`required docs missing: ${doc}`);
   const refs = usesRefs(collectWorkflowFiles(root));
   for (const requirement of contract.requiredWorkflows || []) {
     const matches = refs.filter((entry) => entry.ref.split('@')[0] === requirement.reusable);
     const override = (overrides.overrides || []).find((entry) => entry.id === requirement.id);
     if (override) {
-      if (!override.issue || !/^https:\/\/github\.com\/.+\/issues\/\d+$/.test(override.issue)) violations.push(`override ${requirement.id} needs an upstream issue URL`);
+      if (!override.issue || !/^https:\/\/github\.com\/.+\/issues\/\d+$/.test(override.issue))
+        violations.push(`override ${requirement.id} needs an upstream issue URL`);
       if (!override.reason) violations.push(`override ${requirement.id} needs a reason`);
-      if (override.expires && Date.parse(override.expires) < Date.now()) violations.push(`override ${requirement.id} expired ${override.expires}`);
+      if (override.expires && Date.parse(override.expires) < Date.now())
+        violations.push(`override ${requirement.id} expired ${override.expires}`);
     }
     if (!matches.length) {
-      if (!override) violations.push(`required workflow missing: ${requirement.id} (${requirement.reusable}); declare an OI-linked override if intentional`);
+      if (!override)
+        violations.push(
+          `required workflow missing: ${requirement.id} (${requirement.reusable}); declare an OI-linked override if intentional`,
+        );
       continue;
     }
     for (const match of matches) {
       if (!match.ref.endsWith(`@v${version}`) && !match.ref.endsWith(`@${version}`)) {
-        violations.push(`${requirement.id} ref not pinned to v${version}: ${path.relative(root, match.file)} ${match.ref}`);
+        violations.push(
+          `${requirement.id} ref not pinned to v${version}: ${path.relative(root, match.file)} ${match.ref}`,
+        );
       }
     }
   }
@@ -52,7 +66,10 @@ export function verifyContract({ root, contract, config, overrides = {} }) {
 }
 function main() {
   const args = process.argv.slice(2);
-  const get = (name, fallback = null) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : fallback; };
+  const get = (name, fallback = null) => {
+    const i = args.indexOf(`--${name}`);
+    return i >= 0 ? args[i + 1] : fallback;
+  };
   const root = path.resolve(get('root', '.'));
   const contractPath = path.resolve(get('contract', path.join(root, 'contract', 'adoption-contract.json')));
   const contract = readJson(contractPath);

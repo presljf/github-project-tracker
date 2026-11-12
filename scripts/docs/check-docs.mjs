@@ -52,7 +52,7 @@ for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
   const lines = text.split(/\r?\n/);
   let fence = false;
-  lines.forEach((line, i) => {
+  lines.forEach((line) => {
     if (line.startsWith('```')) fence = !fence;
   });
   if (fence) errors.push(`${path.relative(ROOT, file)}: unbalanced code fence`);

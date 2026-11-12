@@ -11,7 +11,7 @@ import {
 } from '../scripts/github/task.mjs';
 import { FakeTaskGitHub } from './helpers/fake-task-github.mjs';
 
-const silent = { log() {}, warn() {}, error() {} };
+const _silent = { log() {}, warn() {}, error() {} };
 
 function projectConfig() {
   return {
@@ -33,19 +33,37 @@ function projectConfig() {
 }
 
 function fields() {
-  return ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'].map((status) => ({
-    id: `FIELD_STATUS`.replace('STATUS', status.replace(/\s+/g, '_').toUpperCase()),
-    name: 'Status',
-    options: [{ id: 'OPT_TODO', name: 'Todo' }, { id: 'OPT_PROGRESS', name: 'In Progress' }, { id: 'OPT_REVIEW', name: 'In Review' }, { id: 'OPT_BLOCKED', name: 'Blocked' }, { id: 'OPT_DONE', name: 'Done' }],
-  }))[0] && [
-    { id: 'FIELD_STATUS', name: 'Status', options: [{ id: 'OPT_TODO', name: 'Todo' }, { id: 'OPT_PROGRESS', name: 'In Progress' }, { id: 'OPT_REVIEW', name: 'In Review' }, { id: 'OPT_BLOCKED', name: 'Blocked' }, { id: 'OPT_DONE', name: 'Done' }] },
-    { id: 'FIELD_RELEASE', name: 'Release', options: [{ id: 'OPT_RELEASE', name: 'v1.0.0' }] },
-    { id: 'FIELD_SPRINT', name: 'Sprint', options: [{ id: 'OPT_SPRINT', name: '1.0.0.1' }] },
-    { id: 'FIELD_AREA', name: 'Area', options: [{ id: 'OPT_AREA', name: 'docs' }] },
-    { id: 'FIELD_KIND', name: 'Kind', options: [{ id: 'OPT_KIND', name: 'infra' }] },
-    { id: 'FIELD_ESTIMATE', name: 'Estimate', options: [{ id: 'OPT_ESTIMATE', name: 'M' }] },
-    { id: 'FIELD_SOURCE', name: 'Source', options: [{ id: 'OPT_SOURCE', name: 'Internal' }] },
-  ];
+  return (
+    ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'].map((status) => ({
+      id: `FIELD_STATUS`.replace('STATUS', status.replace(/\s+/g, '_').toUpperCase()),
+      name: 'Status',
+      options: [
+        { id: 'OPT_TODO', name: 'Todo' },
+        { id: 'OPT_PROGRESS', name: 'In Progress' },
+        { id: 'OPT_REVIEW', name: 'In Review' },
+        { id: 'OPT_BLOCKED', name: 'Blocked' },
+        { id: 'OPT_DONE', name: 'Done' },
+      ],
+    }))[0] && [
+      {
+        id: 'FIELD_STATUS',
+        name: 'Status',
+        options: [
+          { id: 'OPT_TODO', name: 'Todo' },
+          { id: 'OPT_PROGRESS', name: 'In Progress' },
+          { id: 'OPT_REVIEW', name: 'In Review' },
+          { id: 'OPT_BLOCKED', name: 'Blocked' },
+          { id: 'OPT_DONE', name: 'Done' },
+        ],
+      },
+      { id: 'FIELD_RELEASE', name: 'Release', options: [{ id: 'OPT_RELEASE', name: 'v1.0.0' }] },
+      { id: 'FIELD_SPRINT', name: 'Sprint', options: [{ id: 'OPT_SPRINT', name: '1.0.0.1' }] },
+      { id: 'FIELD_AREA', name: 'Area', options: [{ id: 'OPT_AREA', name: 'docs' }] },
+      { id: 'FIELD_KIND', name: 'Kind', options: [{ id: 'OPT_KIND', name: 'infra' }] },
+      { id: 'FIELD_ESTIMATE', name: 'Estimate', options: [{ id: 'OPT_ESTIMATE', name: 'M' }] },
+      { id: 'FIELD_SOURCE', name: 'Source', options: [{ id: 'OPT_SOURCE', name: 'Internal' }] },
+    ]
+  );
 }
 
 function item(number, extra = {}) {
@@ -127,19 +145,42 @@ test('start rejects WIP violation', async () => {
 
 test('DoR rejects missing acceptance criteria and blocked dependencies', async () => {
   const noAcceptance = fake({ issues: [issue(5, { body: 'No criteria' })] });
-  await assert.rejects(() => checkDoR({ config: projectConfig(), github: noAcceptance, issueNumber: 5, owner: 'owner' }), /Acceptance criteria/);
+  await assert.rejects(
+    () => checkDoR({ config: projectConfig(), github: noAcceptance, issueNumber: 5, owner: 'owner' }),
+    /Acceptance criteria/,
+  );
   const blocked = fake({ deps: { 5: { blocked_by: 1 } } });
-  await assert.rejects(() => checkDoR({ config: projectConfig(), github: blocked, issueNumber: 5, owner: 'owner' }), /blocked by/);
+  await assert.rejects(
+    () => checkDoR({ config: projectConfig(), github: blocked, issueNumber: 5, owner: 'owner' }),
+    /blocked by/,
+  );
 });
 
 test('checkpoint, review, block, and status transitions', async () => {
   const github = fake();
   await startTask({ ...baseArgs(), github });
-  const update = await checkpointTask({ config: projectConfig(), github, issueNumber: 5, message: 'Done: work\nNext: review' });
+  const update = await checkpointTask({
+    config: projectConfig(),
+    github,
+    issueNumber: 5,
+    message: 'Done: work\nNext: review',
+  });
   assert.match(update.comment, /### Update/);
-  await reviewTask({ config: projectConfig(), github, issueNumber: 5, pr: 'https://github.com/owner/repo/pull/1', evidence: 'tests pass' });
+  await reviewTask({
+    config: projectConfig(),
+    github,
+    issueNumber: 5,
+    pr: 'https://github.com/owner/repo/pull/1',
+    evidence: 'tests pass',
+  });
   assert.equal(github.items[0].status, 'In Review');
-  await blockTask({ config: projectConfig(), github, issueNumber: 5, reason: 'waiting', blockedBy: 'https://github.com/owner/repo/issues/6' });
+  await blockTask({
+    config: projectConfig(),
+    github,
+    issueNumber: 5,
+    reason: 'waiting',
+    blockedBy: 'https://github.com/owner/repo/issues/6',
+  });
   assert.equal(github.items[0].status, 'Blocked');
   const state = await statusTask({ config: projectConfig(), github, issueNumber: 5 });
   assert.equal(state.status, 'Blocked');
@@ -148,8 +189,17 @@ test('checkpoint, review, block, and status transitions', async () => {
 
 test('done rejects unchecked acceptance unless forced, then closes with evidence', async () => {
   const github = fake({ issues: [issue(5, { body: '## Acceptance criteria\n- [ ] Not done' })] });
-  await assert.rejects(() => doneTask({ config: projectConfig(), github, issueNumber: 5, evidence: 'x' }), /unchecked acceptance/);
-  const result = await doneTask({ config: projectConfig(), github, issueNumber: 5, evidence: 'tests pass', force: true });
+  await assert.rejects(
+    () => doneTask({ config: projectConfig(), github, issueNumber: 5, evidence: 'x' }),
+    /unchecked acceptance/,
+  );
+  const result = await doneTask({
+    config: projectConfig(),
+    github,
+    issueNumber: 5,
+    evidence: 'tests pass',
+    force: true,
+  });
   assert.equal(result.ok, true);
   assert.equal(github.items[0].status, 'Done');
   assert.equal(github.issues[0].state, 'CLOSED');

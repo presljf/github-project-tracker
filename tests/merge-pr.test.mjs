@@ -8,11 +8,18 @@ const checks = [
 ];
 
 test('accepts green required checks', () => {
-  assert.deepEqual(evaluateRequiredChecks(checks, ['ci / ci-gate', 'docs-guard']), { ok: true, missing: [], failing: [] });
+  assert.deepEqual(evaluateRequiredChecks(checks, ['ci / ci-gate', 'docs-guard']), {
+    ok: true,
+    missing: [],
+    failing: [],
+  });
 });
 
 test('rejects missing required check', () => {
-  const r = evaluateRequiredChecks(checks.filter((c) => c.name !== 'docs-guard'), ['ci / ci-gate', 'docs-guard']);
+  const r = evaluateRequiredChecks(
+    checks.filter((c) => c.name !== 'docs-guard'),
+    ['ci / ci-gate', 'docs-guard'],
+  );
   assert.equal(r.ok, false);
   assert.deepEqual(r.missing, ['docs-guard']);
 });

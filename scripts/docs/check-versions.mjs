@@ -22,7 +22,7 @@ function main() {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'tracker.config.json'), 'utf8'));
   const current = String(config.automation.templateVersion || '');
   const files = execFileSync('git', ['ls-files', '*.md', '*.yml', '*.yaml', '*.json', '*.mjs'], { cwd: root, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-  const violations = findStaleVersions({ files, stale: '1.0.1', allow: ['CHANGELOG.md', 'docs/ROADMAP_v1.1.0.md'] });
+  const violations = findStaleVersions({ files, stale: '1.0.1', allow: ['CHANGELOG.md', 'docs/ROADMAP_v1.1.0.md', 'package-lock.json'] });
   if (violations.length) {
     console.error(`Version consistency FAILED — ${violations.length} file(s) still reference 1.0.1:`);
     for (const f of violations) console.error(`- ${f}`);

@@ -4,7 +4,7 @@ import { evaluateClosing, parseClosingRefs } from '../scripts/github/guard-pr-cl
 
 const task = { number: 1, title: '[Task] work' };
 const sprint = { number: 2, title: '[Sprint] 1.0.0.1 — work' };
-const lookup = (n) => ({1: task, 2: sprint}[n] || null);
+const lookup = (n) => ({ 1: task, 2: sprint })[n] || null;
 
 test('parses closing keywords case-insensitively', () => {
   assert.deepEqual(parseClosingRefs('Closes #12\nfixes #7'), [12, 7]);

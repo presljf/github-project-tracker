@@ -36,13 +36,18 @@ export class RateState {
     state.resources[resource] = {
       resource,
       limit: Number(limit ?? previous?.limit ?? 0),
-      remaining: sameWindow ? Math.min(Number(previous.remaining), Number(remaining)) : Number(remaining ?? previous?.remaining ?? 0),
+      remaining: sameWindow
+        ? Math.min(Number(previous.remaining), Number(remaining))
+        : Number(remaining ?? previous?.remaining ?? 0),
       used: Number(used ?? previous?.used ?? 0),
       resetEpoch: Number(resetEpoch ?? previous?.resetEpoch ?? 0),
       resetAt: resetAt || previous?.resetAt || null,
       updatedAt: new Date(this.now()).toISOString(),
     };
-    state.history = [...(state.history || []), { at: new Date(this.now()).toISOString(), resource, cost, command }].slice(-this.historyLimit);
+    state.history = [
+      ...(state.history || []),
+      { at: new Date(this.now()).toISOString(), resource, cost, command },
+    ].slice(-this.historyLimit);
     this.write(state);
     return state;
   }
@@ -53,7 +58,10 @@ export class RateState {
     if (!current) return state;
     current.remaining = Math.max(0, Number(current.remaining) - Number(cost));
     current.updatedAt = new Date(this.now()).toISOString();
-    state.history = [...(state.history || []), { at: new Date(this.now()).toISOString(), resource, cost: Number(cost), command }].slice(-this.historyLimit);
+    state.history = [
+      ...(state.history || []),
+      { at: new Date(this.now()).toISOString(), resource, cost: Number(cost), command },
+    ].slice(-this.historyLimit);
     this.write(state);
     return state;
   }
@@ -67,11 +75,15 @@ export class RateState {
   report() {
     const state = this.read();
     const byCommand = {};
-    for (const entry of state.history || []) byCommand[entry.command] = (byCommand[entry.command] || 0) + Number(entry.cost || 0);
+    for (const entry of state.history || [])
+      byCommand[entry.command] = (byCommand[entry.command] || 0) + Number(entry.cost || 0);
     return {
       path: this.path,
       resources: state.resources,
-      topCommands: Object.entries(byCommand).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([command, cost]) => ({ command, cost })),
+      topCommands: Object.entries(byCommand)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([command, cost]) => ({ command, cost })),
     };
   }
 }

@@ -513,3 +513,10 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 ### Manual release checksum gate
 
 `npm run verify:checksums -- --dir <artifact-dir>` verifies `SHA256SUMS` before a manual draft release; asset/checksum mismatch fails closed.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

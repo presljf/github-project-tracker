@@ -164,7 +164,7 @@ function labelDescription(name) {
   return 'Tracker process label';
 }
 
-function issueKindType(kind) {
+function issueKindType(_kind) {
   return 'Task';
 }
 
@@ -311,7 +311,6 @@ export async function runBootstrap({ config, github, apply = false, logger = con
         if (!item) {
           add(`ADD issue #${issue.number} to project`);
           item = await github.addProjectItem(owner, project.number, issue.url);
-          projectItems = await github.listProjectItems(owner, project.number);
           itemsByIssue.set(issue.number, item);
         }
         for (const [fieldName, value] of Object.entries(desired)) {

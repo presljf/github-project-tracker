@@ -755,3 +755,10 @@ Performed for this catalog:
 | [SECURITY.md](../SECURITY.md) | Private vulnerability reporting; never expose tokens |
 | [Shipped audit workflow](../.github/workflows/tracker-audit.yml) | Current advisory baseline and skip behavior |
 | [GitHub: reusing workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) · [OIDC hardening](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect) · [rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets) | Upstream behavior reference for integrators |
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

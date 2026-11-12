@@ -1,6 +1,6 @@
 name: Task
 description: A single verifiable unit of work in a tracker sprint
-title: "[Task] "
+title: '[Task] '
 body:
   - type: markdown
     attributes:
@@ -11,7 +11,7 @@ body:
     attributes:
       label: Why / context
       description: What problem or outcome motivates this task? Link the sprint/release.
-      placeholder: "Context, links to sprint/release issues..."
+      placeholder: 'Context, links to sprint/release issues...'
     validations:
       required: true
   - type: textarea
@@ -76,7 +76,7 @@ body:
     attributes:
       label: Estimate
       description: S / M / L or a time range.
-      placeholder: "M"
+      placeholder: 'M'
     validations:
       required: true
   - type: checkboxes

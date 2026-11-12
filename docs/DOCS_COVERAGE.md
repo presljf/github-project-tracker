@@ -28,3 +28,10 @@ The exception is reviewable in the PR; it is not silent.
 
 - Native Feature/Bug issue-type wiring is supported by the guard (`--linked-issue-type`) but the CI caller does not yet fetch linked issue types; labels/coverage mapping are the current enforced path.
 - Generated-doc staleness is covered by `docs:check` and card checks; T12/T15 will add more generated checks.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.

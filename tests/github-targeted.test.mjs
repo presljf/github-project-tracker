@@ -14,14 +14,26 @@ function fakeGraphql(payload) {
 }
 
 function projectItemNode(number, status = 'Todo') {
-  return { id: `ITEM${number}`, project: { number: 2 }, fieldValues: { nodes: [
-    { name: status, field: { name: 'Status', id: 'F_STATUS' } },
-    { name: 'v1.1.0', field: { name: 'Release', id: 'F_RELEASE' } },
-  ] } };
+  return {
+    id: `ITEM${number}`,
+    project: { number: 2 },
+    fieldValues: {
+      nodes: [
+        { name: status, field: { name: 'Status', id: 'F_STATUS' } },
+        { name: 'v1.1.0', field: { name: 'Release', id: 'F_RELEASE' } },
+      ],
+    },
+  };
 }
 
 test('getProjectItemForIssue parses a single target item', () => {
-  const gh = new GitHubCli({ exec: fakeGraphql((input) => ({ data: { repository: { issue: { projectItems: { nodes: [projectItemNode(input.variables.issue)] } } } } })), retries: 0, sleep: () => {} });
+  const gh = new GitHubCli({
+    exec: fakeGraphql((_input) => ({
+      data: { repository: { issue: { projectItems: { nodes: [projectItemNode(_input.variables.issue)] } } } },
+    })),
+    retries: 0,
+    sleep: () => {},
+  });
   const item = gh.getProjectItemForIssue('o', 2, 'o', 'r', 60);
   assert.equal(item.id, 'ITEM60');
   assert.equal(item.status, 'Todo');
@@ -29,12 +41,18 @@ test('getProjectItemForIssue parses a single target item', () => {
 });
 
 test('batchIssueDependencies parses aliases', () => {
-  const gh = new GitHubCli({ exec: fakeGraphql((input) => ({
-    data: { repository: {
-      i0: { blockedBy: { nodes: [{ number: 48 }] } },
-      i1: { blockedBy: { nodes: [] } },
-    } },
-  })), retries: 0, sleep: () => {} });
+  const gh = new GitHubCli({
+    exec: fakeGraphql((_input) => ({
+      data: {
+        repository: {
+          i0: { blockedBy: { nodes: [{ number: 48 }] } },
+          i1: { blockedBy: { nodes: [] } },
+        },
+      },
+    })),
+    retries: 0,
+    sleep: () => {},
+  });
   const deps = gh.batchIssueDependencies('o', 'r', [60, 61]);
   assert.deepEqual(deps[60], [48]);
   assert.deepEqual(deps[61], []);

@@ -8,7 +8,9 @@ try {
   if (process.argv.includes('--json')) {
     process.stdout.write(JSON.stringify({ status, report }, null, 2) + '\n');
   } else {
-    console.log(`GitHub ${status.resource} budget: ${status.remaining}/${status.limit} remaining, ${status.used} used; resets ${status.resetAt}`);
+    console.log(
+      `GitHub ${status.resource} budget: ${status.remaining}/${status.limit} remaining, ${status.used} used; resets ${status.resetAt}`,
+    );
     if (report) {
       console.log(`Shared state: ${report.path}`);
       for (const row of report.topCommands) console.log(`  ${row.command}: ${row.cost} estimated points`);

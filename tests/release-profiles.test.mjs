@@ -1,3 +1,4 @@
+/* eslint-disable no-regex-spaces */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -115,7 +116,10 @@ test('reusable release workflow exposes outputs and optional secrets', () => {
 test('reusable release workflow enforces the publish guards', () => {
   const text = read(REUSABLE);
   assert.match(text, /^permissions: \{\}$/m, 'workflow-level permissions start empty (least privilege)');
-  assert.ok((text.match(/environment: release/g) || []).length >= 3, 'publish/sign jobs declare the release environment');
+  assert.ok(
+    (text.match(/environment: release/g) || []).length >= 3,
+    'publish/sign jobs declare the release environment',
+  );
   for (const phrase of [
     'publish: true requires a release tag ref',
     'publish: true with dry-run: true is contradictory',
@@ -156,11 +160,7 @@ test('reusable release workflow pins third-party actions by commit SHA', () => {
   assert.ok(uses.length >= 4, 'workflow uses several actions');
   for (const ref of uses) {
     if (ref.startsWith('./')) continue;
-    assert.match(
-      ref,
-      /@[0-9a-f]{40}$/,
-      `third-party action must be pinned by full SHA (got ${ref})`,
-    );
+    assert.match(ref, /@[0-9a-f]{40}$/, `third-party action must be pinned by full SHA (got ${ref})`);
   }
   assert.ok(!/@main\b/.test(text));
 });
@@ -363,10 +363,7 @@ test('release-profiles doc covers every required profile topic', () => {
     'immutable',
     'copy mode',
   ]) {
-    assert.ok(
-      text.toLowerCase().includes(phrase.toLowerCase()),
-      `docs/RELEASE_PROFILES.md covers: ${phrase}`,
-    );
+    assert.ok(text.toLowerCase().includes(phrase.toLowerCase()), `docs/RELEASE_PROFILES.md covers: ${phrase}`);
   }
 });
 
@@ -398,16 +395,19 @@ test('relative Markdown links in the new docs resolve', () => {
     const base = dirname(join(ROOT, file));
     for (const match of text.matchAll(/\]\((\.{1,2}\/[^)#\s]+)(#[^)]*)?\)/g)) {
       const target = resolve(base, match[1]);
-      assert.ok(
-        existsSync(target),
-        `${file} links to missing relative path ${match[1]}`,
-      );
+      assert.ok(existsSync(target), `${file} links to missing relative path ${match[1]}`);
     }
   }
 });
 
 test('release surface contains no floating action refs and no tracked secrets config', () => {
-  const files = [REUSABLE, ...CALLERS, ...COPY_EXAMPLES, '.github/actions/checksum/action.yml', '.github/actions/sign-notarize-macos/action.yml'];
+  const files = [
+    REUSABLE,
+    ...CALLERS,
+    ...COPY_EXAMPLES,
+    '.github/actions/checksum/action.yml',
+    '.github/actions/sign-notarize-macos/action.yml',
+  ];
   for (const file of files) {
     const text = read(file);
     for (const match of text.matchAll(/uses:\s+(\S+)/g)) {

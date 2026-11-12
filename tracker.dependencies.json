@@ -1,0 +1,14 @@
+{
+  "approvals": [
+    {
+      "paths": [
+        "package.json",
+        "package-lock.json"
+      ],
+      "issue": "https://github.com/presljf/github-project-tracker/issues/82",
+      "reason": "T18 self-apply lint/format dev tooling; user explicitly approved",
+      "approvedBy": "presljf",
+      "expires": "2026-12-31"
+    }
+  ]
+}

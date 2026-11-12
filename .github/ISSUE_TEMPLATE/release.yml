@@ -1,6 +1,6 @@
 name: Release
 description: A versioned milestone with a release tracker
-title: "[Release] "
+title: '[Release] '
 body:
   - type: markdown
     attributes:
@@ -11,7 +11,7 @@ body:
     attributes:
       label: Release key / milestone
       description: Version and milestone name.
-      placeholder: "v1.0.0"
+      placeholder: 'v1.0.0'
     validations:
       required: true
   - type: textarea
@@ -53,7 +53,7 @@ body:
     id: estimate
     attributes:
       label: Estimate
-      placeholder: "10–16h"
+      placeholder: '10–16h'
     validations:
       required: true
   - type: checkboxes

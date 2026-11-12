@@ -54,7 +54,10 @@ function normalizeItems(items) {
 function normalizeComments(comments) {
   const map = new Map();
   for (const [number, list] of Object.entries(comments || {})) {
-    map.set(Number(number), (list || []).map((comment) => (typeof comment === 'string' ? comment : comment.body || '')));
+    map.set(
+      Number(number),
+      (list || []).map((comment) => (typeof comment === 'string' ? comment : comment.body || '')),
+    );
   }
   return map;
 }
@@ -62,7 +65,10 @@ function normalizeComments(comments) {
 function normalizeSubIssues(subIssues) {
   const map = new Map();
   for (const [parent, list] of Object.entries(subIssues || {})) {
-    map.set(Number(parent), (list || []).map((child) => child.number || child));
+    map.set(
+      Number(parent),
+      (list || []).map((child) => child.number || child),
+    );
   }
   return map;
 }
@@ -76,19 +82,29 @@ function normalizeDependencies(dependencies) {
 }
 
 const REQUIRED_TASK_SECTIONS = [
-  'why / context', 'current behavior', 'goal', 'non-goals', 'acceptance criteria',
-  'test plan', 'verification evidence', 'dependencies / blockers', 'risks / rollback',
+  'why / context',
+  'current behavior',
+  'goal',
+  'non-goals',
+  'acceptance criteria',
+  'test plan',
+  'verification evidence',
+  'dependencies / blockers',
+  'risks / rollback',
 ];
 
 function missingTaskSections(body) {
   const headings = [...String(body || '').matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].trim().toLowerCase());
-  return REQUIRED_TASK_SECTIONS.filter((section) => !headings.some((heading) => heading === section || heading.startsWith(section)));
+  return REQUIRED_TASK_SECTIONS.filter(
+    (section) => !headings.some((heading) => heading === section || heading.startsWith(section)),
+  );
 }
 
 export function auditTracker({ config, data, strict = false }) {
   const violations = [];
   const warnings = [];
-  const add = (code, issue, message) => violations.push({ code, issue: issue?.number ?? null, title: issue?.title || null, message });
+  const add = (code, issue, message) =>
+    violations.push({ code, issue: issue?.number ?? null, title: issue?.title || null, message });
   const issues = (data.issues || []).map(normalizeIssue);
   const issueByNumber = new Map(issues.map((issue) => [issue.number, issue]));
   const items = normalizeItems(data.projectItems);
@@ -98,23 +114,29 @@ export function auditTracker({ config, data, strict = false }) {
   const parentOf = new Map();
   for (const [parent, children] of subIssues) for (const child of children) parentOf.set(child, parent);
 
-  const hasCheckIn = (number) => (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
+  const hasCheckIn = (number) =>
+    (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
   const hasBlockerNote = (number) => (comments.get(number) || []).some((body) => /###\s*Blocker/i.test(body));
-  const hasSprintExit = (number) => (comments.get(number) || []).some((body) => /###\s*Sprint (demo|close|exit)|Status\s*→\s*Done/i.test(body));
+  const hasSprintExit = (number) =>
+    (comments.get(number) || []).some((body) => /###\s*Sprint (demo|close|exit)|Status\s*→\s*Done/i.test(body));
   const hasReleaseExit = (number) => (comments.get(number) || []).some((body) => /###\s*Release close/i.test(body));
 
-  if (!config.automation?.templateVersion) add('TEMPLATE_VERSION_MISSING', null, 'config.automation.templateVersion is required');
+  if (!config.automation?.templateVersion)
+    add('TEMPLATE_VERSION_MISSING', null, 'config.automation.templateVersion is required');
 
   const openTasksInProgress = [];
   for (const issue of issues) {
     const kind = issueKind(issue.title);
     if (issue.state !== 'OPEN') {
-      if (kind === 'sprint' && !hasSprintExit(issue.number)) add('SPRINT_EXIT_EVIDENCE_MISSING', issue, 'closed sprint has no demo/exit evidence comment');
-      if (kind === 'release' && !hasReleaseExit(issue.number)) add('RELEASE_EXIT_EVIDENCE_MISSING', issue, 'closed release has no close evidence comment');
+      if (kind === 'sprint' && !hasSprintExit(issue.number))
+        add('SPRINT_EXIT_EVIDENCE_MISSING', issue, 'closed sprint has no demo/exit evidence comment');
+      if (kind === 'release' && !hasReleaseExit(issue.number))
+        add('RELEASE_EXIT_EVIDENCE_MISSING', issue, 'closed release has no close evidence comment');
       continue;
     }
     if (!issue.type) add('TYPE_MISSING', issue, 'open issue has no native type');
-    if (kind !== 'roadmap' && !issue.milestone) add('MILESTONE_MISSING', issue, 'open release/sprint/task has no milestone');
+    if (kind !== 'roadmap' && !issue.milestone)
+      add('MILESTONE_MISSING', issue, 'open release/sprint/task has no milestone');
     if (kind === 'task') {
       for (const section of missingTaskSections(issue.body)) {
         add('TASK_SECTION_MISSING', issue, `task body is missing required section: ## ${section}`);
@@ -143,14 +165,18 @@ export function auditTracker({ config, data, strict = false }) {
       add('PROJECT_ITEM_MISSING', issue, 'open issue is not on the configured project');
     } else {
       for (const field of ['Area', 'Kind', 'Estimate']) {
-        if (!item[field.toLowerCase()]) add(`FIELD_${field.toUpperCase()}_MISSING`, issue, `project field ${field} is empty`);
+        if (!item[field.toLowerCase()])
+          add(`FIELD_${field.toUpperCase()}_MISSING`, issue, `project field ${field} is empty`);
       }
       if (kind !== 'roadmap' && !item.release) add('FIELD_RELEASE_MISSING', issue, 'release field is empty');
-      if ((kind === 'sprint' || kind === 'task') && !item.sprint) add('FIELD_SPRINT_MISSING', issue, 'sprint field is empty');
-      if (issue.labels.includes('source:downstream') && !item.source) add('FIELD_SOURCE_MISSING', issue, 'downstream issue has no Source field');
+      if ((kind === 'sprint' || kind === 'task') && !item.sprint)
+        add('FIELD_SPRINT_MISSING', issue, 'sprint field is empty');
+      if (issue.labels.includes('source:downstream') && !item.source)
+        add('FIELD_SOURCE_MISSING', issue, 'downstream issue has no Source field');
       if (item.status === 'Blocked') {
         const blockedBy = dependencies.get(issue.number) || 0;
-        if (!blockedBy && !hasBlockerNote(issue.number)) add('BLOCKED_WITHOUT_DEPENDENCY', issue, 'Blocked item has no dependency or blocker comment');
+        if (!blockedBy && !hasBlockerNote(issue.number))
+          add('BLOCKED_WITHOUT_DEPENDENCY', issue, 'Blocked item has no dependency or blocker comment');
       }
     }
     if (kind === 'task' && item?.status === 'In Progress') {
@@ -165,7 +191,8 @@ export function auditTracker({ config, data, strict = false }) {
     if (issue.state !== 'CLOSED') continue;
     const children = subIssues.get(issue.number) || [];
     const openChildren = children.filter((number) => issueByNumber.get(number)?.state === 'OPEN');
-    if (openChildren.length) add('PARENT_DONE_OPEN_CHILDREN', issue, `closed parent has open children: ${openChildren.join(', ')}`);
+    if (openChildren.length)
+      add('PARENT_DONE_OPEN_CHILDREN', issue, `closed parent has open children: ${openChildren.join(', ')}`);
   }
 
   // WIP limit.
@@ -175,7 +202,13 @@ export function auditTracker({ config, data, strict = false }) {
     byOwner.set(owner, [...(byOwner.get(owner) || []), issue]);
   }
   for (const [owner, list] of byOwner) {
-    if (list.length > 1) violations.push({ code: 'WIP_LIMIT_EXCEEDED', issue: null, title: null, message: `${owner} has ${list.length} In Progress tasks: ${list.map((issue) => `#${issue.number}`).join(', ')}` });
+    if (list.length > 1)
+      violations.push({
+        code: 'WIP_LIMIT_EXCEEDED',
+        issue: null,
+        title: null,
+        message: `${owner} has ${list.length} In Progress tasks: ${list.map((issue) => `#${issue.number}`).join(', ')}`,
+      });
   }
 
   const result = {
@@ -200,18 +233,23 @@ export async function collectAuditData(github, config) {
   const subIssues = {};
   const dependencies = {};
   const numbers = issues.map((issue) => issue.number);
-  const activity = typeof github.batchIssueActivity === 'function'
-    ? await github.batchIssueActivity(repoOwner, repoName, numbers)
-    : null;
-  const dependencyBatch = typeof github.batchIssueDependencies === 'function'
-    ? await github.batchIssueDependencies(repoOwner, repoName, numbers)
-    : null;
+  const activity =
+    typeof github.batchIssueActivity === 'function'
+      ? await github.batchIssueActivity(repoOwner, repoName, numbers)
+      : null;
+  const dependencyBatch =
+    typeof github.batchIssueDependencies === 'function'
+      ? await github.batchIssueDependencies(repoOwner, repoName, numbers)
+      : null;
   for (const raw of issues) {
     const issue = normalizeIssue(raw);
-    comments[issue.number] = activity?.comments?.[issue.number] ?? await github.issueComments(repoOwner, repoName, issue.number);
-    subIssues[issue.number] = activity?.subIssues?.[issue.number] ?? await github.listSubIssues(repoOwner, repoName, issue.number);
+    comments[issue.number] =
+      activity?.comments?.[issue.number] ?? (await github.issueComments(repoOwner, repoName, issue.number));
+    subIssues[issue.number] =
+      activity?.subIssues?.[issue.number] ?? (await github.listSubIssues(repoOwner, repoName, issue.number));
     if (issue.state === 'OPEN') {
-      dependencies[issue.number] = dependencyBatch?.[issue.number] ?? await github.issueDependencies(repoOwner, repoName, issue.number);
+      dependencies[issue.number] =
+        dependencyBatch?.[issue.number] ?? (await github.issueDependencies(repoOwner, repoName, issue.number));
     }
   }
   return { issues, projectItems, comments, subIssues, dependencies };
@@ -253,10 +291,13 @@ if (isMain) {
         process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       } else {
         console.log(`Tracker audit — ${result.repository} (${result.strict ? 'strict' : 'advisory'})`);
-        console.log(`Checked ${result.checked.issues} issues / ${result.checked.projectItems} project items; template ${result.templateVersion || 'MISSING'}.`);
+        console.log(
+          `Checked ${result.checked.issues} issues / ${result.checked.projectItems} project items; template ${result.templateVersion || 'MISSING'}.`,
+        );
         if (result.violations.length) {
           console.log(`Violations (${result.violations.length}):`);
-          for (const violation of result.violations) console.log(`- [${violation.code}] ${violation.issue ? `#${violation.issue} ` : ''}${violation.message}`);
+          for (const violation of result.violations)
+            console.log(`- [${violation.code}] ${violation.issue ? `#${violation.issue} ` : ''}${violation.message}`);
         } else {
           console.log('No violations.');
         }

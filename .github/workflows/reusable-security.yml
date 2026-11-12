@@ -16,12 +16,12 @@ on:
   workflow_call:
     inputs:
       fail-on-severity:
-        description: "Dependency review failure threshold: low, moderate, high, or critical."
+        description: 'Dependency review failure threshold: low, moderate, high, or critical.'
         type: string
         required: false
         default: high
       warn-only:
-        description: "Advisory mode: report dependency review findings without failing the check."
+        description: 'Advisory mode: report dependency review findings without failing the check.'
         type: boolean
         required: false
         default: false

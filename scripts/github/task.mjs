@@ -27,7 +27,9 @@ async function readContext({ config, github, issueNumber }) {
   const issue = await github.getIssueView(repoOwner, repoName, issueNumber);
   if (!issue) throw new Error(`issue #${issueNumber} not found`);
   const projects = await github.listProjects(owner);
-  const project = projects.find((entry) => entry.number === config.project.number || entry.title === config.project.title);
+  const project = projects.find(
+    (entry) => entry.number === config.project.number || entry.title === config.project.title,
+  );
   const fields = await github.listFields(owner, config.project.number);
   let item;
   if (typeof github.getProjectItemForIssue === 'function') {
@@ -39,7 +41,20 @@ async function readContext({ config, github, issueNumber }) {
   const items = item ? [item] : [];
   const field = (name) => fields.find((entry) => entry.name === name);
   const option = (name, value) => field(name)?.options?.find((entry) => entry.name === value);
-  return { config, github, repoOwner, repoName, owner, issue, fields, items, item, field, option, projectId: project?.id };
+  return {
+    config,
+    github,
+    repoOwner,
+    repoName,
+    owner,
+    issue,
+    fields,
+    items,
+    item,
+    field,
+    option,
+    projectId: project?.id,
+  };
 }
 
 function requireFieldOption(ctx, fieldName, value) {
@@ -79,7 +94,13 @@ async function checkWip({ ctx, owner, dryRun }) {
   const issues = await ctx.github.listIssues(repoOwner, repoName, 'open');
   let itemByNumber;
   if (typeof ctx.github.batchProjectItems === 'function') {
-    const byNumber = await ctx.github.batchProjectItems(ctx.owner, ctx.config.project.number, repoOwner, repoName, issues.map((issue) => issue.number));
+    const byNumber = await ctx.github.batchProjectItems(
+      ctx.owner,
+      ctx.config.project.number,
+      repoOwner,
+      repoName,
+      issues.map((issue) => issue.number),
+    );
     itemByNumber = new Map(Object.entries(byNumber).map(([number, item]) => [Number(number), item]));
   } else {
     const items = await ctx.github.listProjectItems(ctx.owner, ctx.config.project.number);
@@ -106,7 +127,8 @@ export async function checkDoR({ config, github, issueNumber, owner, dryRun = fa
   const ctx = await readContext({ config, github, issueNumber });
   const { issue, item } = ctx;
   const kind = issueKind(issue.title);
-  if (kind !== 'task') throw new Error(`#${issueNumber} is a ${kind} tracker, not a task; use the sprint/release lifecycle`);
+  if (kind !== 'task')
+    throw new Error(`#${issueNumber} is a ${kind} tracker, not a task; use the sprint/release lifecycle`);
   if (String(issue.state).toUpperCase() !== 'OPEN') throw new Error(`#${issueNumber} is not open`);
   if (!issue.issueType?.name) throw new Error('DoR: issue has no native type');
   if (!issue.milestone) throw new Error('DoR: issue has no milestone');
@@ -127,13 +149,29 @@ function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
     exec(['switch', '-c', branch]);
   }
   try {
-    return { branch: branch || exec(['rev-parse', '--abbrev-ref', 'HEAD']), head: exec(['rev-parse', '--short', 'HEAD']) };
+    return {
+      branch: branch || exec(['rev-parse', '--abbrev-ref', 'HEAD']),
+      head: exec(['rev-parse', '--short', 'HEAD']),
+    };
   } catch {
     return { branch: branch || '(unknown)', head: '(unknown)' };
   }
 }
 
-export async function startTask({ config, github, issueNumber, owner, executor, branch, dryRun = false, repoRoot = process.cwd(), gitExec = null, allowDirty = false, dirtyReason = '', preflightStatus = null }) {
+export async function startTask({
+  config,
+  github,
+  issueNumber,
+  owner,
+  executor,
+  branch,
+  dryRun = false,
+  repoRoot = process.cwd(),
+  gitExec = null,
+  allowDirty = false,
+  dirtyReason = '',
+  preflightStatus = null,
+}) {
   const status = preflightStatus ?? (gitExec ? '' : gitStatus(repoRoot));
   const preflight = evaluateCleanTree({ statusText: status, allowDirty, reason: dirtyReason });
   if (!preflight.ok) throw new UsageError(`preflight: ${preflight.violations.join('; ')}`);
@@ -232,7 +270,10 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
   const ctx = await readContext({ config, github, issueNumber });
   if (String(ctx.issue.state).toUpperCase() !== 'OPEN') throw new Error(`#${issueNumber} is not open`);
   const unchecked = uncheckedAcceptance(ctx.issue.body);
-  if (unchecked.length && !force) throw new Error(`DoD: ${unchecked.length} unchecked acceptance criterion(ia); check them or use --force after review`);
+  if (unchecked.length && !force)
+    throw new Error(
+      `DoD: ${unchecked.length} unchecked acceptance criterion(ia); check them or use --force after review`,
+    );
   const body = [
     '### Check-out',
     '',
@@ -302,7 +343,21 @@ if (isMain) {
       }
       const args = parseArgs(raw.slice(1), {
         flags: ['dry-run', 'json', 'force', 'help', 'allow-dirty'],
-        options: ['config', 'issue', 'owner', 'executor', 'branch', 'message', 'message-file', 'pr', 'evidence', 'evidence-file', 'reason', 'blocked-by', 'dirty-reason'],
+        options: [
+          'config',
+          'issue',
+          'owner',
+          'executor',
+          'branch',
+          'message',
+          'message-file',
+          'pr',
+          'evidence',
+          'evidence-file',
+          'reason',
+          'blocked-by',
+          'dirty-reason',
+        ],
       });
       if (args.help) {
         console.log(usage());
@@ -314,26 +369,58 @@ if (isMain) {
       const errors = validateConfig(config);
       if (errors.length) throw new UsageError(`invalid config:\n- ${errors.join('\n- ')}`);
       const issueNumber = Number(args.issue);
-      if (!Number.isInteger(issueNumber) || issueNumber <= 0) throw new UsageError('--issue is required and must be a positive integer');
+      if (!Number.isInteger(issueNumber) || issueNumber <= 0)
+        throw new UsageError('--issue is required and must be a positive integer');
       const owner = args.owner || config.automation?.defaultAssignee || '@me';
       const executor = args.executor || process.env.TRACKER_EXECUTOR || 'agent:session';
       const dryRun = Boolean(args['dry-run']);
       const github = createGitHub();
       let result;
-      if (command === 'start') result = await startTask({ config, github, issueNumber, owner, executor, branch: args.branch, dryRun, allowDirty: Boolean(args['allow-dirty']), dirtyReason: args['dirty-reason'] });
-      else if (command === 'checkpoint') result = await checkpointTask({ config, github, issueNumber, message: messageFrom(args), dryRun });
-      else if (command === 'review') result = await reviewTask({ config, github, issueNumber, pr: args.pr, evidence: args.evidence, dryRun });
-      else if (command === 'block') result = await blockTask({ config, github, issueNumber, reason: args.reason, blockedBy: args['blocked-by'], dryRun });
+      if (command === 'start')
+        result = await startTask({
+          config,
+          github,
+          issueNumber,
+          owner,
+          executor,
+          branch: args.branch,
+          dryRun,
+          allowDirty: Boolean(args['allow-dirty']),
+          dirtyReason: args['dirty-reason'],
+        });
+      else if (command === 'checkpoint')
+        result = await checkpointTask({ config, github, issueNumber, message: messageFrom(args), dryRun });
+      else if (command === 'review')
+        result = await reviewTask({ config, github, issueNumber, pr: args.pr, evidence: args.evidence, dryRun });
+      else if (command === 'block')
+        result = await blockTask({
+          config,
+          github,
+          issueNumber,
+          reason: args.reason,
+          blockedBy: args['blocked-by'],
+          dryRun,
+        });
       else if (command === 'done') {
         const evidence = args['evidence-file']
           ? fs.readFileSync(path.resolve(args['evidence-file']), 'utf8')
           : args.evidence;
-        result = await doneTask({ config, github, issueNumber, evidence, pr: args.pr, force: Boolean(args.force), dryRun });
+        result = await doneTask({
+          config,
+          github,
+          issueNumber,
+          evidence,
+          pr: args.pr,
+          force: Boolean(args.force),
+          dryRun,
+        });
       } else if (command === 'status') result = await statusTask({ config, github, issueNumber });
       else throw new UsageError(`unknown command: ${command}`);
       if (args.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       else if (result.action === 'status') {
-        console.log(`status #${issueNumber}: ${result.state}; project status=${result.status || '(not on project)'}; assignee=${result.assignees?.join(', ') || '(none)'}`);
+        console.log(
+          `status #${issueNumber}: ${result.state}; project status=${result.status || '(not on project)'}; assignee=${result.assignees?.join(', ') || '(none)'}`,
+        );
         if (result.fields) console.log(`fields: ${JSON.stringify(result.fields)}`);
       } else {
         console.log(`${result.action} #${issueNumber}: ${dryRun ? 'DRY-RUN (no mutations)' : 'applied'}`);

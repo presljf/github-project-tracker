@@ -1,6 +1,6 @@
 name: Sprint
 description: A scoped build unit inside a release
-title: "[Sprint] "
+title: '[Sprint] '
 body:
   - type: markdown
     attributes:
@@ -18,7 +18,7 @@ body:
     attributes:
       label: Sprint key
       description: Stable key used in the Project Sprint field.
-      placeholder: "1.0.0.1"
+      placeholder: '1.0.0.1'
     validations:
       required: true
   - type: textarea
@@ -67,7 +67,7 @@ body:
     id: estimate
     attributes:
       label: Estimate
-      placeholder: "6–10h"
+      placeholder: '6–10h'
     validations:
       required: true
   - type: checkboxes

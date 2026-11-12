@@ -46,3 +46,10 @@ T12 evidence feeds release tracker [#2](https://github.com/presljf/github-projec
 
 
 `npm run guard:versions` fails active docs/config/workflows that still reference the previous tracker template version; CHANGELOG and the historical roadmap are allowlisted.
+
+
+## Lint/format self-check (T18)
+
+Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
+`npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
+as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
