@@ -171,6 +171,16 @@
         "docs/LINTING.md",
         "docs/ADOPTION.md"
       ]
+    },
+    {
+      "id": "release-tooling",
+      "paths": [
+        "scripts/release/"
+      ],
+      "docs": [
+        "docs/REFERENCE.md",
+        "docs/UPGRADING.md"
+      ]
     }
   ]
 }

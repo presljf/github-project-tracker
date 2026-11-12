@@ -2,7 +2,7 @@
 
 A portable, auditable GitHub project-tracker operating system: playbook, exhaustive docs, versioned config, bootstrap/audit/task CLIs, reusable CI/security workflows, release profiles, and downstream feedback intake.
 
-**Status:** v1.2.1 validated; public template repository · **Docs version:** `v1.0.0-docs.1` · **License:** MIT
+**Status:** v1.2.1 validated; public template repository · **Docs version:** `v1.2.1-docs.1` · **License:** MIT
 
 ## Use this template
 
@@ -32,6 +32,7 @@ A portable, auditable GitHub project-tracker operating system: playbook, exhaust
    ```
 
 Expected output examples:
+
 ```text
 $ node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
 Dry-run: N planned action(s); no mutations performed.
@@ -66,15 +67,15 @@ See [docs/ROADMAP_v1.1.0.md](docs/ROADMAP_v1.1.0.md): P0 rate-limit hardening, a
 
 ## What’s included
 
-| Area | Artifacts |
-|---|---|
-| Procedure | playbook, HOW TO USE, reference, troubleshooting, adoption/upgrading, agent/multi-project docs |
-| Config | JSON Schema, generic + pilot examples, validator, comment/issue/PR templates |
-| Automation | bootstrap, audit (advisory/strict/JSON), task lifecycle CLI, tests |
-| CI/security | reusable CI/caller, Dependabot + dependency review, opt-in CodeQL, required-check runbook |
-| Release | GitHub Release/macOS/container/package profiles with dry-run/skip guards |
-| Downstream | bug/feature forms, Source field, triage/versioning/no-fork policy |
-| Profiles/docs | generic Node lint/format profile, printable reference cards (T13) |
+| Area          | Artifacts                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Procedure     | playbook, HOW TO USE, reference, troubleshooting, adoption/upgrading, agent/multi-project docs |
+| Config        | JSON Schema, generic + pilot examples, validator, comment/issue/PR templates                   |
+| Automation    | bootstrap, audit (advisory/strict/JSON), task lifecycle CLI, tests                             |
+| CI/security   | reusable CI/caller, Dependabot + dependency review, opt-in CodeQL, required-check runbook      |
+| Release       | GitHub Release/macOS/container/package profiles with dry-run/skip guards                       |
+| Downstream    | bug/feature forms, Source field, triage/versioning/no-fork policy                              |
+| Profiles/docs | generic Node lint/format profile, printable reference cards (T13)                              |
 
 ## Repository layout
 
