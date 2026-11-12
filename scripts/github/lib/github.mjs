@@ -304,13 +304,14 @@ export class GitHubCli {
     return this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,title,state,url'], { json: true });
   }
 
-  createIssue(owner, repo, { title, body, milestone }) {
+  createIssue(owner, repo, { title, body, milestone, labels = [] }) {
     this._beforeMutation();
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-issue-'));
     const bodyPath = path.join(dir, 'body.md');
     fs.writeFileSync(bodyPath, body || '');
     const args = ['issue', 'create', '--repo', `${owner}/${repo}`, '--title', title, '--body-file', bodyPath];
     if (milestone) args.push('--milestone', milestone);
+    for (const label of labels) args.push('--label', label);
     const url = this.run(args);
     const number = Number(url.split('/').pop());
     fs.rmSync(dir, { recursive: true, force: true });
@@ -388,7 +389,7 @@ export class GitHubCli {
 
 
   getPullRequest(owner, repo, number) {
-    return this.run(['pr', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup'], { json: true });
+    return this.run(['pr', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefName,body,labels'], { json: true });
   }
 
   mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true } = {}) {

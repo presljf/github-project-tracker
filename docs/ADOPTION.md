@@ -167,3 +167,7 @@ Run `npm run verify:contract` against `contract/adoption-contract.json`. Require
 ## Closing-keyword guard
 
 Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` with the `partial` label and must not close. The tracker PR close guard rejects incorrect closing targets (including sprint/release trackers) and keeps the project linked-PR field consistent.
+
+## Post-merge bypass audit
+
+Merged PRs with failed/missing required checks or invalid closure open a `tracker-contract-exception` OI. The next release must block until resolved.
