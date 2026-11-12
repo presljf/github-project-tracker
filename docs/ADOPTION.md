@@ -163,3 +163,7 @@ Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch`; it refuses `
 ## Adoption contract verify
 
 Run `npm run verify:contract` against `contract/adoption-contract.json`. Required workflows must be pinned to the exact tracker tag; a bespoke workflow or missing capability requires an OI-linked `tracker.overrides.json` entry with reason and expiry.
+
+## Closing-keyword guard
+
+Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` with the `partial` label and must not close. The tracker PR close guard rejects incorrect closing targets (including sprint/release trackers) and keeps the project linked-PR field consistent.
