@@ -11,8 +11,15 @@ There are two adoption modes (hybrid D model, see ACTIONS CATALOG §8):
 | **reusable** (default) | A thin caller job that calls `reusable-release.yml` by exact tag/SHA; no copied release logic | Template refs are accessible from your repo (same org or public template) |
 | **copy** | Standalone caller workflows from `copy/` plus the composite actions in `.github/actions/` | Cross-repo reuse is blocked by visibility/policy, or you need project-specific steps |
 
-The template repository itself ships reusable-mode callers in `.github/workflows/release*.yml`;
-this directory ships the **copy-mode** equivalents and the shared profile reference material.
+The template repository's only runnable release caller is `.github/workflows/release.yml` (generic
+profile, local `uses:`). GitHub executes only workflows under `.github/workflows/`, so nothing in
+this directory runs in place:
+
+- `reusable/` — **non-runnable examples** of reusable-mode callers for the macOS/container/package
+  profiles, pinned to `reusable-release.yml@v1.3.2`. Copy into `.github/workflows/`, replace the pin
+  with the tag you adopted, then add your build command/trigger/secrets.
+- `copy/` — non-runnable **copy-mode** caller templates. Copy into `.github/workflows/` plus the
+  composite actions below.
 
 ## Profiles
 
@@ -30,10 +37,19 @@ release tag and the protected `release` environment (required reviewers in the a
 
 | File | Purpose |
 |---|---|
+| `reusable/release-macos.yml` | **Non-runnable** reusable-mode caller example (macOS profile; dispatch-only; pinned `reusable-release.yml@v1.3.2`) |
+| `reusable/release-container.yml` | **Non-runnable** reusable-mode caller example (container/GHCR profile; dispatch-only; pinned ref) |
+| `reusable/release-package.yml` | **Non-runnable** reusable-mode caller example (npm/PyPI package profile; dispatch-only; pinned ref) |
 | `copy/generic-release.yml` | Copy-mode generic GitHub Release pipeline (build → checksum → guarded draft release) |
 | `copy/macos-release.yml` | Copy-mode macOS pipeline (build → optional sign/notarize/staple → checksum → guarded release) |
 | `copy/container-release.yml` | Copy-mode container pipeline (docker build → save → guarded GHCR push) |
 | `copy/package-release.yml` | Copy-mode package pipeline (build dists → checksum → guarded npm/PyPI publish) |
+
+The files under `reusable/` are examples, not workflows: GitHub never executes `profiles/`. Copy
+one into `.github/workflows/`, replace
+`presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.2` with the exact tag
+(or full SHA) your project adopted, and add the profile trigger/build/secrets — the examples are
+dispatch-only and dry-run by default.
 
 The copy-mode workflows use the template's composite actions:
 
@@ -41,10 +57,29 @@ The copy-mode workflows use the template's composite actions:
 - `.github/actions/sign-notarize-macos` — mask/import/sign/notarize/staple with clean skip when
   credentials are absent and a no-network dry-run mode.
 
-When copying, copy **both** action directories into `.github/actions/` and record the origin
-template version in the project's adoption notes (UPGRADING copy-vs-reusable procedure).
+When copying in copy mode, copy **both** action directories into `.github/actions/` and record the
+origin template version in the project's adoption notes (UPGRADING copy-vs-reusable procedure).
 
-## Apply (copy mode)
+## Apply
+
+Both modes start by copying a file out of `profiles/` into `.github/workflows/`; files under
+`profiles/` are never executed where they live.
+
+**Reusable mode (recommended):**
+
+1. Copy `reusable/release-<profile>.yml` into `.github/workflows/<name>.yml`.
+2. Replace the pinned ref
+   `presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.2` with the exact tag
+   (or full SHA) your project adopted — never `@main`.
+3. Replace the `build-command` placeholder with the project's real build; update `artifact-globs`
+   and `working-directory`. The artifact globs must match at least one file.
+4. Add the profile's trigger and secrets only after a green dry-run: the examples are dispatch-only
+   and dry-run by default. A `push: tags: v*` trigger is safe once the `release` environment and
+   the caller permission union (see `docs/RELEASE_PROFILES.md` §5.1) are configured.
+5. Keep `workflows.release.profile` / `dryRun` / `ref` in `tracker.config.json` consistent with
+   the caller you adopt.
+
+**Copy mode:**
 
 1. Copy `copy/<profile>-release.yml` into `.github/workflows/<name>.yml`.
 2. Copy `.github/actions/checksum/` and (for macOS) `.github/actions/sign-notarize-macos/` into

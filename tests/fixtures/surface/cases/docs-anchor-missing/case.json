@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "set": {
+      "wf:demo": {
+        "docs": [
+          "docs/REFERENCE.md#no-such-heading"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_DOC_ANCHOR_MISSING"
+    ]
+  }
+}

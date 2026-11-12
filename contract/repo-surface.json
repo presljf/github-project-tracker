@@ -1,0 +1,1531 @@
+{
+  "schemaVersion": 1,
+  "generatedRoots": [
+    "docs/reference-cards/"
+  ],
+  "scope": {
+    "classify": [
+      ".github/workflows/",
+      ".github/actions/",
+      "profiles/",
+      "scripts/",
+      "docs/",
+      "contract/"
+    ],
+    "exclude": []
+  },
+  "entries": [
+    {
+      "id": "action-doc:checksum",
+      "path": ".github/actions/checksum/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "checksum",
+      "summary": "Composite action for deterministic release checksums",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"
+      ]
+    },
+    {
+      "id": "action-doc:sign-notarize-macos",
+      "path": ".github/actions/sign-notarize-macos/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "sign-notarize-macos",
+      "summary": "Composite action for optional macOS code signing and notarization on a macOS runner",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"
+      ]
+    },
+    {
+      "id": "action:checksum",
+      "path": ".github/actions/checksum/action.yml",
+      "class": "reusable-action",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Checksum artifacts",
+      "summary": ">-",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"
+      ],
+      "catalogSection": "7.8"
+    },
+    {
+      "id": "action:setup-node-cache",
+      "path": ".github/actions/setup-node-cache/action.yml",
+      "class": "reusable-action",
+      "status": "contract-only",
+      "audience": [
+        "adopter"
+      ],
+      "title": "setup-node-cache",
+      "summary": "Documented composite-action contract (catalog §7.8); implemented in T02, not present yet.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#setup-node-cache"
+      ],
+      "catalogSection": "7.8"
+    },
+    {
+      "id": "action:sign-notarize-macos",
+      "path": ".github/actions/sign-notarize-macos/action.yml",
+      "class": "reusable-action",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Sign and notarize macOS artifacts",
+      "summary": ">-",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"
+      ],
+      "catalogSection": "7.8"
+    },
+    {
+      "id": "contract:adoption",
+      "path": "contract/adoption-contract.json",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "Adoption contract",
+      "summary": "Versioned downstream adoption contract (config paths, reusable workflow pins, required profiles/docs).",
+      "docs": [
+        "docs/REFERENCE.md#adoption-contract-verifier",
+        "docs/ADOPTION.md#adoption-contract-verify"
+      ]
+    },
+    {
+      "id": "contract:exceptions",
+      "path": "contract/exceptions/metadata-exceptions.json",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Metadata exceptions",
+      "summary": "Documented Metadata Audit exceptions with owner issue and expiry.",
+      "docs": [
+        "docs/REFERENCE.md#14-token-and-secret-matrix"
+      ]
+    },
+    {
+      "id": "contract:repo-surface",
+      "path": "contract/repo-surface.json",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Repo surface manifest",
+      "summary": "Class-first classification of workflows, actions, profiles, scripts and docs; enforced by scripts/internal/verify-surface.mjs.",
+      "docs": [
+        "docs/DOCS_COVERAGE.md"
+      ]
+    },
+    {
+      "id": "doc:actions_catalog",
+      "path": "docs/ACTIONS_CATALOG.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "ACTIONS CATALOG",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:adoption",
+      "path": "docs/ADOPTION.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "ADOPTION — zero to first task",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:agent_guide",
+      "path": "docs/AGENT_GUIDE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "AGENT GUIDE",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:ci_security_profile",
+      "path": "docs/CI_SECURITY_PROFILE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "CI, required-check, and security profile",
+      "summary": "Profile version: v1.0.0 (T15)",
+      "docs": []
+    },
+    {
+      "id": "doc:docs_coverage",
+      "path": "docs/DOCS_COVERAGE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Documentation coverage enforcement",
+      "summary": "Documentation updates are enforced by CI, not by a checklist",
+      "docs": []
+    },
+    {
+      "id": "doc:docs_style_guide",
+      "path": "docs/DOCS_STYLE_GUIDE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "DOCS STYLE GUIDE",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:docs_validation",
+      "path": "docs/DOCS_VALIDATION.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Docs validation report (T12)",
+      "summary": "Docs version: v1.3.0-docs.1 · Target template: v1.0.0",
+      "docs": []
+    },
+    {
+      "id": "doc:downstream_feedback",
+      "path": "docs/DOWNSTREAM_FEEDBACK.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Downstream feedback",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:fresh_eyes_t12",
+      "path": "docs/FRESH_EYES_T12.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Fresh-eyes docs review — T12",
+      "summary": "Date: 2026-11-11",
+      "docs": []
+    },
+    {
+      "id": "doc:github_app_spike",
+      "path": "docs/GITHUB_APP_SPIKE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "GITHUB APP SPIKE",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:github_project_tracker_playbook",
+      "path": "docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "GitHub Project Tracker Playbook",
+      "summary": "Docs version: v1.3.2-docs.1 · Status: Project Tracker OS v1.0.0 playbook",
+      "docs": []
+    },
+    {
+      "id": "doc:guard_distribution",
+      "path": "docs/GUARD_DISTRIBUTION.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "No-copy guard distribution",
+      "summary": "Applies to: tracker automation and adopting projects",
+      "docs": []
+    },
+    {
+      "id": "doc:how_to_use",
+      "path": "docs/HOW_TO_USE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "HOW TO USE — exhaustive handbook",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:multi_project",
+      "path": "docs/MULTI_PROJECT.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "MULTI-PROJECT",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:publication",
+      "path": "docs/PUBLICATION.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "PUBLICATION",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:quickstart",
+      "path": "docs/QUICKSTART.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Quickstart — first tracker in ~10 minutes",
+      "summary": "Docs version: v1.3.2-docs.1 · Full handbook: HOW TO USE · Reference: REFERENCE",
+      "docs": []
+    },
+    {
+      "id": "doc:readme",
+      "path": "docs/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Documentation index",
+      "summary": "Docs version: v1.3.2-docs.1 (targets Project Tracker OS v1.3.2; refreshed before release)",
+      "docs": []
+    },
+    {
+      "id": "doc:reference",
+      "path": "docs/REFERENCE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "REFERENCE",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:release_profiles",
+      "path": "docs/RELEASE_PROFILES.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "RELEASE PROFILES",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:roadmap_v1.1.0",
+      "path": "docs/ROADMAP_v1.1.0.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "v1.1.0 execution plan — tracker hardening before CastDeck adoption",
+      "summary": "Status: Active plan of record · Created: 2026-11-11 · Tracker template: v1.0.1",
+      "docs": []
+    },
+    {
+      "id": "doc:task_cli",
+      "path": "docs/TASK_CLI.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "TASK CLI",
+      "summary": "Docs version: v1.3.2-docs.1 · Status: available now",
+      "docs": []
+    },
+    {
+      "id": "doc:template_repo",
+      "path": "docs/TEMPLATE_REPO.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Template repository guide",
+      "summary": "Docs version: v1.3.2-docs.1 · Template target: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:troubleshooting",
+      "path": "docs/TROUBLESHOOTING.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "TROUBLESHOOTING",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "doc:upgrading",
+      "path": "docs/UPGRADING.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "UPGRADING",
+      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "docs": []
+    },
+    {
+      "id": "docs:assets",
+      "path": "docs/assets/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Docs assets — diagram/screenshot policy",
+      "summary": "Docs version: v1.3.2-docs.1",
+      "docs": []
+    },
+    {
+      "id": "docs:comment-templates",
+      "paths": [
+        "docs/comment-templates/README.md",
+        "docs/comment-templates/blocker.md",
+        "docs/comment-templates/check-in.md",
+        "docs/comment-templates/check-out.md",
+        "docs/comment-templates/plan-change.md",
+        "docs/comment-templates/release-close.md",
+        "docs/comment-templates/sprint-close.md",
+        "docs/comment-templates/update.md"
+      ],
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Comment templates",
+      "summary": "Copy-paste lifecycle comment templates (check-in/update/out/blocker/plan-change/sprint-close/release-close).",
+      "docs": []
+    },
+    {
+      "id": "docs:docs-coverage-json",
+      "path": "docs/DOCS_COVERAGE.json",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Docs coverage rules",
+      "summary": "Machine-readable source-area -> documentation coverage mapping used by guard-docs.mjs.",
+      "docs": [
+        "docs/DOCS_COVERAGE.md#mechanism"
+      ]
+    },
+    {
+      "id": "docs:reference-cards-source",
+      "paths": [
+        "docs/reference-cards/README.md",
+        "docs/reference-cards/command-cheatsheet.md",
+        "docs/reference-cards/reporting-upstream.md",
+        "docs/reference-cards/sprint-release-checklists.md",
+        "docs/reference-cards/statuses-wip-ownership.md",
+        "docs/reference-cards/task-lifecycle.md",
+        "docs/reference-cards/token-secret-matrix.md",
+        "docs/reference-cards/troubleshooting-audit.md"
+      ],
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reference-card sources",
+      "summary": "Printable reference-card Markdown sources plus the card README.",
+      "docs": []
+    },
+    {
+      "id": "generated:reference-cards",
+      "paths": [
+        "docs/reference-cards/command-cheatsheet-A4.pdf",
+        "docs/reference-cards/command-cheatsheet-Letter.pdf",
+        "docs/reference-cards/command-cheatsheet.html",
+        "docs/reference-cards/reporting-upstream-A4.pdf",
+        "docs/reference-cards/reporting-upstream-Letter.pdf",
+        "docs/reference-cards/reporting-upstream.html",
+        "docs/reference-cards/sprint-release-checklists-A4.pdf",
+        "docs/reference-cards/sprint-release-checklists-Letter.pdf",
+        "docs/reference-cards/sprint-release-checklists.html",
+        "docs/reference-cards/statuses-wip-ownership-A4.pdf",
+        "docs/reference-cards/statuses-wip-ownership-Letter.pdf",
+        "docs/reference-cards/statuses-wip-ownership.html",
+        "docs/reference-cards/task-lifecycle-A4.pdf",
+        "docs/reference-cards/task-lifecycle-Letter.pdf",
+        "docs/reference-cards/task-lifecycle.html",
+        "docs/reference-cards/token-secret-matrix-A4.pdf",
+        "docs/reference-cards/token-secret-matrix-Letter.pdf",
+        "docs/reference-cards/token-secret-matrix.html",
+        "docs/reference-cards/troubleshooting-audit-A4.pdf",
+        "docs/reference-cards/troubleshooting-audit-Letter.pdf",
+        "docs/reference-cards/troubleshooting-audit.html"
+      ],
+      "class": "generated",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Generated reference-card HTML + PDFs",
+      "summary": "Build outputs of scripts/internal/build-cards.mjs (7 cards x HTML + A4/Letter PDF).",
+      "generatedBy": "scripts/internal/build-cards.mjs --check",
+      "docs": [
+        "docs/reference-cards/README.md"
+      ]
+    },
+    {
+      "id": "profile:counts-baseline-example",
+      "path": "profiles/counts/test-counts.baseline.example.json",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Counts baseline example",
+      "summary": "Example tracker counts baseline JSON for adopters wiring the counts contract.",
+      "header": "none",
+      "docs": [
+        "profiles/counts/README.md"
+      ]
+    },
+    {
+      "id": "profile:counts-README-md",
+      "path": "profiles/counts/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Counts contract profile (verified PASS/FAIL/SKIP)",
+      "summary": "Adopter wiring for the \"aware and agree\" counts contract",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "profile:desktop-README-md",
+      "path": "profiles/desktop/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Desktop smoke profile",
+      "summary": "Thin caller for the reusable desktop-smoke workflow",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "profile:node-configs",
+      "paths": [
+        "profiles/node/.editorconfig",
+        "profiles/node/.prettierignore",
+        "profiles/node/eslint.config.mjs",
+        "profiles/node/package.example.json",
+        "profiles/node/prettier.config.mjs"
+      ],
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Node lint/format profile",
+      "summary": "Generic ESLint/Prettier/editorconfig baseline files adopters copy into the project root.",
+      "header": "none",
+      "docs": [
+        "profiles/node/README.md"
+      ]
+    },
+    {
+      "id": "profile:node-readme",
+      "path": "profiles/node/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Node profile (generic)",
+      "summary": "A reusable Node >=22 lint/format baseline for projects adopting the Project Tracker OS",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "profile:release-copy-container-release-yml",
+      "path": "profiles/release/copy/container-release.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (copy mode, container)",
+      "summary": "COPY-MODE EXAMPLE — container release profile (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "copy",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-copy-generic-release-yml",
+      "path": "profiles/release/copy/generic-release.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (copy mode, generic)",
+      "summary": "COPY-MODE EXAMPLE — generic GitHub Release profile (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "copy",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-copy-macos-release-yml",
+      "path": "profiles/release/copy/macos-release.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (copy mode, macOS)",
+      "summary": "COPY-MODE EXAMPLE — macOS sign/notarize release profile (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "copy",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-copy-package-release-yml",
+      "path": "profiles/release/copy/package-release.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (copy mode, package)",
+      "summary": "COPY-MODE EXAMPLE — package release profile (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "copy",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-README-md",
+      "path": "profiles/release/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release profiles",
+      "summary": "Copyable release-profile examples for Project Tracker OS adopters",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "profile:release-reusable-release-container-yml",
+      "path": "profiles/release/reusable/release-container.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (container example)",
+      "summary": "COPY-MODE EXAMPLE — reusable-mode container release caller (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-reusable-release-macos-yml",
+      "path": "profiles/release/reusable/release-macos.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (macOS example)",
+      "summary": "COPY-MODE EXAMPLE — reusable-mode macos release caller (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:release-reusable-release-package-yml",
+      "path": "profiles/release/reusable/release-package.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release (package example)",
+      "summary": "COPY-MODE EXAMPLE — reusable-mode package release caller (T10)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:tooling-config-example",
+      "path": "profiles/tooling/tracker.config.example.json",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Tooling work-profile config example",
+      "summary": "Example tooling-profile tracker.config.json (workProfile: tooling, Stream field, empty releases).",
+      "header": "none",
+      "docs": [
+        "profiles/tooling/README.md"
+      ]
+    },
+    {
+      "id": "profile:tooling-README-md",
+      "path": "profiles/tooling/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Tooling work profile (Stream → Task)",
+      "summary": "An enforced second work profile for tooling streams whose delivery is unversioned until the tag",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:audit",
+      "path": "scripts/adopt/cli/audit.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Audit",
+      "summary": "Tracker invariant audit (advisory/strict/JSON), mode-aware.",
+      "docs": [
+        "docs/REFERENCE.md#52-audit"
+      ]
+    },
+    {
+      "id": "script:bootstrap",
+      "path": "scripts/adopt/cli/bootstrap.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Bootstrap",
+      "summary": "Idempotent repo/project bootstrap from tracker.config.json.",
+      "docs": [
+        "docs/REFERENCE.md#51-bootstrap"
+      ]
+    },
+    {
+      "id": "script:build-cards",
+      "path": "scripts/internal/build-cards.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Build cards",
+      "summary": "Reference-card build: Markdown -> HTML -> A4/Letter PDFs (template-only).",
+      "docs": [
+        "docs/DOCS_STYLE_GUIDE.md"
+      ]
+    },
+    {
+      "id": "script:bump-version",
+      "path": "scripts/internal/bump-version.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Bump version",
+      "summary": "Qualified template version bump: explicit files, exclusions, dry-run diff.",
+      "docs": [
+        "docs/UPGRADING.md"
+      ]
+    },
+    {
+      "id": "script:check-docs",
+      "path": "scripts/adopt/docs/check-docs.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Check docs",
+      "summary": "Dependency-free Markdown link/anchor/fence/secret checker.",
+      "docs": [
+        "docs/DOCS_VALIDATION.md"
+      ]
+    },
+    {
+      "id": "script:check-main-history",
+      "path": "scripts/adopt/cli/check-main-history.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Check main history",
+      "summary": "Backstop: flag main commits not associated with a merged PR",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:check-versions",
+      "path": "scripts/adopt/docs/check-versions.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Check versions",
+      "summary": "Fail when active docs/config/workflows pin an older tracker version.",
+      "docs": [
+        "docs/DOCS_VALIDATION.md"
+      ]
+    },
+    {
+      "id": "script:cli",
+      "path": "scripts/adopt/lib/cli.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Cli",
+      "summary": "Small shared helpers for tracker CLI scripts",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:github",
+      "path": "scripts/adopt/lib/github.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Github",
+      "summary": "Metadata-only PR fetch (no statusCheckRollup)",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:guard-dependencies",
+      "path": "scripts/adopt/cli/guard-dependencies.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard dependencies",
+      "summary": "Require explicit approval for dependency/lockfile changes.",
+      "docs": [
+        "docs/ADOPTION.md#preflight-and-dependency-approval"
+      ]
+    },
+    {
+      "id": "script:guard-docs",
+      "path": "scripts/adopt/docs/guard-docs.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard docs",
+      "summary": "Fail when changed source areas do not include their mapped documentation.",
+      "docs": [
+        "docs/REFERENCE.md#docs-coverage-guard"
+      ]
+    },
+    {
+      "id": "script:guard-docs-counts",
+      "path": "scripts/adopt/cli/guard-docs-counts.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard docs counts",
+      "summary": "Counts baseline, skip agreement, generated-doc and marker freshness guard.",
+      "docs": [
+        "docs/REFERENCE.md#57-verified-counts-contract-suite-counts-guard-docs-counts"
+      ]
+    },
+    {
+      "id": "script:guard-gh-transport",
+      "path": "scripts/adopt/cli/guard-gh-transport.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard gh transport",
+      "summary": "Fail when tracker automation bypasses the GitHub transport.",
+      "docs": [
+        "docs/GUARD_DISTRIBUTION.md#files"
+      ]
+    },
+    {
+      "id": "script:guard-local-suite",
+      "path": "scripts/adopt/cli/guard-local-suite.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard local suite",
+      "summary": "Offline remote-only verification guard (enforce/report).",
+      "docs": [
+        "docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy"
+      ]
+    },
+    {
+      "id": "script:guard-pr-close",
+      "path": "scripts/adopt/cli/guard-pr-close.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard pr close",
+      "summary": "Enforce closing-keyword rules for task PRs.",
+      "docs": [
+        "docs/REFERENCE.md#pr-closing-keyword-guard"
+      ]
+    },
+    {
+      "id": "script:guard-scope",
+      "path": "scripts/adopt/cli/guard-scope.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guard scope",
+      "summary": "Verify a branch/worktree only touches the declared task scope.",
+      "docs": [
+        "docs/GUARD_DISTRIBUTION.md#files"
+      ]
+    },
+    {
+      "id": "script:guards",
+      "path": "scripts/adopt/lib/guards.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Guards",
+      "summary": "Script guards.mjs.",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:install-hooks",
+      "path": "scripts/adopt/cli/install-hooks.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Install hooks",
+      "summary": "Install versioned git hooks for branch hygiene",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:merge-pr",
+      "path": "scripts/adopt/cli/merge-pr.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Merge pr",
+      "summary": "No-admin merge wrapper that refuses drafts/non-mergeable PRs.",
+      "docs": [
+        "docs/REFERENCE.md#no-admin-merge-wrapper"
+      ]
+    },
+    {
+      "id": "script:playwright-remote-guard",
+      "path": "scripts/adopt/lib/playwright-remote-guard.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Playwright remote guard",
+      "summary": "Dependency-free Playwright globalSetup factory for the remote-only policy.",
+      "docs": [
+        "docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy"
+      ]
+    },
+    {
+      "id": "script:post-merge-audit",
+      "path": "scripts/adopt/cli/post-merge-audit.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Post merge audit",
+      "summary": "Audit merged PRs for bypassed required checks and closing-keyword misuse.",
+      "docs": [
+        "docs/REFERENCE.md#post-merge-bypass-audit"
+      ]
+    },
+    {
+      "id": "script:preflight",
+      "path": "scripts/adopt/lib/preflight.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Preflight",
+      "summary": "Script preflight.mjs.",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:project-field-option",
+      "path": "scripts/adopt/cli/project-field-option.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Project field option",
+      "summary": "Safe single-select option append that preserves ids and item values.",
+      "docs": [
+        "docs/REFERENCE.md#55-project-field-option"
+      ]
+    },
+    {
+      "id": "script:rate-limit",
+      "path": "scripts/adopt/cli/rate-limit.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Rate limit",
+      "summary": "Print the current GitHub budget and shared command cost report.",
+      "docs": [
+        "docs/REFERENCE.md#rate-limit-behavior"
+      ]
+    },
+    {
+      "id": "script:rate-state",
+      "path": "scripts/adopt/lib/rate-state.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Rate state",
+      "summary": "Script rate-state.mjs.",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:reconcile-metadata",
+      "path": "scripts/adopt/cli/reconcile-metadata.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reconcile metadata",
+      "summary": "Reconcile Project metadata to the canonical contract.",
+      "docs": [
+        "docs/ADOPTION.md#metadata-reconciliation"
+      ]
+    },
+    {
+      "id": "script:reconcile-status",
+      "path": "scripts/adopt/cli/reconcile-status.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reconcile status",
+      "summary": "Close-out Project-status reconciliation (report/apply).",
+      "docs": [
+        "docs/REFERENCE.md#58-reconcile-status-close-out-project-status"
+      ]
+    },
+    {
+      "id": "script:release-gate",
+      "path": "scripts/adopt/cli/release-gate.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Release gate",
+      "summary": "Release gate: contract verification plus no open bypass OIs.",
+      "docs": [
+        "docs/REFERENCE.md#release-gate"
+      ]
+    },
+    {
+      "id": "script:stream",
+      "path": "scripts/adopt/cli/stream.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Stream",
+      "summary": "Tooling-profile [Stream] open/close lifecycle with release gate.",
+      "docs": [
+        "docs/REFERENCE.md#54-stream-tooling-profile"
+      ]
+    },
+    {
+      "id": "script:suite-counts",
+      "path": "scripts/adopt/cli/suite-counts.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Suite counts",
+      "summary": "Counted-runner parsers plus the counts check/record/render CLI.",
+      "docs": [
+        "docs/REFERENCE.md#57-verified-counts-contract-suite-counts-guard-docs-counts"
+      ]
+    },
+    {
+      "id": "script:task",
+      "path": "scripts/adopt/cli/task.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Task",
+      "summary": "Task lifecycle CLI: start/checkpoint/review/block/done/status.",
+      "docs": [
+        "docs/REFERENCE.md#53-task",
+        "docs/TASK_CLI.md"
+      ]
+    },
+    {
+      "id": "script:validate-config",
+      "path": "scripts/adopt/cli/validate-config.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Validate config",
+      "summary": "Validate tracker.config JSON files against the versioned contract.",
+      "docs": [
+        "docs/REFERENCE.md#6-config-reference"
+      ]
+    },
+    {
+      "id": "script:verification-policy",
+      "path": "scripts/adopt/lib/verification-policy.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Verification policy",
+      "summary": "Remote-only verification policy: config resolution, defaults, and shared evaluation",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "script:verify-checksums",
+      "path": "scripts/adopt/cli/verify-checksums.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Verify checksums",
+      "summary": "Verify SHA256SUMS against release assets (manual fallback gate).",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ]
+    },
+    {
+      "id": "script:verify-contract",
+      "path": "scripts/adopt/cli/verify-contract.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Verify contract",
+      "summary": "Verify a downstream repo follows the pinned adoption contract.",
+      "docs": [
+        "docs/REFERENCE.md#adoption-contract-verifier"
+      ]
+    },
+    {
+      "id": "script:verify-metadata",
+      "path": "scripts/adopt/cli/verify-metadata.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Verify metadata",
+      "summary": "Verify live GitHub project metadata against the adoption contract.",
+      "docs": [
+        "docs/ADOPTION.md#project-metadata-verification"
+      ]
+    },
+    {
+      "id": "script:verify-surface",
+      "path": "scripts/internal/verify-surface.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Verify surface",
+      "summary": "Repo-surface guard: enforce contract/repo-surface.json classification rules.",
+      "docs": [
+        "docs/DOCS_COVERAGE.md"
+      ]
+    },
+    {
+      "id": "script:verify-tooling",
+      "path": "scripts/adopt/cli/verify-tooling.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Verify tooling",
+      "summary": "Verify downstream tooling/config against the adoption contract.",
+      "docs": [
+        "docs/UPGRADING.md"
+      ]
+    },
+    {
+      "id": "script:work-profile",
+      "path": "scripts/adopt/lib/work-profile.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Work profile",
+      "summary": "Work-profile adapters: one enforcement engine, two selectable lifecycles",
+      "docs": [
+        "docs/REFERENCE.md#1-repository-map"
+      ]
+    },
+    {
+      "id": "wf:ci",
+      "path": ".github/workflows/ci.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "CI",
+      "summary": "Thin CI caller (project tracker template repository)",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#2-workflow-catalog",
+        "docs/REFERENCE.md#13-workflow-catalog"
+      ]
+    },
+    {
+      "id": "wf:main-history-guard",
+      "path": ".github/workflows/main-history-guard.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Main history guard",
+      "summary": "GitHub Actions workflow main-history-guard.yml.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
+      ]
+    },
+    {
+      "id": "wf:post-merge-audit",
+      "path": ".github/workflows/post-merge-audit.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "Post-merge bypass audit",
+      "summary": "Least privilege for the audit: - contents: read -> checkout the repo under audit - issues: write -> open the tracker-contract-exception OI/label - pull-requests: read -> read the merged PR metadata -",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
+      ]
+    },
+    {
+      "id": "wf:pr-close-guard",
+      "path": ".github/workflows/pr-close-guard.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "PR close guard",
+      "summary": "GitHub Actions workflow pr-close-guard.yml.",
+      "docs": [
+        "docs/REFERENCE.md#pr-closing-keyword-guard"
+      ]
+    },
+    {
+      "id": "wf:release",
+      "path": ".github/workflows/release.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "Release (generic)",
+      "summary": "Thin generic GitHub Release caller (T10 release profile, template repository)",
+      "docs": [
+        "docs/RELEASE_PROFILES.md"
+      ]
+    },
+    {
+      "id": "wf:reusable-audit",
+      "path": ".github/workflows/reusable-audit.yml",
+      "class": "reusable-workflow",
+      "status": "contract-only",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable audit",
+      "summary": "Documented workflow_call contract; not implemented in this repository yet.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract"
+      ],
+      "catalogSection": "7.6"
+    },
+    {
+      "id": "wf:reusable-ci",
+      "path": ".github/workflows/reusable-ci.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable Node CI",
+      "summary": "Reusable Node CI for Project Tracker OS adopters (T15 profile)",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#72-reusable-ciyml-required-ci-contract"
+      ],
+      "catalogSection": "7.2"
+    },
+    {
+      "id": "wf:reusable-desktop-smoke",
+      "path": ".github/workflows/reusable-desktop-smoke.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable desktop smoke",
+      "summary": "GitHub Actions workflow reusable-desktop-smoke.yml.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#74-reusable-desktop-smokeyml-desktop-smoke-contract-shipped"
+      ],
+      "catalogSection": "7.4"
+    },
+    {
+      "id": "wf:reusable-docs",
+      "path": ".github/workflows/reusable-docs.yml",
+      "class": "reusable-workflow",
+      "status": "contract-only",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable docs",
+      "summary": "Documented workflow_call contract; not implemented in this repository yet.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#77-reusable-securityyml-and-reusable-docsyml"
+      ],
+      "catalogSection": "7.7"
+    },
+    {
+      "id": "wf:reusable-e2e",
+      "path": ".github/workflows/reusable-e2e.yml",
+      "class": "reusable-workflow",
+      "status": "contract-only",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable e2e",
+      "summary": "Documented workflow_call contract; not implemented in this repository yet.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile"
+      ],
+      "catalogSection": "7.3"
+    },
+    {
+      "id": "wf:reusable-guard",
+      "path": ".github/workflows/reusable-guard.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable tracker guard",
+      "summary": "GitHub Actions workflow reusable-guard.yml.",
+      "docs": [
+        "docs/GUARD_DISTRIBUTION.md#no-copy-guard-distribution"
+      ]
+    },
+    {
+      "id": "wf:reusable-release",
+      "path": ".github/workflows/reusable-release.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable Release",
+      "summary": "Reusable release pipelines for Project Tracker OS adopters (T10 release profile)",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#75-release-workflow-contract"
+      ],
+      "catalogSection": "7.5"
+    },
+    {
+      "id": "wf:reusable-security",
+      "path": ".github/workflows/reusable-security.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable security defaults",
+      "summary": "Reusable security defaults for Project Tracker OS adopters (T15 profile)",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#77-reusable-securityyml-and-reusable-docsyml"
+      ],
+      "catalogSection": "7.7"
+    },
+    {
+      "id": "wf:security",
+      "path": ".github/workflows/security.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Security",
+      "summary": "Security defaults caller (T15 profile)",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
+      ]
+    },
+    {
+      "id": "wf:tracker-audit",
+      "path": ".github/workflows/tracker-audit.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "Tracker audit (advisory)",
+      "summary": "GitHub Actions workflow tracker-audit.yml.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
+      ]
+    }
+  ]
+}

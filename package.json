@@ -39,6 +39,7 @@
     "reconcile:status": "node scripts/adopt/cli/reconcile-status.mjs",
     "hooks:install": "node scripts/adopt/cli/install-hooks.mjs",
     "verify:tooling": "node scripts/adopt/cli/verify-tooling.mjs",
+    "verify:surface": "node scripts/internal/verify-surface.mjs",
     "release:bump": "node scripts/internal/bump-version.mjs"
   },
   "devDependencies": {

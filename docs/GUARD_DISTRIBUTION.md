@@ -24,7 +24,7 @@ jobs:
       config-path: tracker.config.json
 ```
 
-The reusable workflow checks out the project and the pinned tracker guard, then runs the same checked-in implementation. No guard code is copied into the project.
+The reusable workflow checks out the project and the pinned tracker guard, then runs the same checked-in implementation. No guard code is copied into the project. It invokes the pinned tracker checkout's npm aliases (`guard:gh`, `guard:docs`), so the caller is layout-independent: the same `tracker-ref` works for a v1.3.x checkout (old script layout) and a v1.4.0+ checkout (`scripts/adopt/**`), because the aliases resolve inside the pinned checkout.
 
 Project config allowlist:
 
@@ -41,13 +41,15 @@ Once branch protection is available, require this check (`Tracker guard / guard`
 
 ## Local projects
 
-If the project carries `scripts/adopt/cli/**` (copied mode), run:
+If the project carries `scripts/adopt/**` (copied mode), run:
 
 ```bash
 npm run guard:gh
 ```
 
-This is local parity; CI is the authoritative gate.
+This is local parity; CI is the authoritative gate. After a tracker upgrade that moves script
+paths, re-copy `scripts/adopt/**` and update the copied alias targets (alias names are unchanged)
+— see [UPGRADING](./UPGRADING.md).
 
 ## Teammates: worktree scope guard
 

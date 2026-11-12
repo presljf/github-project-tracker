@@ -1,9 +1,15 @@
 # RELEASE PROFILES
 
 **Docs version:** `v1.3.2-docs.1` · Target template: `v1.3.2`
-**Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and copy-mode examples under `profiles/release/`.
-**Status:** T10 implements this profile layer; T02 added live dry-run validation (generic/container/package pass, macOS blocked by runner-plan support) and fixed the caller permission-union startup failure. Publishing is dry-run/skip guarded by default; no live release was published.
+**Scope:** reusable release pipeline (`reusable-release.yml`), thin callers for four profiles (generic GitHub Release, macOS signed/notarized, GHCR container, npm/PyPI package), composite actions (`checksum`, `sign-notarize-macos`), and the caller examples under `profiles/release/` (`reusable/` reusable-mode examples, `copy/` copy-mode templates). Only files under `.github/workflows/` are executed by GitHub.
+**Status:** T10 implements this profile layer; T02 added live dry-run validation (generic/container/package pass, macOS blocked by runner-plan support) and fixed the caller permission-union startup failure. T01 moved the macOS/container/package reusable-mode callers out of `.github/workflows/` into `profiles/release/reusable/` as non-runnable copy examples; `.github/workflows/release.yml` is the only runnable release caller. Publishing is dry-run/skip guarded by default; no live release was published.
 **Contracts:** [ACTIONS CATALOG §2.4/§7.5/§7.8/§9](./ACTIONS_CATALOG.md) is the interface source of truth; this page documents the delivered behavior. [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog), [CI & security profile](./CI_SECURITY_PROFILE.md), and [UPGRADING](./UPGRADING.md) stay consistent with it.
+
+**Availability:** the reusable contract `reusable-release.yml` is shipped and callable. The only
+runnable release caller in this repository is `.github/workflows/release.yml` (generic profile,
+local `uses:`). The macOS/container/package reusable-mode callers under
+`profiles/release/reusable/` are **inert copy examples — GitHub executes only workflows under
+`.github/workflows/`**. Copy one there, then pin the exact adopted tag (never `@main`).
 
 ## Contents
 
@@ -154,20 +160,27 @@ The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`ver
 
 ## 5. Callers and wiring
 
-### 5.1 Reusable mode (recommended)
+### 5.1 Reusable mode (recommended; one runnable caller + copy examples)
 
-In-repo template callers (also the copyable contract examples):
+One runnable caller in this repo, plus the reusable-mode examples adopters copy:
 
-| Caller | Trigger | Profile | Caller permissions |
-|---|---|---|---|
-| `.github/workflows/release.yml` | push tags `v*`; dispatch (dry-run default) | generic | `contents: write`, `packages: write`, `id-token: write` |
-| `profiles/release/reusable/release-macos.yml` | dispatch only (example) | macos | `contents: write`, `packages: write`, `id-token: write` |
-| `profiles/release/reusable/release-container.yml` | dispatch only (example) | container | `contents: write`, `packages: write`, `id-token: write` |
-| `profiles/release/reusable/release-package.yml` | dispatch only (example) | package | `contents: write`, `packages: write`, `id-token: write` |
+| Caller | Status | Trigger | Profile | Caller permissions |
+|---|---|---|---|---|
+| `.github/workflows/release.yml` | **runnable in this repo** (the only one) | push tags `v*`; dispatch (dry-run default) | generic | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-macos.yml` | non-runnable copy example | dispatch only | macos | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-container.yml` | non-runnable copy example | dispatch only | container | `contents: write`, `packages: write`, `id-token: write` |
+| `profiles/release/reusable/release-package.yml` | non-runnable copy example | dispatch only | package | `contents: write`, `packages: write`, `id-token: write` |
+
+The files under `profiles/release/reusable/` are **examples, not workflows**: GitHub executes only
+files in `.github/workflows/`, so nothing under `profiles/` runs where it lives. To adopt one, copy
+it into your repo's `.github/workflows/` and replace the pinned
+`uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.2` with the exact
+tag (or full SHA) your project adopted — never `@main`. The called workflow stays in the template
+repo; only the thin caller is copied.
 
 **Permission-union requirement (found live in T02):** a caller job must grant at least the union of permissions declared by the called reusable workflow's jobs (`contents: write` for the release job, `packages: write` for the container job, `id-token: write` for OIDC package publishing). Granting only the current profile's subset made every dispatch fail with `startup_failure` at workflow validation. Jobs that do not apply to the active profile are skipped and never use the extra grant; each called job still declares its own reduced permission set. Copy-mode callers declare permissions directly and are unaffected.
 
-Generic caller expressions: on a tag push it passes `dry-run: false` and `publish: true`; on dispatch it passes the operator's `dry-run` (default `true`) and `publish` (default `false`). The reusable workflow still refuses to publish unless the ref is the matching tag and the environment approves. The profile example callers are dispatch-only in the template repository (no product build/secrets exist here); adopters add the tag trigger once their project commands/secrets are configured.
+Generic caller expressions: on a tag push it passes `dry-run: false` and `publish: true`; on dispatch it passes the operator's `dry-run` (default `true`) and `publish` (default `false`). The reusable workflow still refuses to publish unless the ref is the matching tag and the environment approves. The profile examples under `profiles/release/reusable/` are dispatch-only and inert here (no product build/secrets exist in the template repository); after copying one into `.github/workflows/` and pinning the adopted tag, adopters add the tag trigger once their project commands/secrets are configured.
 
 Downstream (pinned) form — never `@main`:
 
@@ -196,6 +209,10 @@ jobs:
 Pass signing/publishing secrets by name exactly as listed in §3.3; do not use `secrets: inherit` for third-party/workflow reuse unless the caller and called workflow are first-party and reviewed. Caller must grant the permission union described in the table above (the called workflow can only reduce it).
 
 ### 5.2 Copy mode
+
+Both modes copy a caller out of `profiles/release/` into `.github/workflows/` — reusable-mode
+callers from `reusable/` (§5.1; pin the adopted tag after copying) and standalone callers from
+`copy/` below. Nothing under `profiles/release/` is executed where it lives.
 
 `profiles/release/copy/{generic,macos,container,package}-release.yml` are standalone callers for repos where cross-repo reuse is blocked (hybrid D copy fallback, ACTIONS CATALOG §8.4). Copy the caller into `.github/workflows/` **and** copy `.github/actions/checksum/` and (for macOS) `.github/actions/sign-notarize-macos/` into `.github/actions/`; record the origin template version and local overrides in the project notes. The copy examples use the same tag/environment guards and pinned action SHAs, but keep checksum generation inside the build/sign jobs rather than a dedicated bundle job — preserve the guards, do not add PR publishes.
 
@@ -271,6 +288,7 @@ Outputs: `signed-path` (empty when skipped), `notarized` (`'true'`/`'false'`). G
 Run before enabling any publish path (T12 captures evidence for the template release; adopters repeat for their project):
 
 - [ ] YAML parses (`python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))' <file>`) for every workflow/action.
+- [ ] Release caller copied into `.github/workflows/` from `profiles/release/reusable/` (reusable mode, pinned exact tag/SHA) or `profiles/release/copy/` (copy mode); no file under `profiles/` is expected to execute in place.
 - [ ] `actionlint .github/workflows/*.yml` passes in an environment that has it (not available in the authoring environment for T10; T15/T12 must run it on real workflows).
 - [ ] `npm test` passes, including `tests/release-profiles.test.mjs` (structural guards: dry-run defaults, publish guards, tag pattern, environment, pinned SHAs, no secrets).
 - [ ] `npm run validate:config` passes (release config keys remain schema-valid).
@@ -308,7 +326,7 @@ Run before enabling any publish path (T12 captures evidence for the template rel
 
 ## 11. Live validation evidence (T02) and residual limitations
 
-T02 dispatched the merged profiles on branch ref `task/40-release-validation` with `dry-run: true`/`publish: false`: **no secrets, no publish, no release assets created.** Workflow runs are on `presljf/github-project-tracker`.
+T02 dispatched the merged profiles on branch ref `task/40-release-validation` with `dry-run: true`/`publish: false`: **no secrets, no publish, no release assets created.** Workflow runs are on `presljf/github-project-tracker`. The T02 runs predate T01: they dispatched the then-runnable profile callers from `.github/workflows/`; the macOS/container/package callers are now non-runnable examples under `profiles/release/reusable/` (copy into `.github/workflows/` and pin the adopted tag to re-run).
 
 | Profile | Run | Result | Evidence |
 |---|---|---|---|
@@ -357,7 +375,7 @@ Limits: this fallback has manual approval, not a platform-enforced protected env
 | [REFERENCE](./REFERENCE.md) §13–16 | Workflow/token/runner/release quick lookup |
 | [UPGRADING](./UPGRADING.md) | Copy vs reusable, pins, upgrade procedure |
 | [HOW TO USE](./HOW_TO_USE.md) | Lifecycle context for release work |
-| [profiles/release](../profiles/release/README.md) | Copy-mode examples and the shared profile matrix |
+| [profiles/release](../profiles/release/README.md) | Reusable-mode copy examples, copy-mode templates, and the shared profile matrix |
 | [tracker config schema](../schemas/tracker.config.schema.json) | `workflows.release` keys |
 | [SECURITY.md](../SECURITY.md) | Private vulnerability reporting; never expose tokens |
 | [GitHub: reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) · [Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) · [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [OIDC](https://docs.github.com/en/actions/concepts/security/openid-connect) | Upstream behavior reference |

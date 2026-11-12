@@ -136,13 +136,18 @@ until a human fills `reason/coveredBy/agreedOn`. Full wiring:
 ## 3. Install template/config
 
 Copy from the tracker template (copy mode requires the full set):
-- `scripts/adopt/cli/**`, `schemas/tracker.config.schema.json`, `package.json`
-- `profiles/node/`, `profiles/release/**` (if used), `profiles/counts/` (if the counts contract is adopted), `tests/**` (optional but recommended)
+- `scripts/adopt/**` (adopter CLIs + shared libs + docs-QA CLIs); `scripts/internal/` is
+  template-maintainer-only and is never copied
+- `schemas/tracker.config.schema.json`, `package.json`
+- `profiles/node/`, `profiles/desktop/` (if used), `profiles/counts/` (if the counts contract is adopted), `tests/**` (optional but recommended)
+- Release caller examples: `profiles/release/reusable/` (reusable-mode callers — copy into
+  `.github/workflows/` and pin the adopted tracker tag) or `profiles/release/copy/` (copy-mode templates)
 - `.github/ISSUE_TEMPLATE/*`
 - `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/*` caller workflows (CI/security/audit/guard runners are shipped; the `reusable-*`
+  contracts are called by pinned template ref, not copied)
 - `docs/comment-templates/*` (or link the upstream docs)
 - `tracker.config.example.json` → `tracker.config.json`
-- `.github/workflows/*` caller workflows (CI/security/audit are shipped; release profile callers are shipped; contract-only workflows are labeled)
 
 Edit config for your repo/project/releases/sprints/commands. Validate:
 ```bash
@@ -158,7 +163,7 @@ Pin the template version exactly and record the feedback channel:
 
 ## 3.5 No-copy guard installation
 
-Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION.md); do not copy the guard implementation. Add `guard.allow` only for explicit migration exceptions. If the project carries `scripts/adopt/cli/**` in copy mode, wire `npm run guard:gh` into its test/CI task.
+Add the thin guard caller described in [GUARD_DISTRIBUTION](./GUARD_DISTRIBUTION.md); do not copy the guard implementation. Add `guard.allow` only for explicit migration exceptions. If the project carries `scripts/adopt/**` in copy mode, wire `npm run guard:gh` into its test/CI task.
 
 ## 4. Create the plan skeleton
 
@@ -177,7 +182,9 @@ option. The tag records the version; stream close requires every child task done
 ## 5. Audit, CI, protection
 
 - Configure the tracker audit token as a secret (project-scoped).
-- Add CI/audit caller workflows (shipped CI/security/audit; release profiles shipped); keep audit **advisory** first.
+- Add CI/audit caller workflows (CI/security/audit runner callers are shipped; release caller
+  `release.yml` plus reusable-mode examples under `profiles/release/reusable/`); keep audit
+  **advisory** first.
 - Configure branch protection/rulesets:
   - required: deterministic Linux CI checks.
   - advisory first: desktop smoke/audit.

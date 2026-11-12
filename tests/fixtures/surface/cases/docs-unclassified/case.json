@@ -1,0 +1,11 @@
+{
+  "write": {
+    "docs/EXTRA.md": "# Extra\n\nNot classified yet.\n"
+  },
+  "expect": {
+    "ok": true,
+    "warnings": [
+      "SURFACE_DOCS_UNCLASSIFIED"
+    ]
+  }
+}

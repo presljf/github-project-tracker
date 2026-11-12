@@ -31,6 +31,46 @@ existing board. No config change is required.
 - New `reconcile-status` command (`npm run reconcile:status`) to list and fix Project Status drift
   left by `Closes #N` auto-closes.
 
+## v1.4.0 — breaking: class-first script families and non-runnable release examples
+
+v1.4.0 ships a **breaking change**: the scripts tree moved into class-first families and the old
+paths are gone (no shims). The break is an accepted exception (D10) on the v1.x line; tags at or
+before v1.3.2 keep the old layout, so a pinned old checkout's documented commands still work for
+that pin, and adopters upgrade deliberately.
+
+| Before v1.4.0 | v1.4.0 |
+|---|---|
+| `scripts/github` CLI files (bootstrap, audit, task/stream, guards, verify, reconcile, rate-limit…) | `scripts/adopt/cli/` |
+| `scripts/github` shared libraries (`lib/`) and `playwright-remote-guard.mjs` | `scripts/adopt/lib/` |
+| `scripts/docs` docs-QA CLIs (`check-docs`, `check-versions`, `guard-docs`) | `scripts/adopt/docs/` |
+| `scripts/docs` card builder and `scripts/release` bump tool | `scripts/internal/` (template-maintainer-only) |
+
+Adopter steps:
+
+1. Re-copy `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs) over the old copies and
+   delete the pre-v1.4.0 script files you replaced. `scripts/internal/**` is template-maintainer-only
+   — do not copy it.
+2. Update copied `package.json` alias targets: alias **names are unchanged** (`audit`, `task`,
+   `docs:check`, `guard:versions`, `docs:counts:check`, `docs:counts:update`, …) but each target now
+   points under `scripts/adopt/…`.
+3. Update copied runner workflows that invoke scripts directly: `post-merge-audit.yml`,
+   `pr-close-guard.yml`, `tracker-audit.yml`, `main-history-guard.yml` (and any copied caller whose
+   `run:` lines name a script path).
+4. If the counts contract is adopted, re-run `npm run docs:counts:update` after the moves: the
+   generated doc header records the update command path, so refresh `docs/TEST_COUNTS.md` + markers
+   in the upgrade PR.
+5. Release profiles: reusable-mode caller examples moved to `profiles/release/reusable/` — copy the
+   caller you use into `.github/workflows/` and pin your adopted tracker tag; copy-mode templates
+   stay in `profiles/release/copy/`. The template no longer ships runnable release examples in
+   `.github/workflows/`; `release.yml` is the only runnable release caller there.
+6. Reusable/hybrid mode needs no script-copy work: `reusable-guard.yml` now invokes the pinned
+   tracker checkout's npm aliases, so it stays layout-independent across v1.3.x and v1.4.0+ refs.
+7. Template-internal only: new `contract/repo-surface.json` manifest + `scripts/internal/verify-surface.mjs`
+   (`npm run verify:surface`) keep the shipped surface machine-checkable; adopters do not copy
+   either.
+
+No config change is required beyond bumping `automation.templateVersion` to the exact target tag.
+
 ## Before upgrading
 
 - [ ] Read the target changelog/release notes/migration notes.
@@ -61,7 +101,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
 1. **Read** target changelog + diff/overrides.
 2. **Dry-run** in a branch:
    ```bash
-   git checkout -b chore/upgrade-tracker-1.3.2
+   git checkout -b chore/upgrade-tracker-1.4.0
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);

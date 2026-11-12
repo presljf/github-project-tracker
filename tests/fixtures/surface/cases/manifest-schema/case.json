@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "set": {
+      "wf:demo": {
+        "class": "bogus"
+      }
+    }
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_MANIFEST_SCHEMA"
+    ]
+  }
+}

@@ -150,7 +150,8 @@ Expected UI: task appears under parent; parent progress shows `1/1`.
 
 ### 4.4 Install templates/config
 
-- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md`, plus `scripts/adopt/cli/**`, `schemas/tracker.config.schema.json`, and `package.json` from the tracker template (copy mode requires the full set).
+- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md`, plus `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs), `schemas/tracker.config.schema.json`, and `package.json` from the tracker template (copy mode requires the full set). `scripts/internal/` is template-maintainer-only and is **not** copied.
+- Script families: `scripts/adopt/cli/` (lifecycle/audit/guards/verification), `scripts/adopt/lib/` (shared imports), `scripts/adopt/docs/` (docs-QA); the `package.json` aliases name these targets.
 - Copy `tracker.config.example.json` to `tracker.config.json`; edit values.
 - Validate:
   ```bash
@@ -382,6 +383,11 @@ Acceptance: no Done sprint with open children unless deferral is recorded.
 - Tag matches versions; build/publish artifacts + checksums.
 - Release notes/docs updated; release tracker + milestone closed; final summary posted.
 - Do not close with open child sprints unless deferred.
+
+**Release profiles:** reusable-mode callers live in `profiles/release/reusable/` (copy the caller into
+`.github/workflows/` and pin the tracker tag you adopted); copy-mode templates live in
+`profiles/release/copy/`. The template's own `.github/workflows/release.yml` is the runnable generic
+caller; see [RELEASE_PROFILES](./RELEASE_PROFILES.md).
 
 ### Tooling profile: Stream → Task deliveries
 

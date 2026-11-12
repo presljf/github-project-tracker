@@ -1,0 +1,28 @@
+{
+  "write": {
+    ".github/workflows/bad-example.yml": "# COPY-MODE EXAMPLE — misplaced\nname: Bad example\n\non:\n  workflow_dispatch:\n\njobs:\n  demo:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo demo\n"
+  },
+  "manifest": {
+    "add": [
+      {
+        "id": "profile:bad-location",
+        "path": ".github/workflows/bad-example.yml",
+        "class": "copy-mode",
+        "status": "shipped",
+        "audience": [
+          "adopter"
+        ],
+        "mode": "copy",
+        "header": "required",
+        "title": "Bad location",
+        "summary": "Copy-mode entry outside profiles/.",
+        "docs": []
+      }
+    ]
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_COPY_MODE_NOT_PROFILE"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # COPY-MODE EXAMPLE — container release profile (T10).
 #
-# Copy this file into profiles/release/reusable/release-container.yml when cross-repo reusable workflows
+# Copy this file into .github/workflows/release-container.yml when cross-repo reusable workflows
 # are blocked. Prefer the reusable mode (`profiles/release/reusable/release-container.yml` in this
 # template) when the template ref is accessible.
 #

@@ -54,6 +54,13 @@
 | `docs/TEMPLATE_REPO.md` | template structure/versioning/tag policy | now |
 | `tracker.config.example.json` | generic config | now |
 | `schemas/tracker.config.schema.json` | config contract | now |
+| `contract/adoption-contract.json` | downstream adoption contract (pinned refs, required workflows/profiles) consumed by `verify-contract`/`release-gate` | now |
+| `contract/repo-surface.json` | repo-surface manifest: class/status/docs source of truth for scripts/workflows/release examples | now |
+| `scripts/adopt/cli/` | adopter CLIs — lifecycle, reconciliation, guards, verification (individual CLIs below) | now |
+| `scripts/adopt/lib/` | shared libraries imported by the CLIs (GitHub transport, guards, work profiles, Playwright guard) | now |
+| `scripts/adopt/docs/` | docs-QA CLIs: `check-docs.mjs`, `check-versions.mjs`, `guard-docs.mjs` | now |
+| `scripts/internal/` | template-maintainer-only tools (never copied): `build-cards.mjs`, `bump-version.mjs`, `verify-surface.mjs` | now |
+| `scripts/internal/verify-surface.mjs` | repo-surface manifest ↔ shipped-surface verifier (`npm run verify:surface`) | now |
 | `scripts/adopt/cli/validate-config.mjs` | config validation | now |
 | `scripts/adopt/cli/bootstrap.mjs` | idempotent repo/project setup | now |
 | `scripts/adopt/cli/audit.mjs` | tracker audit (advisory/strict/JSON), mode-aware | now |
@@ -74,8 +81,8 @@
 | `profiles/counts/` | counts contract wiring + example baseline | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
-| `.github/workflows/`, `.github/actions/` | reusable CI/release/security/audit workflows + composite actions | now |
-| `profiles/release/` | release profile examples/copy callers | now |
+| `.github/workflows/`, `.github/actions/` | internal runner callers + `reusable-*` workflow contracts + composite actions (`release.yml` is the only runnable release caller here) | now |
+| `profiles/release/` | release profile examples: reusable-mode callers in `reusable/` (copy into `.github/workflows/` + pin the adopted tag) and copy-mode templates in `copy/` | now |
 
 ## 2. Command conventions
 
@@ -724,6 +731,32 @@ When the repo under inspection **is the contract's own repository**
 alignment. Downstream repositories keep the full check set; `release-gate` passes the self-repo
 result through with the same note. This is what lets `release:bump` + `gate:release` (and
 `stream.mjs close`'s default gate command) run inside the tracker repo (T06 prerequisite).
+
+### Repo-surface verifier
+
+`npm run verify:surface` (`node scripts/internal/verify-surface.mjs --root . --manifest
+contract/repo-surface.json`) keeps the shipped surface mechanically consistent with
+`contract/repo-surface.json`, the class/status/docs/audience source of truth for scripts, workflows,
+actions, profiles, docs, and contract files. Entries carry a class (`adopter-cli`, `adopter-lib`,
+`reusable-workflow`, `reusable-action`, `copy-mode`, `internal`, `generated`) and a status
+(`shipped` or `contract-only`). It fails on:
+
+- a missing manifest when `--require-manifest` is set (CI runs it with that flag);
+- manifest ↔ filesystem drift: a `shipped` entry whose file is absent, a `contract-only` entry that
+  exists, or a path inside the classified scope that is unclassified or classified twice;
+- a `reusable-*` workflow that is not a `workflow_call` contract, or a non-`reusable-*` workflow that
+  uses `workflow_call`; `.github/workflows/` keeps only internal runners + `reusable-*`, with
+  `release.yml` as the only runnable release caller;
+- a copy-mode entry outside `profiles/` or a YAML example without its `COPY-MODE EXAMPLE` header;
+- catalog claims that disagree with the manifest (reusable-workflow/action documentation and
+  `docs/ACTIONS_CATALOG.md` shipped vs contract-only claims);
+- manifest-referenced docs anchors that do not resolve, or a generated entry outside
+  `generatedRoots`/without an existing `generatedBy` script.
+
+Warnings (unclassified docs, npm-alias drift, adopter code importing internal code, stale catalog
+section docs) fail only under `--strict`. CI runs it in the `docs-guard` job:
+`node scripts/internal/verify-surface.mjs --root . --manifest contract/repo-surface.json --require-manifest`.
+T02 generates `docs/SURFACE.md` from the manifest — treat that page as generated, not hand-edited.
 
 ### No-admin merge wrapper
 

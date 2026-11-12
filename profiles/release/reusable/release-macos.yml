@@ -1,8 +1,9 @@
 # COPY-MODE EXAMPLE — reusable-mode macos release caller (T10).
 #
-# Non-runnable example: this file lives under profiles/ so GitHub never executes it. Copy it
-# into your repository's .github/workflows/ and pin the tracker ref to the tag you adopted
-# (replace @v1.3.2 below). The runnable self-repo caller is .github/workflows/release.yml.
+# Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
+# lives under profiles/. Copy it into your repository's .github/workflows/ and pin the tracker ref
+# to the tag you adopted (replace @v1.3.2 below). The runnable self-repo caller is
+# .github/workflows/release.yml.
 #
 # Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-release.yml (contract in
 # docs/ACTIONS_CATALOG.md §7.5; profile details in docs/RELEASE_PROFILES.md).

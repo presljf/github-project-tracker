@@ -1,0 +1,18 @@
+name: Reusable demo
+
+on:
+  workflow_call:
+    inputs:
+      demo:
+        description: Demo input.
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo demo

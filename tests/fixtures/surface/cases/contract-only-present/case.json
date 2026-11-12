@@ -1,0 +1,10 @@
+{
+  "write": {
+    ".github/actions/setup-node-cache/action.yml": "name: setup-node-cache\ndescription: Implemented early.\n\nruns:\n  using: composite\n  steps:\n    - run: echo cached\n      shell: bash\n"
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_CONTRACT_ONLY_PRESENT"
+    ]
+  }
+}

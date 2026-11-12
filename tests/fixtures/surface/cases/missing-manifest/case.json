@@ -1,0 +1,9 @@
+{
+  "remove": [
+    "contract/repo-surface.json"
+  ],
+  "expect": {
+    "ok": true,
+    "skipped": "manifest-missing"
+  }
+}

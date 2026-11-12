@@ -1,0 +1,7 @@
+{
+  "name": "surface-fixture",
+  "private": true,
+  "scripts": {
+    "demo": "node scripts/adopt/cli/demo.mjs"
+  }
+}

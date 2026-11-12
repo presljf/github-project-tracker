@@ -1,0 +1,11 @@
+{
+  "write": {
+    ".github/workflows/demo.yml": "# COPY-MODE EXAMPLE — wrong class\nname: Demo\n\non:\n  push:\n\npermissions:\n  contents: read\n\njobs:\n  demo:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo demo\n"
+  },
+  "expect": {
+    "ok": true,
+    "warnings": [
+      "SURFACE_COPY_HEADER_UNEXPECTED"
+    ]
+  }
+}

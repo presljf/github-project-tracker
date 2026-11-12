@@ -1,0 +1,14 @@
+# COPY-MODE EXAMPLE — demo profile
+name: Demo profile example
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo demo

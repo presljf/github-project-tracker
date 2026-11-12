@@ -6,7 +6,9 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 
 ## Use this template
 
-1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/adopt/cli/`, `schemas/`, `profiles/`, `tests/`, `.github/`, `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
+1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs), `schemas/`, `profiles/`, `tests/`, `.github/` (issue/PR forms and caller workflows; `reusable-*` contracts only if you cannot call the template by pinned ref), `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
+   - `scripts/internal/` is template-maintainer-only (card build, release bump, repo-surface guard) and is **never** copied.
+   - Release examples: `profiles/release/reusable/` holds reusable-mode callers (copy into `.github/workflows/` and pin the tracker tag you adopted); `profiles/release/copy/` holds copy-mode templates.
 2. Follow [docs/ADOPTION.md](./ADOPTION.md) / [QUICKSTART](./QUICKSTART.md).
 3. Copy `tracker.config.example.json` to `tracker.config.json`, edit for your project, validate:
    ```bash
@@ -28,12 +30,19 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 | Path | Purpose |
 |---|---|
 | `docs/` | playbook, HOW TO USE, reference, troubleshooting, adoption/upgrading, agent/multi-project, downstream, cards/style |
-| `scripts/adopt/cli/` | bootstrap, audit, task CLI, validate-config, shared adapters |
+| `scripts/adopt/cli/` | adopter CLIs: bootstrap, audit, task/stream lifecycle, reconciliation, guards, verification |
+| `scripts/adopt/lib/` | shared libraries imported by the CLIs (GitHub transport, guards, work profiles, Playwright guard) |
+| `scripts/adopt/docs/` | docs-QA CLIs: `check-docs`, `check-versions`, `guard-docs` |
+| `scripts/internal/` | template-maintainer-only tools: `build-cards`, `bump-version`, `verify-surface` (never copied) |
+| `contract/adoption-contract.json` | downstream adoption contract consumed by `verify-contract`/`release-gate` |
+| `contract/repo-surface.json` | repo-surface manifest: machine-checkable class/status/docs source of truth for scripts/workflows/examples |
 | `schemas/`, `examples/` | config contract and generic/pilot examples |
 | `profiles/node/` | generic lint/format profile |
-| `profiles/release/`, `.github/workflows/release*` | release profile examples (T10) |
+| `profiles/desktop/`, `profiles/tooling/`, `profiles/counts/` | opt-in desktop-smoke, tooling-work-profile, and counts-contract wiring |
+| `profiles/release/reusable/` | reusable-mode release caller examples (copy into `.github/workflows/` and pin the adopted tag; non-runnable here) |
+| `profiles/release/copy/` | copy-mode standalone release templates |
 | `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md` | intake/PR forms |
-| `.github/workflows/` | CI, security, audit, reusable contracts, release profiles, no-copy guard |
+| `.github/workflows/` | internal runner callers (CI/security/audit/guards) + `reusable-*` workflow contracts; `release.yml` is the only runnable release caller here |
 | `docs/GUARD_DISTRIBUTION.md` | adoption: transport guard + teammate scope guard |
 | `tests/` | dependency-free Node test suite (`npm test`) |
 | `tracker.config.json` | this repo's self-config for audit/CI |
@@ -42,6 +51,10 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 
 - Adopters pin `automation.templateVersion` exactly (e.g. `1.0.0`) and record it in their tracker config/docs.
 - Patch = compatible fixes; minor = compatible features; major = breaking changes with migration notes.
+- v1.4.0 reorganized scripts into class-first families: `scripts/adopt/**` is copied,
+  `scripts/internal/**` is template-maintainer-only, and release examples live under
+  `profiles/release/{reusable,copy}/`. Older tags keep the older layout (no shims), so re-copy
+  scripts on upgrade — see [UPGRADING](./UPGRADING.md).
 - Upgrade with [docs/UPGRADING.md](./UPGRADING.md); never fork silently.
 - Template tags are immutable. The `v1.0.0` tag is created only after T08 replication/upgrade validation and T12 fresh-eyes docs QA pass.
 

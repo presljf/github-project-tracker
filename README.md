@@ -80,14 +80,21 @@ See [docs/ROADMAP_v1.1.0.md](docs/ROADMAP_v1.1.0.md): P0 rate-limit hardening, a
 ## Repository layout
 
 ```
-docs/                 docs, playbook, comment templates, reference cards
-scripts/adopt/cli/       bootstrap, audit, task CLI, validate-config, adapters
-schemas/, examples/   config contract + examples
-profiles/             Node and release profiles
-tests/                dependency-free Node test suite (npm test)
-.github/              issue/PR forms, CI/security/audit/release workflows
-tracker.config.json   self-config for this repo
+docs/                  docs, playbook, comment templates, reference cards
+scripts/adopt/cli/     adopter CLIs: bootstrap, audit, task/stream lifecycle, guards, verify
+scripts/adopt/lib/     shared libraries imported by the CLIs (transport, guards, work profiles)
+scripts/adopt/docs/    docs-QA CLIs: docs check, version consistency, docs coverage guard
+scripts/internal/      template-maintainer only: release bump, card build, repo-surface guard
+contract/              adoption contract + repo-surface.json manifest (template-internal)
+schemas/, examples/    config contract + examples
+profiles/              Node/desktop/tooling/counts profiles; release examples under release/
+tests/                 dependency-free Node test suite (npm test)
+.github/               issue/PR forms, internal runner callers, reusable-* workflow contracts
+tracker.config.json    self-config for this repo
 ```
+
+Adopters copy the `scripts/adopt/**` tree (and the caller workflows/forms they use);
+`scripts/internal/` is template-maintainer-only and is never copied.
 
 ## Versioning and support
 

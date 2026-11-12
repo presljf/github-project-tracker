@@ -184,6 +184,10 @@ Fix the `$path`; re-run until `OK`.
 **Cause:** manual edits not recorded; template upgrade overwrote.
 **Fix:** record local overrides in the project docs/config; re-apply after upgrade; open upstream issue if the generic contract is insufficient.
 
+### `Cannot find module` after upgrading the tracker
+**Cause:** v1.4.0 moved scripts into class-first families (no shims); copied aliases or runner workflows still point at pre-v1.4.0 locations.
+**Fix:** re-copy `scripts/adopt/**`, update copied `package.json` alias targets (names unchanged) and copied runner workflows (`post-merge-audit.yml`, `pr-close-guard.yml`, `tracker-audit.yml`, `main-history-guard.yml`); `scripts/internal/**` stays template-maintainer-only. Old tags keep the old layout, so a pinned old checkout is unaffected — see [UPGRADING](./UPGRADING.md).
+
 ## Network / limits / platform
 
 ### Rate limit / secondary rate limit

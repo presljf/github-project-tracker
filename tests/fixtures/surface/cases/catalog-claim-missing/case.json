@@ -1,0 +1,10 @@
+{
+  "append": {
+    "docs/ACTIONS_CATALOG.md": "\nSee also `reusable-ghost.yml` for the planned contract.\n"
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_CATALOG_CLAIM_MISSING"
+    ]
+  }
+}
