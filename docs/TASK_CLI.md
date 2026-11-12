@@ -95,3 +95,6 @@ The task CLI is covered by `npm test` (mock adapter, happy/error/WIP/DoR/DoD/dry
 Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
 `npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
 as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
+
+`start` warns loudly in the check-in when `core.hooksPath` is not `.githooks`; run
+`npm run hooks:install` before starting work.

@@ -202,3 +202,9 @@ optional standard field; project-specific forbidden fields are rejected. Open/cu
 Run report-first (`--repair=none`), review the plan, then apply open-only or selected repairs. Closed history is report-only by default; exceptions/OIs are recorded for issues not safely changed.
 
 Historical metadata exceptions are explicit, OI-linked, and expiring. They are reserved for artifacts that cannot be safely repaired, such as duplicate closed issues; open/current issues are always strict.
+
+## Branch hygiene
+
+Install `.githooks` with `npm run hooks:install`; do not require unconditional branch switching in
+automation. Use `git switch -c task/...`, assert the branch before commits, and rely on
+main-history detection plus the release gate where branch protection is unavailable.

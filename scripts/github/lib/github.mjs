@@ -416,6 +416,10 @@ export class GitHubCli {
     );
   }
 
+  getCommitPullRequests(owner, repo, sha) {
+    return this.run(['api', `repos/${owner}/${repo}/commits/${sha}/pulls`], { json: true });
+  }
+
   getIssueTypes(owner, repo) {
     return this.run(['api', `repos/${owner}/${repo}/issue-types`], { json: true });
   }

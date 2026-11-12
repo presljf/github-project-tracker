@@ -1,0 +1,22 @@
+#!/bin/sh
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  if [ "${TRACKER_ALLOW_MAIN_COMMIT:-}" = "1" ]; then
+    echo "WARNING: committing directly on $branch via TRACKER_ALLOW_MAIN_COMMIT=1" >&2
+    echo "WARNING: this override is not audited locally; record it before pushing." >&2
+    exit 0
+  fi
+  echo "ERROR: refusing commit on $branch." >&2
+  echo "Create/switch a task branch first: git switch -c task/<issue>-<slug>" >&2
+  echo "Emergency override only: TRACKER_ALLOW_MAIN_COMMIT=1 (record the reason)." >&2
+  exit 1
+fi
+case "$branch" in
+  task/*|release/*|hotfix/*|chore/*) ;;
+  *)
+    echo "ERROR: branch '$branch' is not task/*, release/*, hotfix/*, or chore/*." >&2
+    echo "Switch to a task branch: git switch -c task/<issue>-<slug>" >&2
+    exit 1
+    ;;
+esac
+exit 0

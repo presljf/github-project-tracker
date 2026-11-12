@@ -77,3 +77,14 @@ Stop and ask/block when:
 ## Commands
 
 Use [Reference](./REFERENCE.md) for exact commands/flags. Scripts are available now; manual fallbacks remain documented for UI-only or restricted environments. Report upstream via [Downstream feedback](./DOWNSTREAM_FEEDBACK.md) when the tracker itself is deficient.
+
+## Branch hygiene (non-negotiable)
+
+Install hooks once per clone: `npm run hooks:install`.
+
+- `pre-commit` refuses commits on main/master and requires task/*, release/*, hotfix/*, or chore/*.
+- `pre-push` refuses direct pushes to main/master.
+- `post-checkout` warns when landing on main.
+- Emergency overrides (`TRACKER_ALLOW_MAIN_COMMIT=1`, `TRACKER_ALLOW_MAIN_PUSH=1`) warn loudly and must be recorded.
+- Do not issue unconditional `git checkout main`; assert the branch before committing. The main-history guard opens an OI for any main commit without a merged PR.
+- CastDeck's private/personal plan cannot enforce remote branch protection; hooks, detection, and the release gate are the fallback, not a claim of platform enforcement.

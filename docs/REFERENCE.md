@@ -543,3 +543,10 @@ Metadata reconciliation uses `updateIssueTitle` and `setIssueType` transport met
 ### Metadata exceptions
 
 `contract/exceptions/metadata-exceptions.json` records historical anomalies with repo, issue numbers, reason, upstream issue, and expiry. `verify:metadata --exceptions <file>` excludes only those recorded issues; exceptions are visible in the contract and cannot hide open/current drift. CastDeck #61–#68 are closed duplicate tracker-authoring artifacts; #69–#76 parent links were backfilled to their real sprints.
+
+### Branch hygiene and hooks
+
+Run `npm run hooks:install` to set `core.hooksPath=.githooks`. The hooks block commits on main/master,
+block direct pushes to main/master, and warn on checkout to main. `main-history-guard` opens a
+`tracker-contract-exception` OI when a main commit has no merged PR. Explicit env overrides are
+warned and must be recorded; they do not bypass remote protection.

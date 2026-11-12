@@ -1,0 +1,10 @@
+#!/bin/sh
+previous=$1
+new=$2
+flag=$3
+[ "$flag" = "1" ] || exit 0
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "WARNING: you are on $branch. Create/switch a task branch before editing; commits on $branch are blocked." >&2
+fi
+exit 0

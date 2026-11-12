@@ -762,3 +762,7 @@ Performed for this catalog:
 Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
 `npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
 as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
+
+**Branch hygiene guard:** `main-history-guard.yml` runs on push to main, verifies commits are
+associated with merged PRs, and opens a `tracker-contract-exception` OI for direct commits. Hooks
+prevent the common cases locally; this is the remote backstop.
