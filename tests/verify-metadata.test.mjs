@@ -6,7 +6,7 @@ const contract = {
   metadata: {
     requiredIssueTypes: ['Task', 'Bug', 'Feature'],
     typeMapping: { release: 'Task', sprint: 'Task', task: 'Feature' },
-    requiredProjectFields: ['Status', 'Release', 'Sprint'],
+    requiredFields: ['Status', 'Release', 'Sprint'],
     requiredOptions: { Status: ['Todo', 'Done'] },
     hierarchy: { release: ['sprint'], sprint: ['task'] },
     uniqueKeys: true,
