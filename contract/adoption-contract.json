@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "trackerVersion": "1.2.1",
+  "trackerVersion": "1.2.2",
   "repository": "presljf/github-project-tracker",
   "requiredConfig": [
     "trackerVersion",

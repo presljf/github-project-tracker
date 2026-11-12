@@ -81,7 +81,7 @@
     "branchPrefix": "task/",
     "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
     "templateRepo": "presljf/github-project-tracker",
-    "templateVersion": "1.2.1",
+    "templateVersion": "1.2.2",
     "inReviewMode": "manual",
     "autoAddIssues": true,
     "closeToDone": true,
@@ -106,7 +106,7 @@
   "feedback": {
     "upstreamRepo": "presljf/github-project-tracker",
     "issueForm": "downstream-bug.yml",
-    "pinnedVersion": "1.2.1"
+    "pinnedVersion": "1.2.2"
   },
   "governance": {
     "versioning": {

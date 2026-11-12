@@ -55,6 +55,9 @@ export function versionPattern(from) {
   const v = from.replace(/^v/, '').replace(/\./g, '\\.');
   return new RegExp(`(?:v?${v})(?![.\\d])`, 'g');
 }
+const VERSION_CONTEXT =
+  /(docs version|target template|target\s+v|templateVersion|pinnedVersion|trackerVersion|"ref"\s*:|uses:\s|default:\s*v|latest patch|status:\s*v|release:\s*v|tag\s+v?)/i;
+const HISTORICAL = /(released as|result recorded|live t08|historical|remains immutable|superseded|incident|reusable workflow ref parses|composite action ref works)/i;
 export function planVersionBump({ root, from, to }) {
   const allow = ALLOW.map(globToRegex);
   const exclude = EXCLUDE.map(globToRegex);
@@ -69,6 +72,10 @@ export function planVersionBump({ root, from, to }) {
     const pattern = versionPattern(from);
     lines.forEach((line, idx) => {
       if (!pattern.test(line)) return;
+      if (!VERSION_CONTEXT.test(line) || HISTORICAL.test(line)) {
+        pattern.lastIndex = 0;
+        return;
+      }
       pattern.lastIndex = 0;
       edits.push({
         line: idx + 1,
