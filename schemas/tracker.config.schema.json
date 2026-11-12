@@ -558,6 +558,60 @@
           }
         }
       }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional verification-suite policy. Absent means no extra policy (current behaviour).",
+      "properties": {
+        "remoteOnly": {
+          "type": "array",
+          "description": "Suites that may only run visibly on a real remote runner (GITHUB_ACTIONS=true). Hidden local mode can remain available; absent or empty means no-op.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "workflow"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Stable suite id passed to the guard (lowercase letters, digits, hyphens)."
+              },
+              "workflow": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Remote workflow file or name that runs this suite (shown in actionable instructions)."
+              },
+              "prLabel": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Optional PR label that triggers the remote workflow run."
+              },
+              "localMode": {
+                "enum": [
+                  "hidden",
+                  "forbidden"
+                ],
+                "description": "Local fallback: hidden = non-authoritative hidden local mode allowed; forbidden (default) = no local run."
+              },
+              "overrideEnv": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$",
+                "description": "Optional env var that allows deliberate human debugging with a loud warning (agents must not use it)."
+              },
+              "docs": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Optional doc path/URL shown in the block/override instructions."
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

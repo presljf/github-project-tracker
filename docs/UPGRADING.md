@@ -93,6 +93,40 @@ To adopt `tooling`:
 
 See [profiles/tooling](../profiles/tooling/README.md) and [REFERENCE §5.3–5.5](./REFERENCE.md#5-tracker-cli).
 
+## Optional: adopt the remote-only verification policy
+
+v1.3.0 adds an optional `verification.remoteOnly[]` block (`id`, `workflow`, `prLabel`,
+`localMode: hidden|forbidden`, `overrideEnv`, `docs`). No action is required for existing
+adopters: absent or empty block is a no-op and suites keep running as before.
+
+To adopt it:
+
+1. Declare the disruptive suite(s), e.g. desktop GUI smoke:
+   ```json
+   "verification": {
+     "remoteOnly": [
+       {
+         "id": "desktop-smoke",
+         "workflow": ".github/workflows/reusable-desktop-smoke.yml",
+         "prLabel": "run-desktop-smoke",
+         "localMode": "hidden",
+         "overrideEnv": "TRACKER_ALLOW_VISIBLE_GUI",
+         "docs": "profiles/desktop/README.md"
+       }
+     ]
+   }
+   ```
+2. Validate: `node scripts/github/validate-config.mjs tracker.config.json` and
+   `npm run verify:tooling` (both reject malformed policy entries).
+3. Wire the offline guard before the suite spawns (`npm run guard:local-suite -- --suite <id>`)
+   and/or the Playwright `globalSetup` from `scripts/github/playwright-remote-guard.mjs`.
+4. Record the remote-run evidence at check-out; hidden local runs stay non-authoritative and the
+   override env is for deliberate human debugging only (agents must not use it).
+5. Rollback: remove the `verification` block; absent config restores previous local behaviour.
+
+See [profiles/desktop](../profiles/desktop/README.md) and
+[REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
+
 ## Rollback
 
 - Revert the upgrade PR **or** restore the previous tag/commit for copied files.

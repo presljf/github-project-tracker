@@ -143,6 +143,22 @@ function crossChecks(config, errors) {
       }
     }
   }
+  const remoteOnly = config.verification?.remoteOnly;
+  if (Array.isArray(remoteOnly)) {
+    const seenSuites = new Set();
+    remoteOnly.forEach((entry, index) => {
+      const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
+      if (!id) return;
+      if (seenSuites.has(id)) {
+        validationError(
+          errors,
+          `$.verification.remoteOnly[${index}].id`,
+          `duplicate suite id ${JSON.stringify(id)}; suite ids must be unique`,
+        );
+      }
+      seenSuites.add(id);
+    });
+  }
   const seenReleases = new Set();
   const seenMilestones = new Set();
   const seenSprints = new Set();

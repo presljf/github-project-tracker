@@ -13,6 +13,7 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 6. **Status is authoritative.** Todo → In Progress → In Review → Blocked → Done; update the Project field, not just comments.
 7. **Plan changes are explicit.** Dated `plan-change` comment + label + tracker/field updates; no silent scope changes.
 8. **No silent WIP.** If a session ends, post a checkpoint and hand off.
+9. **No visible local GUI suites.** Suites declared under `verification.remoteOnly[]` run visibly only on a remote runner (`GITHUB_ACTIONS=true`) or in the documented hidden local mode; agents must never set the override env (human debugging only) and never claim local hidden runs as evidence.
 
 ## Work profiles
 
@@ -27,6 +28,30 @@ The repo config selects the enforced lifecycle (`workProfile`; absent means `pro
 Confirm the profile in the task issue/config before checking in; a product config rejects
 `--stream` and a tooling config rejects a start without it. Do not mix lifecycles in one delivery.
 
+## Remote-only suites
+
+When `verification.remoteOnly[]` is configured, a disruptive suite (desktop GUI smoke, native
+window tests) cannot run visibly locally:
+
+```bash
+# local visible attempt: blocked with remote workflow/label/override instructions
+npm run guard:local-suite -- --suite desktop-smoke
+
+# hidden local mode (non-authoritative; only if the suite declares localMode: hidden)
+npm run guard:local-suite -- --suite desktop-smoke --hidden
+
+# verify aggregator: record the deferral instead of blocking (exit 0, DEFERRED_REMOTE)
+npm run guard:local-suite -- --suite desktop-smoke --mode report --json
+```
+
+- **Remote visible = evidence.** Attach the remote run URL/artifact at check-out; `GITHUB_ACTIONS`
+  is the only remote signal (a local `CI=true` is not remote).
+- **Hidden local = non-authoritative feedback.** It is allowed only when the suite declares
+  `localMode: hidden`; never cite it as release evidence.
+- **Override env = human debugging only.** It prints a loud warning; agents must not set it.
+- Playwright suites wire `scripts/github/playwright-remote-guard.mjs` as `globalSetup` so the run
+  fails before any window is created. Full reference: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
+
 ## Session start
 
 - [ ] Read the task issue (Why, goal, non-goals, acceptance, test/evidence, deps).
@@ -36,6 +61,8 @@ Confirm the profile in the task issue/config before checking in; a product confi
 - [ ] Check task type/fields/blockers; no unresolved dependency.
 - [ ] For tooling work, confirm the open `[Stream]` container and that the task is its sub-issue with
       a matching `Stream` field option.
+- [ ] Check remote-only suites: do not plan visible local runs; use the guard/hidden mode and plan
+      the remote evidence run.
 - [ ] Check docs/related issues for context.
 
 ## Check-in

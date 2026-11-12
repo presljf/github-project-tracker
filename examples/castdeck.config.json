@@ -289,5 +289,17 @@
       "contact": "GitHub private vulnerability reporting when available; otherwise the maintainer's private contact in SECURITY.md",
       "privateVulnerabilityReporting": false
     }
+  },
+  "verification": {
+    "remoteOnly": [
+      {
+        "id": "desktop-smoke",
+        "workflow": ".github/workflows/reusable-desktop-smoke.yml",
+        "prLabel": "run-desktop-smoke",
+        "localMode": "hidden",
+        "overrideEnv": "CASTDECK_ALLOW_VISIBLE_GUI",
+        "docs": "profiles/desktop/README.md"
+      }
+    ]
   }
 }

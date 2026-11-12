@@ -303,6 +303,10 @@ If you cannot start: leave Todo or set Blocked with a reason; don't create orpha
 - Keep status current: In Progress → In Review only when ready for review; Blocked only with concrete reason + dependency.
 - **Session end without completion:** post a checkpoint (state/next/branch/PR) and keep status accurate. No silent WIP.
 - **Scope change:** dated `plan-change` comment, label, update sprint/release/project fields, defer equivalent scope.
+- **Remote-only suites:** never run a declared visible GUI suite locally. Use
+  `npm run guard:local-suite -- --suite <id>` before spawning (or the hidden wrapper); local
+  `--mode report` records `DEFERRED_REMOTE`, and the remote visible run is the evidence. The
+  override env is for deliberate human debugging only; agents must not set it.
 
 ```bash
 git add -A
@@ -316,6 +320,7 @@ Reviewer checks:
 
 - [ ] Acceptance criteria/evidence.
 - [ ] Required checks pass; test plan executed.
+- [ ] Remote-only suites: remote run/artifact evidence attached; hidden local runs not cited as evidence.
 - [ ] No secrets/live calls; docs updated.
 - [ ] One task/one PR.
 - [ ] Deviations/follow-ups recorded.

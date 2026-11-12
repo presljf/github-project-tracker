@@ -3,12 +3,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { resolveRemoteOnlyPolicy } from './lib/verification-policy.mjs';
 
 export function major(version = '') {
   const m = String(version).match(/^[~^]?(\d+)/);
   return m ? Number(m[1]) : null;
 }
-export function evaluateTooling({ contract, pkg = {}, configText = '', submoduleTag = null } = {}) {
+export function evaluateTooling({
+  contract,
+  pkg = {},
+  configText = '',
+  submoduleTag = null,
+  trackerConfig = null,
+} = {}) {
   const tooling = contract.tooling || {};
   const violations = [];
   for (const [name, expected] of Object.entries(tooling)) {
@@ -24,6 +31,10 @@ export function evaluateTooling({ contract, pkg = {}, configText = '', submodule
     violations.push('local lint warning override present; fix warnings instead');
   if (submoduleTag && String(submoduleTag).replace(/^v/, '') !== String(contract.trackerVersion).replace(/^v/, ''))
     violations.push(`.tracker-os tag=${submoduleTag} expected v${contract.trackerVersion}`);
+  if (trackerConfig) {
+    const remoteOnly = resolveRemoteOnlyPolicy(trackerConfig);
+    for (const violation of remoteOnly.violations) violations.push(`${violation.path}: ${violation.message}`);
+  }
   return { ok: violations.length === 0, violations };
 }
 function main() {
@@ -52,7 +63,20 @@ function main() {
       submoduleTag = 'unknown';
     }
   }
-  const result = evaluateTooling({ contract, pkg, configText, submoduleTag });
+  let trackerConfig = null;
+  const trackerConfigArg = get('tracker-config', null);
+  const trackerConfigFile = trackerConfigArg ? path.resolve(trackerConfigArg) : path.join(root, 'tracker.config.json');
+  if (fs.existsSync(trackerConfigFile)) {
+    try {
+      trackerConfig = JSON.parse(fs.readFileSync(trackerConfigFile, 'utf8'));
+    } catch (err) {
+      console.error(`Tooling contract FAILED (1):`);
+      console.error(`- tracker config parse error (${trackerConfigFile}): ${err.message}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+  const result = evaluateTooling({ contract, pkg, configText, submoduleTag, trackerConfig });
   if (result.ok) console.log('Tooling contract OK.');
   else {
     console.error(`Tooling contract FAILED (${result.violations.length}):`);

@@ -116,6 +116,28 @@ start #123: applied
 
 Exit 1 with an actionable message on: missing/invalid config, missing issue, tracker issue instead of task, missing fields/type/milestone/acceptance, blocked dependency, WIP violation, missing evidence, unchecked acceptance without `--force`, or GitHub API failure. `--dry-run` makes no mutations.
 
+## Remote-only verification suites
+
+When `tracker.config.json` declares `verification.remoteOnly[]`, run the guard before spawning a
+declared suite (e.g. desktop GUI smoke). It is offline and uses `GITHUB_ACTIONS === 'true'` as the
+only remote signal:
+
+```bash
+# local: blocked with workflow/label/override instructions (exit 1) unless hidden mode/override applies
+node scripts/github/guard-local-suite.mjs --suite desktop-smoke
+
+# hidden local mode (non-authoritative; only when the suite declares localMode: hidden)
+node scripts/github/guard-local-suite.mjs --suite desktop-smoke --hidden
+
+# verify aggregator: record the deferral instead of blocking (exit 0, DEFERRED_REMOTE line)
+node scripts/github/guard-local-suite.mjs --suite desktop-smoke --mode report --json
+```
+
+Adopters typically wire the guard into their suite scripts (visible wrapper without `--hidden`,
+hidden wrapper with it) and into the Playwright `globalSetup` via
+`scripts/github/playwright-remote-guard.mjs`. Agents must never set the suite override env — it is
+for deliberate human debugging only. Details: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
+
 ## Availability
 
 The task CLI is covered by `npm test` (mock adapter, happy/error/WIP/DoR/DoD/dry-run paths). T12 validates the real end-to-end lifecycle on a scratch issue before release. The tooling work profile, stream open/close lifecycle, and mode-aware audit are covered by `tests/work-profile.test.mjs` (DoR matrix, close gates, a closed rehearsal stream cycle, and audit positive/negative fixtures).

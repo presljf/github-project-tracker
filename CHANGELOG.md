@@ -16,9 +16,14 @@ All notable changes to Project Tracker OS are documented here. The format follow
   project field, tooling DoR/WIP/`done` enforcement, `stream.mjs open|close` lifecycle gates,
   mode-aware audit, safe single-select project-field option append, and a `profiles/tooling/`
   selection guide. Product behaviour and historical records are unchanged.
-- Remaining v1.3.0 items (remote-only suite policy, verified PASS/FAIL/SKIP counts contract,
-  post-merge-audit hardening, release metadata/tag) land in their own tasks and are recorded at
-  release close.
+- Add the enforced **remote-only / hidden-local verification suite policy**
+  (`verification.remoteOnly[]`, absent = no-op): offline `guard-local-suite.mjs` with
+  `enforce`/`report` modes, strict `GITHUB_ACTIONS === 'true'` remote detection, loud
+  human-only override env, `DEFERRED_REMOTE` aggregator output, a dependency-free Playwright
+  `globalSetup` factory (`playwright-remote-guard.mjs`), schema/validate-config/verify-tooling
+  validation, and docs for the hidden-local (non-authoritative) vs remote-visible (evidence) split.
+- Remaining v1.3.0 items (verified PASS/FAIL/SKIP counts contract, post-merge-audit hardening,
+  release metadata/tag) land in their own tasks and are recorded at release close.
 
 ## v1.2.2 — Qualified release tooling
 

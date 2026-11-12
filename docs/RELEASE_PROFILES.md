@@ -391,6 +391,13 @@ Desktop smoke is a separate reusable profile:
 - Failure artifacts (logs/summary) are uploaded when `artifact-path` is set.
 - The downstream contract verifier treats a bespoke desktop-smoke workflow as a contract
   bypass unless an OI-linked override is declared.
+- **Local guard:** declare the suite in `verification.remoteOnly[]` and gate local runs with
+  `scripts/github/guard-local-suite.mjs` (visible local blocked; hidden local allowed only when
+  declared; `--mode report` defers for aggregators). Playwright suites can use
+  `scripts/github/playwright-remote-guard.mjs` as `globalSetup`. The remote visible run is the
+  release evidence; hidden local is non-authoritative. See
+  [profiles/desktop](../profiles/desktop/README.md#remote-only-policy-guarded-local-runs) and
+  [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
 
 ## Lint/format self-check (T18)

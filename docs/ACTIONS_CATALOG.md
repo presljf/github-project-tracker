@@ -95,6 +95,12 @@ Three invariants follow from the definitions:
 - **Artifacts:** smoke logs and a short summary, 7 days.
 - **Failure mode:** advisory failure annotates the PR; failure on a release tag blocks publishing.
 - **Local parity:** project-defined `npm run smoke:desktop` (or documented build+launch command).
+- **Remote-only guard:** desktop smoke is remote-only by policy — declare it in
+  `verification.remoteOnly[]` and gate local runs with the offline `guard-local-suite.mjs`.
+  Local visible runs exit 1 with the remote workflow/label/override instructions; hidden local mode
+  (when declared) is non-authoritative; `--mode report` records `DEFERRED_REMOTE` for aggregators.
+  Remote detection is `GITHUB_ACTIONS === 'true'` only (a local `CI=true` is not remote). Agents
+  must never set the override env. See §7.4.1.
 
 ### 2.4 Release (release gate)
 
@@ -419,6 +425,39 @@ Required-check mapping: the implementation exposes `ci / prepare`, `ci / lint`, 
 | Runner | macOS (input-controlled); timeout 30 min |
 | Artifacts | smoke logs + summary |
 | Stability | command inputs are required strings; changing their semantics is major; runner-label default changes are minor |
+
+#### 7.4.1 Remote-only local guard (`guard-local-suite.mjs`, shipped)
+
+The desktop-smoke suite is disruptive locally, so local visible runs are machine-blocked by the
+optional remote-only policy. Config (`tracker.config.json`, absent = no-op):
+
+```json
+"verification": {
+  "remoteOnly": [
+    {
+      "id": "desktop-smoke",
+      "workflow": ".github/workflows/reusable-desktop-smoke.yml",
+      "prLabel": "run-desktop-smoke",
+      "localMode": "hidden",
+      "overrideEnv": "TRACKER_ALLOW_VISIBLE_GUI",
+      "docs": "profiles/desktop/README.md"
+    }
+  ]
+}
+```
+
+| Interface | Definition |
+|---|---|
+| CLI | `node scripts/github/guard-local-suite.mjs --suite <id> [--mode enforce|report] [--hidden] [--json] [--root DIR] [--config FILE]`; offline (reads config only, no GitHub API) |
+| Remote signal | `GITHUB_ACTIONS === 'true'` **only**; a local `CI=true` is not remote |
+| `enforce` (default) | visible local run exits 1 with workflow/PR-label/hidden/override/docs instructions (`BLOCKED_LOCAL_VISIBLE`); remote, declared hidden local (`--hidden`), and override-env runs are allowed |
+| `report` | local runs print `DEFERRED_REMOTE suite=... workflow=... prLabel=... overrideEnv=... docs=...` and exit 0 for verify aggregators (`--json` for object form) |
+| Override | suite `overrideEnv` truthy ⇒ allowed with a loud warning; deliberate human debugging only — agents must never set it |
+| Playwright helper | `scripts/github/playwright-remote-guard.mjs` exports `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })` returning a `globalSetup` function; no `@playwright/test` import; throws before any window is created |
+| Config validation | `validate-config` + `verify:tooling` reject bad `localMode`/`overrideEnv`/unknown keys and duplicate suite ids |
+| Caller wiring | Remote run stays label/path-gated in the caller (`run-desktop-smoke`); local wrappers are `npm run guard:local-suite -- --suite desktop-smoke` (visible) and `... --hidden` (hidden local). See [profiles/desktop](../profiles/desktop/README.md) |
+
+Hidden local = fast, non-authoritative feedback; the remote visible run is the release evidence.
 
 ### 7.5 Release workflow contract
 
