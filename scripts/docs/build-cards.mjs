@@ -28,8 +28,9 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SCRIPT_DIR, '../..');
 const CARDS_DIR = path.join(ROOT, 'docs/reference-cards');
 const DOCS_URL = 'https://github.com/presljf/github-project-tracker/blob/main/docs';
-const DOCS_VERSION = 'v1.0.0-docs.1';
-const TARGET_TEMPLATE = 'v1.0.0';
+const REPO_URL = 'https://github.com/presljf/github-project-tracker/blob/main';
+const DOCS_VERSION = 'v1.3.0-docs.1';
+const TARGET_TEMPLATE = 'v1.3.0';
 
 /** Card order defines the printed card number (n/N). */
 const CARDS = [
@@ -80,13 +81,14 @@ const escapeHtml = (text) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
-/** Resolve relative Markdown links in cards to the upstream GitHub docs tree. */
+/** Resolve relative Markdown links in cards to the upstream GitHub docs/root tree. */
 function resolveHref(href) {
   if (/^(https?:|mailto:|#)/.test(href)) return href;
   const clean = href.replace(/^\.\//, '');
-  const target = clean.startsWith('../') ? clean.slice(3) : clean;
+  const rootRelative = clean.startsWith('../../');
+  const target = rootRelative ? clean.slice(6) : clean.startsWith('../') ? clean.slice(3) : clean;
   if (!target.endsWith('.md') && !target.includes('.md#')) return href;
-  return `${DOCS_URL}/${target}`;
+  return `${rootRelative ? REPO_URL : DOCS_URL}/${target}`;
 }
 
 /** Inline Markdown: code spans, links, bold, italics. */

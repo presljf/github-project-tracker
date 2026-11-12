@@ -231,7 +231,7 @@
     "branchPrefix": "task/",
     "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
     "templateRepo": "presljf/github-project-tracker",
-    "templateVersion": "1.2.2",
+    "templateVersion": "1.3.0",
     "inReviewMode": "manual",
     "autoAddIssues": true,
     "closeToDone": true,

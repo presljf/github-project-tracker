@@ -8,7 +8,7 @@ The template/Project Tracker OS is supported at the latest released `v1.0.x` lin
 
 | Version | Supported |
 |---|---|
-| `v1.0.x` (latest patch, currently `v1.2.2`) | :white_check_mark: |
+| `v1.0.x` (latest patch, currently `v1.3.0`) | :white_check_mark: |
 | earlier/untagged snapshots | :x: |
 
 ## Reporting a vulnerability

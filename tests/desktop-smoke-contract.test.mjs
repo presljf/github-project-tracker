@@ -21,5 +21,5 @@ test('caller example documents path/label gating and macos-15', () => {
   const readme = read('profiles/desktop/README.md');
   assert.match(readme, /contains\(github\.event\.pull_request\.labels/);
   assert.match(readme, /macos-15/);
-  assert.match(readme, /reusable-desktop-smoke\.yml@v1\.2\.2/);
+  assert.match(readme, /reusable-desktop-smoke\.yml@v1\.3\.0/);
 });
