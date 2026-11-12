@@ -149,6 +149,18 @@ Org repos may also require SSO authorization in the browser.
 **Cause:** scope/estimate changed silently.
 **Fix:** add dated plan-change comment retroactively with old→new and why; update trackers/fields.
 
+### Closed issue still shows In Review/In Progress on the board
+**Cause:** the issue was closed by a `Closes #` merge keyword; issue closure does not update the Project Status field (per-item metadata).
+**Fix:** run `node scripts/github/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run with `--apply`; every closed item on the project ends up `Done`.
+
+### `PROJECT_STATUS_STALE` warning
+**Cause:** a closed item on the configured project has a Project Status other than `Done` (auto-close drift).
+**Fix:** advisory only — it never changes audit `ok`/exit code, including under `--strict`. Repair with `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply`; no config change is needed.
+
+### `SPRINT_HIERARCHY_MISSING_RELEASE`
+**Cause:** an open product sprint has no `[Release]` ancestor (board built outside `bootstrap.mjs`/`task.mjs`).
+**Fix:** link the sprint as a sub-issue of its release with the sub-issues API (REFERENCE §5.9), then re-run the audit; `--strict` keeps failing until the ancestor exists. Closed/historical sprints and the tooling profile are exempt.
+
 ## Bootstrap / scripts / upgrades
 
 ### `bootstrap.mjs` fails midway

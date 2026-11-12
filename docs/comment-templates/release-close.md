@@ -7,5 +7,6 @@
 - **Known issues:** <none or list>
 - **Rollback:** <how>
 - **Milestone/release tracker closed:** yes
+- **Project statuses reconciled:** yes/no (no closed item left outside Done)
 
 Status → Done; milestone closed.

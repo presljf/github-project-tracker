@@ -227,7 +227,8 @@ UI-only steps: create view, choose layout/filter/group, save. CLI/API view creat
 Enable built-in workflows (Project → ⋯ → Workflows):
 
 - Auto-add issues from the repo.
-- Issue closed → Status Done.
+- Issue closed → Status Done **only when the project's built-in workflow is enabled** (UI-only). Do
+  not rely on it: verify a closed issue actually moved and reconcile drift at check-out (§10).
 - Do **not** auto-start work; check-in is explicit.
 
 ### 5.5 Labels (minimal)
@@ -335,8 +336,9 @@ Check-out flow:
 2. Reviewer approves or requests changes.
 3. Merge with `Closes #<issue>` (or close manually with reason).
 4. Set status **Done**; confirm issue closed.
-5. Post [check-out](./comment-templates/check-out.md), including tests/evidence/deviations.
-6. Update parent sprint/release if exit criteria affected.
+5. If the merge auto-closed the issue (`Closes #`), `task.mjs done` cannot run — reconcile the Project Status (REFERENCE §5.8).
+6. Post [check-out](./comment-templates/check-out.md), including tests/evidence/deviations.
+7. Update parent sprint/release if exit criteria affected.
 
 Tooling profile: use `task.mjs done --issue N --pr <PR> --evidence "..."` — the PR is required, and
 the audit flags closed tooling tasks without a `### Check-out` comment. `[Stream]` containers are
@@ -420,6 +422,10 @@ Checklist:
 - [ ] No secrets in config/artifacts (manual review; audit does not scan comments).
 - [ ] Open tasks have required DoR sections and profile-correct tracker ancestry (release+sprint for
       product, `[Stream]` for tooling) and profile-correct fields.
+- [ ] Open product sprints have a release tracker ancestor (`SPRINT_HIERARCHY_MISSING_RELEASE`);
+      closed and historical sprints are exempt.
+- [ ] Closed project items are Done (`PROJECT_STATUS_STALE`, advisory warning — never blocks, even
+      under `--strict`); closure by `Closes #` does not set the field, so reconcile at close-out.
 
 Enforcement: advisory in CI first; required at release gates once stable. Audit token is project-scoped and stored as a secret.
 

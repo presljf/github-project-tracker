@@ -57,6 +57,7 @@
 | `scripts/github/validate-config.mjs` | config validation | now |
 | `scripts/github/bootstrap.mjs` | idempotent repo/project setup | now |
 | `scripts/github/audit.mjs` | tracker audit (advisory/strict/JSON), mode-aware | now |
+| `scripts/github/reconcile-status.mjs` | close-out Project-status reconciliation (report/apply) | now |
 | `scripts/github/task.mjs` | start/checkpoint/review/block/done/status | now |
 | `scripts/github/stream.mjs` | tooling-profile `[Stream]` open/close lifecycle | now |
 | `scripts/github/project-field-option.mjs` | safe single-select option append (preserves ids/item values) | now |
@@ -182,6 +183,10 @@ gh issue edit 123 --repo OWNER/REPO \
 
 If native sub-issues/dependencies are unavailable: use body links + labels; document fallback.
 
+Create trackers and tasks through `bootstrap.mjs`, `task.mjs`, or `stream.mjs`. If board creation
+used raw `gh`/UI instead, assert the intended tree and run the advisory audit before starting work
+(§5.9).
+
 ### Views
 ```bash
 gh api graphql --input view-query.json
@@ -213,6 +218,16 @@ node scripts/github/audit.mjs --config tracker.config.json --json
 ```
 Advisory default: prints violations, exit 0. `--strict` exits 1 on violations for release gates. Workflow: `.github/workflows/tracker-audit.yml` (scheduled/dispatch), skips safely without `TRACKER_TOKEN`.
 
+Warnings (for example `PROJECT_STATUS_STALE`, §5.8) are advisory by design and never change the
+exit code, including under `--strict`. Close-out and hierarchy verification commands are in
+§5.8–5.9.
+
+Example warning output:
+
+```text
+warning: [PROJECT_STATUS_STALE] #116 closed issue has Project status In Review (expected Done) — fix: npm run reconcile:status -- --config tracker.config.json --apply
+```
+
 ### 5.3 task
 
 ```bash
@@ -238,6 +253,11 @@ enforcement matrix follows `config.workProfile`:
 Full behavior: [TASK CLI](./TASK_CLI.md). Tooling-profile checks are rejected for product configs
 and product mode ignores every tooling flag.
 
+**Auto-close caveat:** a PR body with `Closes #<issue>` makes GitHub close the issue at merge,
+before `task.mjs done` runs; `done` then refuses the closed issue (`#<issue> is not open`) and the
+Project Status stays wherever it was. Reconcile it with `reconcile-status.mjs` after every merge
+(§5.8).
+
 ### 5.4 stream (tooling profile)
 
 ```bash
@@ -250,6 +270,9 @@ adds the container to the project with Status/Stream/Area/Kind/Estimate, and pos
 (`gate:release`; override with `--gate-command`), validates `--tag` against
 `automation.tagPattern`, posts `### Stream close evidence`, sets Status Done, and closes the
 container. Tag creation stays with the release flow. Product configs are rejected.
+
+`close` checks the child issue states, not their Project Status: run the close-out reconciliation
+(§5.8) before closing so every merge-keyword auto-closed child task is `Done` on the board.
 
 ### 5.5 project-field-option
 
@@ -324,6 +347,116 @@ agreement metadata in the same PR. The guard validates schema/agreement, regener
 doc, and fails stale/missing docs/markers; historical docs are exempt by construction (only
 `docs.counts.markers` files are checked). Full adoption wiring:
 [profiles/counts](../profiles/counts/README.md).
+
+### 5.8 reconcile-status (close-out Project status)
+
+Project **Status** is per-item metadata: a PR merged with `Closes #<issue>` closes the issue, but
+the field is not updated, and `task.mjs done` refuses closed issues. Reconcile after every merge and
+before closing a sprint, release, or stream.
+
+```bash
+node scripts/github/reconcile-status.mjs --config tracker.config.json           # report-only (default)
+node scripts/github/reconcile-status.mjs --config tracker.config.json --apply   # set flagged items to Done
+node scripts/github/reconcile-status.mjs --config tracker.config.json --json    # machine-readable plan/result
+npm run reconcile:status                                                       # report-only, default config
+```
+
+Report-only on a clean board (exit 0, no mutations):
+
+```text
+$ node scripts/github/reconcile-status.mjs --config tracker.config.json
+Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
+No stale Project statuses; every closed item is Done.
+```
+
+With drift, the report lists one line per item and `--apply` fixes each with one field mutation:
+
+```text
+$ node scripts/github/reconcile-status.mjs --config tracker.config.json
+Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
+Stale closed item(s) (1) — status should be Done:
+- #116 status=In Review — [1.3.0.1-T05] Release v1.3.0 metadata, docs and tag
+Run with --apply to set these items to Done.
+
+$ node scripts/github/reconcile-status.mjs --config tracker.config.json --apply
+Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
+Stale closed item(s) (1) — status should be Done:
+- #116 status=In Review — [1.3.0.1-T05] Release v1.3.0 metadata, docs and tag
+Applied 1 status update(s).
+```
+
+`--json` prints `{ ok, repository, project, apply, count, plan[], applied[], skipped[] }` for
+evidence; plan entries carry `code`, `issue`, `title`, `status`, `itemId`, `fix`, `message`.
+Items missing a project-item id are skipped with `warning: #N skipped (project item id missing)`.
+
+Scope: closed issues **on the configured project** whose Project Status is not `Done` — including
+an item with **no status value at all** (`closed issue has no Project status (expected Done)`).
+Items from another repository on a shared project are ignored; closed issues never added to the
+project are out of scope. There is no work-profile gate and no historical-record exemption here:
+unlike delivery evidence (the T06 `requiresStreamAncestry` precedent), Project Status is
+current-state board metadata, not a historical record. The audit reports the same drift as the
+`PROJECT_STATUS_STALE` warning (§12); the audit never repairs it, this command does. Re-running is
+safe and idempotent; `--apply` requires a project token plus the `Status`/`Done` field option and
+fails loudly when the project, field, or option is missing.
+
+Manual fallback for a project still pinned to an older tracker version (`jq` required):
+
+```bash
+# list: join closed issues with non-Done project items
+gh project item-list PROJECT_NUMBER --owner PROJECT_OWNER --format json --limit 200 > /tmp/items.json
+gh issue list --repo OWNER/REPO --state closed --limit 200 --json number,state,title > /tmp/closed.json
+jq -r --slurpfile closed /tmp/closed.json \
+  '.items[] | select(.content.type == "Issue" and .status != "Done") | .content.number as $n
+   | $closed[0][] | select(.number == $n) | "#\(.number) \(.state) \(.title)"' /tmp/items.json
+
+# fix one item (no node IDs needed; no output on success)
+gh project item-edit PROJECT_NUMBER --owner PROJECT_OWNER \
+  --url https://github.com/OWNER/REPO/issues/116 --field Status --value Done
+```
+
+### 5.9 Expected-tree assertion and advisory audits
+
+Run after a completion merge that auto-closed issues, and after any board creation that bypassed
+`bootstrap.mjs`, `task.mjs`, or `stream.mjs`; record the output as close-out evidence.
+
+**1. Assert the intended tree.** Native sub-issues are the hierarchy source; the parent endpoint is
+the inverse link.
+
+```bash
+# product: sprints under a release; tasks under a sprint
+gh api repos/OWNER/REPO/issues/RELEASE_ISSUE/sub_issues \
+  --jq '.[] | "\(.number)\t\(.state)\t\(.title)"'
+gh api repos/OWNER/REPO/issues/SPRINT_ISSUE/sub_issues \
+  --jq '.[] | "\(.number)\t\(.state)\t\(.title)"'
+# inverse link: a sprint/task parent is its tracker; 404 = no parent (top-level tracker, expected for a release/stream)
+gh api repos/OWNER/REPO/issues/SPRINT_ISSUE/parent --jq '.number'
+
+# tooling: tasks under a stream
+gh api repos/OWNER/REPO/issues/STREAM_ISSUE/sub_issues \
+  --jq '.[] | "\(.number)\t\(.state)\t\(.title)"'
+```
+
+A missing sprint→release, task→sprint, or task→stream link means the tree was not created: fix it
+with `gh api repos/OWNER/REPO/issues/<parent>/sub_issues -X POST -F sub_issue_id=...` (§4) or rerun
+`bootstrap.mjs --apply`, then re-assert. The audit reports the same evidence:
+`SPRINT_HIERARCHY_MISSING_RELEASE` (open product sprint) and `TASK_HIERARCHY_MISSING_RELEASE` /
+`_SPRINT` / `_STREAM` (open task), §12.
+
+**2. Reconcile Project statuses** with §5.8.
+
+**3. Run the advisory audit** for the repository you are in:
+
+```bash
+# tracker repo (self): advisory, exit 0
+node scripts/github/audit.mjs --config tracker.config.json --advisory
+
+# downstream adopter: run the pinned copy (e.g. the .tracker-os submodule) with a project-scoped token
+GH_TOKEN=$(gh auth token) node .tracker-os/scripts/github/audit.mjs --config tracker.config.json --advisory
+```
+
+Findings are advisory: fix them before closing the sprint/release/stream or before a `--strict`
+release gate; never make the advisory run a merge blocker. Record the command + result (`--json` for
+machine-readable evidence, `warnings[]`/`violations[]` carry the codes) with the close-out comment.
 
 ## 6. Config reference
 
@@ -425,6 +558,11 @@ Do not add `area:*`, `release:*`, `sprint:*`, `type:*` labels when the field/typ
 
 `docs/comment-templates/`: check-in, update, check-out, blocker, plan-change, sprint-close, release-close. One check-in and one check-out per task; dated plan changes; evidence links, not claims.
 
+Sprint-close and release-close record a **Project statuses reconciled** line so merge-keyword
+auto-closes are fixed before a tracker closes; the check-out comment itself is generated by
+`task.mjs done` and is unchanged — reconcile the field separately when the issue was already closed
+(§5.8).
+
 ## 12. Audit invariants
 
 Run `audit.mjs` advisory first; `--strict` for release gates. Invariants follow
@@ -448,8 +586,21 @@ valid). The invariant list (`--json` reports `workProfile`):
 11. Open tasks contain required issue-template/DoR sections.
 12. Open tasks have both a release tracker and sprint tracker ancestor (product profile) or a
     `[Stream]` ancestor (tooling profile).
+13. Open product sprints have a release tracker ancestor (`SPRINT_HIERARCHY_MISSING_RELEASE`);
+    closed/historical sprints are exempt and the tooling profile has no release ancestor to check.
+14. Closed items on the configured project are `Done` (`PROJECT_STATUS_STALE`, warning): issue
+    closure does not update the field, so merges that auto-close issues leave drift until §5.8
+    runs. Warnings never change the exit code (including `--strict`); items from other
+    repositories on a shared project are ignored and closed issues never added to the project are
+    out of scope. There is no profile/historical exemption for this warning.
 
 Enforcement: advisory CI first; required at release gates once stable. Audit token project-scoped; never in config.
+
+Rule codes appear as `[CODE]` in output and as `violations[].code` / `warnings[].code` in
+`--json`; use §5.8–5.9 to repair close-out findings. `PROJECT_STATUS_STALE` is a warning and never
+affects the exit code; `SPRINT_HIERARCHY_MISSING_RELEASE` follows the normal advisory/strict rule
+(advisory run exits 0, `--strict` exits 1 — adopters running strict audits may only now be able to
+see pre-existing unlinked open sprints; the v1.3.2 release task owns the CHANGELOG/UPGRADING note).
 
 ## 13. Workflow catalog
 
