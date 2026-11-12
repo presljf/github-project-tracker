@@ -120,7 +120,8 @@ function main() {
   })();
   let plan = buildReconciliationPlan({ issues, selected, includeClosed, exceptions: parsedExceptions });
   if (repair === 'open-only') plan = plan.filter((p) => p.state !== 'CLOSED');
-  if (repair === 'all-safe') plan = plan.filter((p) => p.actions.every((a) => ['rename', 'type', 'parent'].includes(a.type)));
+  if (repair === 'all-safe')
+    plan = plan.filter((p) => p.actions.every((a) => ['rename', 'type', 'parent'].includes(a.type)));
   console.log(
     `Metadata reconciliation (${repair}${includeClosed ? ', include-closed' : ''}): ${plan.length} issue(s) require action.`,
   );
