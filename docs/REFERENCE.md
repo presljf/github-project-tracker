@@ -363,6 +363,13 @@ Bootstrap/audit/task share a local budget/cost state at `TRACKER_RATE_STATE` (de
 
 Task context uses a targeted `issue.projectItems` lookup (and batched WIP item lookup) instead of full `project item-list`; audit dependencies are batched via `blockedBy` aliases. `setProjectItemFieldValues` aliases multiple field mutations into one GraphQL request.
 
+### Post-merge bypass audit
+
+`.github/workflows/post-merge-audit.yml` runs when a PR is merged. It checks required checks
+(`ci / ci-gate`, `docs-guard`, `pr-close-guard`) and closing-keyword/partial-PR rules. A merged PR
+with a failed/missing required check or invalid closure opens an OI labeled
+`tracker-contract-exception` and must be resolved before release.
+
 ### PR closing-keyword guard
 
 `.github/workflows/pr-close-guard.yml` enforces:
