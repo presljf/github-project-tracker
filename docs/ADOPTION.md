@@ -190,3 +190,10 @@ When a protected environment is unsupported, use hosted macOS dry-run → downlo
 Tracker OS now self-applies ESLint and Prettier: `npm ci`, `npm run lint`, and
 `npm run format:check`. A missing or broken lint/format command fails CI rather than succeeding
 as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #82.
+
+## Project metadata verification
+
+Run `verify:metadata` against the live project. Required fields must exist; Priority is an
+optional standard field; project-specific forbidden fields are rejected. Open/current work is
+strict; historical audits use `--include-closed`, and migration uses `--warn-only` until T20
+reconciliation is approved.
