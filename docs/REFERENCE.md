@@ -530,3 +530,8 @@ keys, and type mapping. Default is open/current strict; `--include-closed` audit
 
 **Standard fields:** required Status/Release/Sprint/Area/Kind/Estimate/Source; optional
 Priority (P0–P3 when present); forbidden fields are project-specific only.
+
+
+### Metadata reconciliation
+
+`npm run reconcile:metadata -- --repo owner/repo --repair=none` is report-only. `--repair=open-only`, `--repair=selected --issues N,N`, or `--repair=all-safe` mutate only selected scope; `--include-closed` extends the report/selection. Legacy `[vX] Release` and `[key] Sprint` titles are renamed to canonical `[Release]` / `[Sprint]`; implementation tasks normalize to native Feature.
