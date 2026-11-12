@@ -345,3 +345,16 @@ Residual follow-ups: adopters/pilot must confirm macOS runner availability and e
 | [GitHub: reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) · [Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) · [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [OIDC](https://docs.github.com/en/actions/concepts/security/openid-connect) | Upstream behavior reference |
 
 | macos | [43146125258](https://github.com/presljf/github-project-tracker/actions/runs/43146125258) | **success** | `macos-15` runner; build/checksum passed; sign/publish skipped (dry-run, no secrets). Bash 3.2 portable artifact matching. |
+
+## Desktop smoke profile
+
+Desktop smoke is a separate reusable profile:
+`.github/workflows/reusable-desktop-smoke.yml` with the caller contract in
+[`profiles/desktop/README.md`](../profiles/desktop/README.md).
+
+- macOS `macos-15` default; path/label gating is owned by the caller.
+- Optional install/build commands, required smoke command, 30-minute timeout.
+- Advisory on PRs; required only at the release gate when the project promotes it.
+- Failure artifacts (logs/summary) are uploaded when `artifact-path` is set.
+- The downstream contract verifier treats a bespoke desktop-smoke workflow as a contract
+  bypass unless an OI-linked override is declared.
