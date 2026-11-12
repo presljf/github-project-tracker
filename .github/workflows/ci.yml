@@ -66,6 +66,7 @@ jobs:
         run: |
           npm run docs:check
           npm run guard:versions
+          npm run verify:tooling
           npm run guard:gh
           npm run guard:deps
           node scripts/docs/guard-docs.mjs --base "${DOCS_GUARD_BASE:-origin/main}"

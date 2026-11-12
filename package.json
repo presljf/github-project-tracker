@@ -30,12 +30,16 @@
     "format:check": "prettier --check \"scripts/**/*.mjs\" \"tests/**/*.mjs\" \"*.mjs\" \"package.json\" \".github/**/*.{yml,yaml}\"",
     "verify:metadata": "node scripts/github/verify-metadata.mjs",
     "reconcile:metadata": "node scripts/github/reconcile-metadata.mjs",
-    "hooks:install": "node scripts/github/install-hooks.mjs"
+    "hooks:install": "node scripts/github/install-hooks.mjs",
+    "verify:tooling": "node scripts/github/verify-tooling.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "prettier": "^3.10.0"
+  },
+  "overrides": {
+    "espree": "11.2.0"
   }
 }

@@ -1,6 +1,6 @@
 # AGENT GUIDE
 
-**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
+**Docs version:** v1.2.1-docs.1 · Target template: v1.2.1
 Operating protocol for agents (and humans delegating to agents) using the tracker.
 
 ## Non-negotiables

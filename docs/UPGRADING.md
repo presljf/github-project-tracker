@@ -1,6 +1,6 @@
 # UPGRADING
 
-**Docs version:** v1.2.0-docs.1 · Target template: v1.2.0
+**Docs version:** v1.2.1-docs.1 · Target template: v1.2.1
 The tracker is versioned; downstream projects pin an exact version and upgrade deliberately.
 
 ## Version semantics
@@ -38,7 +38,7 @@ Never edit a reusable workflow in the downstream repo; override via inputs/confi
 1. **Read** target changelog + diff/overrides.
 2. **Dry-run** in a branch:
    ```bash
-   git checkout -b chore/upgrade-tracker-1.2.0
+   git checkout -b chore/upgrade-tracker-1.2.1
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);

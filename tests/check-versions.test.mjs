@@ -10,7 +10,7 @@ test('flags stale version and ignores allowlist', () => {
   const clean = path.join(dir, 'clean.md');
   const history = path.join(dir, 'history.md');
   fs.writeFileSync(old, 'v1.0.1\n');
-  fs.writeFileSync(clean, 'v1.2.0\n');
+  fs.writeFileSync(clean, 'v1.2.1\n');
   fs.writeFileSync(history, 'v1.0.1\n');
   const got = findStaleVersions({ files: [old, clean, history], stale: '1.0.1', allow: [history] });
   assert.deepEqual(got, [old]);

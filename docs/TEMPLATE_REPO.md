@@ -1,6 +1,6 @@
 # Template repository guide
 
-**Docs version:** v1.2.0-docs.1 · Template target: v1.2.0
+**Docs version:** v1.2.1-docs.1 · Template target: v1.2.1
 
 This repository is the **source of truth** for Project Tracker OS. It is a public GitHub template repository (published after private reusable access was validated as blocked) containing the playbook, docs, scripts, workflows, config schema, profiles, and validation.
 
@@ -58,7 +58,7 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 ## Repository settings
 
 - Template repository: **enabled**; visibility: **public**.
-- Public after the v1.0.0/v1.2.0 validation and the T01 private-access result; branch protection/private reporting follow T03/T04.
+- Public after the v1.0.0/v1.2.1 validation and the T01 private-access result; branch protection/private reporting follow T03/T04.
 - Branch protection/rulesets pending platform availability (private personal repo 403); apply when public/Pro.
 - Advisory tracker audit skips safely when `TRACKER_TOKEN` is unavailable.
 - License: MIT (see `LICENSE`).

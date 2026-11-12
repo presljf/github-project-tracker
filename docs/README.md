@@ -1,6 +1,6 @@
 # Documentation index
 
-**Docs version:** `v1.2.0-docs.1` (targets Project Tracker OS v1.0.0; refreshed before release)
+**Docs version:** `v1.2.1-docs.1` (targets Project Tracker OS v1.0.0; refreshed before release)
 **Status:** T12 docs QA fixes applied; v1.0.0 tag follows T08 live validation + release close.
 
 Read in this order depending on your goal:

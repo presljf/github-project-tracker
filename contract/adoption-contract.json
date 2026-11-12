@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "trackerVersion": "1.2.0",
+  "trackerVersion": "1.2.1",
   "repository": "presljf/github-project-tracker",
   "requiredConfig": [
     "trackerVersion",
@@ -62,5 +62,12 @@
       "task": ["[<sprint>-T<nn>] ..."]
     },
     "exceptionsFile": "contract/exceptions/metadata-exceptions.json"
+  },
+  "tooling": {
+    "eslint": "^10.14.0",
+    "@eslint/js": "^10.0.1",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.0",
+    "config": "profiles/node/eslint.config.mjs"
   }
 }

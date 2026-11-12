@@ -220,7 +220,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
   };
   for (const [fieldName, fieldConfig] of Object.entries(configuredFields)) {
     const options = fieldConfig.options || [];
-    let field = fieldMap().get(fieldName);
+    const field = fieldMap().get(fieldName);
     if (!field) {
       add(`CREATE field "${fieldName}" → ${options.join(', ')}`);
       if (apply) {
@@ -273,7 +273,7 @@ export async function runBootstrap({ config, github, apply = false, logger = con
   // Issues.
   const specs = buildIssueSpecs(config);
   const issueByTitle = new Map();
-  let projectItems = project?.number && apply ? await github.listProjectItems(owner, project.number) : [];
+  const projectItems = project?.number && apply ? await github.listProjectItems(owner, project.number) : [];
   const itemsByIssue = new Map((projectItems || []).map((item) => [item.content?.number, item]));
 
   for (const spec of specs) {

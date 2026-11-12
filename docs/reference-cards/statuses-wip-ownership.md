@@ -1,6 +1,6 @@
 # Statuses, WIP & ownership
 
-<!-- Docs version: v1.2.0-docs.1 · Target template: v1.2.0 · print formats: A4, Letter -->
+<!-- Docs version: v1.2.1-docs.1 · Target template: v1.2.1 · print formats: A4, Letter -->
 
 > One page for the five statuses, the one-task WIP rule, and who owns what. Full detail: [HOW TO USE §2, §5.2, §17](../HOW_TO_USE.md#2-roles).
 

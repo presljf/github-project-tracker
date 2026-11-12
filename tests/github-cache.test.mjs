@@ -5,7 +5,7 @@ import { GitHubCli } from '../scripts/github/lib/github.mjs';
 
 test('listFields is cached and cleared by field mutations', () => {
   let calls = 0;
-  let remaining = 4000;
+  const remaining = 4000;
   const exec = (args) => {
     if (args[0] === 'api' && args[1] === '--include') {
       return `HTTP/2.0 200 OK\nx-ratelimit-limit: 5000\nx-ratelimit-remaining: ${remaining}\nx-ratelimit-used: ${5000 - remaining}\nx-ratelimit-reset: ${Math.floor(Date.now() / 1000) + 3600}\nx-ratelimit-resource: graphql\n\n{"data":{"rateLimit":{"limit":5000,"remaining":${remaining},"used":${5000 - remaining},"resetAt":"2099-01-01T00:00:00Z","cost":1}}}`;
