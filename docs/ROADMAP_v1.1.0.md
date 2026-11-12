@@ -250,7 +250,7 @@ Decisions/limitations recorded without an OI: GitHub App bot assignment NO-GO; P
 
 **Closed 2026-11-11.** CastDeck adoption closed: gate #77 and adoption issues #78–#81 complete (config v1.0.1, operator guide, advisory audit workflow; owner token deferred). v0.4.6 quality #2 unblocked.
 
-Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. Explicit deferrals: T03 owner token, T10 owner retention. Branch protection + docs coverage + transport guards are enforced. Adoption gate #77 unblocked.
+Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. T03 completed (tracker audit token/run); T10 completed with archived-repo retention due missing delete_repo scope. Branch protection + docs coverage + transport guards are enforced. Adoption gate #77 unblocked.
 
 ## 15. Progress log
 
@@ -260,9 +260,9 @@ Completed: T01/T02/T04/T05/T06/T07/T08/T09/T11/T12. Explicit deferrals: T03 owne
 - [x] T06 audit section/hierarchy enforcement — **COMPLETED 2026-11-11** (PR #54; tests 44/44; strict audit 34/34)
 - [x] T01 cross-repo reusable/public decision — **COMPLETED 2026-11-11** (PR #55; private access blocked; public fallback validated)
 - [x] T02 live release profiles/CI queue — **COMPLETED 2026-11-11** (PR #61; generic/container/package dry-runs verified; macOS runner-plan blocked; 14 stale queued runs need owner cancellation)
-- [x] T03 audit CI/branch protection — **DEFERRED 2026-11-11**: branch protection enabled (`ci / ci-gate`, `docs-guard`); owner-created audit token explicit deferral
+- [x] T03 audit CI/branch protection — **COMPLETED 2026-11-11** (branch protection + required checks; tracker audit workflow success run 43124914866)
 - [x] T04 downstream/security/publication — **COMPLETED 2026-11-11** (PR #64; private vulnerability reporting enabled; publication checklist)
 - [x] T05 version pins/docs CI — **COMPLETED 2026-11-11** (PR #57; v1.0.1 pins; docs-guard CI; actionlint unavailable)
 - [x] T12 shared rate-limit state/targeted queries/cost instrumentation — **COMPLETED 2026-11-11** (PR #67; shared state+cost report; targeted item lookups; batched dependencies/mutations; tests 58/58) — #60
 - [x] T11 docs coverage guard — **COMPLETED 2026-11-11** (PR #65; CI docs coverage; tests 53/53; issue-type CI wiring follow-up) — #58
-- [x] T10 scratch cleanup — **DEFERRED 2026-11-11** (owner retention; archived/no deletion) — #51
+- [x] T10 scratch cleanup — **COMPLETED 2026-11-11** (smoke project #3 deleted; archived repo retained because delete_repo scope unavailable; worktrees/temp cleaned) — #51
