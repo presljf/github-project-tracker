@@ -9,6 +9,12 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## v1.2.2 — Qualified release tooling
+
+- Add `release:bump` with explicit allowlist, exclusions, dry-run diff, and v/dotted-key preservation.
+- Stabilize lockfile resolution and historical-doc handling after the v1.2.1 release.
+- No downstream contract change.
+
 ## v1.2.1 — Tooling contract
 
 - Shared `profiles/node/eslint.config.mjs` baseline.

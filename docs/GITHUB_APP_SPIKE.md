@@ -1,6 +1,6 @@
 # GITHUB APP SPIKE
 
-**Docs version:** `v1.2.1-docs.1` · Target template: `v1.2.1`
+**Docs version:** `v1.2.2-docs.1` · Target template: `v1.2.2`
 
 **Status:** complete (desk research + read-only API probes). No GitHub App was registered, installed, or credentialed; no live bot test was performed (see [Non-goals](#non-goals-and-scope-boundaries) and [Limitations](#7-limitations-and-follow-ups)).
 

@@ -10,8 +10,11 @@ function repo() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bump-'));
   execFileSync('git', ['init', '-b', 'main', root], { stdio: 'ignore' });
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'tracker.config.json'), '{"v":"1.2.0"}\n');
-  fs.writeFileSync(path.join(root, 'docs/REFERENCE.md'), 'Target v1.2.0\nSprint 1.2.0.1 stays\n');
+  fs.writeFileSync(path.join(root, 'tracker.config.json'), '{"templateVersion":"1.2.0"}\n');
+  fs.writeFileSync(
+    path.join(root, 'docs/REFERENCE.md'),
+    'Target v1.2.0\nSprint 1.2.0.1 stays\nHistorical: released as patch v1.2.0\n',
+  );
   fs.writeFileSync(path.join(root, 'docs/ROADMAP_v1.0.md'), 'history v1.2.0\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"version":"1.2.0"}\n');
   fs.writeFileSync(path.join(root, 'tests.fixture.md'), 'v1.2.0\n');

@@ -1,6 +1,6 @@
 # ADOPTION — zero to first task
 
-**Docs version:** v1.2.1-docs.1 · Target template: v1.2.1
+**Docs version:** v1.2.2-docs.1 · Target template: v1.2.2
 This guide onboards a **new project** onto the tracker. The CastDeck pilot is only an example; do not copy its product-specific plan.
 
 > **Automation note:** bootstrap/audit/task CLI are available now. This manual path explains the steps; the same config drives `bootstrap.mjs`, and the CLIs automate the lifecycle.

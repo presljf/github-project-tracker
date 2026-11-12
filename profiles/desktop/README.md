@@ -32,7 +32,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-desktop-smoke') }}
     permissions:
       contents: read
-    uses: presljf/github-project-tracker/.github/workflows/reusable-desktop-smoke.yml@v1.2.1
+    uses: presljf/github-project-tracker/.github/workflows/reusable-desktop-smoke.yml@v1.2.2
     with:
       runner-label: macos-15
       working-directory: .
