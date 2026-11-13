@@ -1446,12 +1446,12 @@
       "id": "wf:reusable-e2e",
       "path": ".github/workflows/reusable-e2e.yml",
       "class": "reusable-workflow",
-      "status": "contract-only",
+      "status": "shipped",
       "audience": [
         "adopter"
       ],
-      "title": "Reusable e2e",
-      "summary": "Documented workflow_call contract; not implemented in this repository yet.",
+      "title": "Reusable Playwright E2E",
+      "summary": "Opinionated Playwright E2E contract: setup-node-cache via job.workflow_repository/sha, browser install, adopter command, failure-only artifacts.",
       "docs": [
         "docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile"
       ],
@@ -1805,6 +1805,95 @@
       "summary": "COPY-MODE EXAMPLE - reusable-mode advisory/strict tracker audit caller (T04).",
       "docs": [
         "docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "wf:reusable-counts",
+      "path": ".github/workflows/reusable-counts.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable counts docs verification",
+      "summary": "Pinned-tracker guard-docs-counts contract (baseline agreement, generated doc, markers; no suite inventory).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#713-reusable-countsyml-counts-docs-verification-contract"
+      ],
+      "catalogSection": "7.13"
+    },
+    {
+      "id": "wf:counts-docs",
+      "path": ".github/workflows/counts-docs.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Counts docs (self caller)",
+      "summary": "Thin local caller of reusable-counts.yml (dogfooding; no-op until docs.counts is adopted).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#212-counts-docs-verification"
+      ]
+    },
+    {
+      "id": "wf:e2e-fixture",
+      "path": ".github/workflows/e2e-fixture.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "E2E reusable plumbing fixture",
+      "summary": "Dispatch-only self caller proving reusable-e2e wiring (browsers: none; Playwright path validated at CastDeck C3).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#22-e2e-integration-optional-profile"
+      ]
+    },
+    {
+      "id": "profile:e2e-readme",
+      "path": "profiles/e2e/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "E2E profile",
+      "summary": "Reusable Playwright caller guide: gating, browser/artifact policy, check-name mapping, C3 note.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile"
+      ]
+    },
+    {
+      "id": "profile:e2e-caller",
+      "path": "profiles/e2e/e2e.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "E2E caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode Playwright caller (T05).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:counts-caller",
+      "path": "profiles/counts/counts-docs.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Counts docs caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode counts-docs caller (context counts-docs / counts).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#713-reusable-countsyml-counts-docs-verification-contract"
       ],
       "mode": "reusable",
       "header": "required"

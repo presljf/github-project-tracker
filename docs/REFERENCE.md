@@ -79,9 +79,10 @@
 | `profiles/node/` | generic lint/format profile | now |
 | `profiles/desktop/` | desktop smoke caller + remote-only local guard | now |
 | `profiles/tooling/` | tooling work-profile selection + example config | now |
-| `profiles/counts/` | counts contract wiring + example baseline | now |
+| `profiles/counts/` | counts contract wiring, example baseline, and the reusable `counts-docs.yml` caller example | now |
 | `profiles/contract/` | contract + metadata reusable caller example (`tracker-contract.yml`) and token/check-name guidance | now |
 | `profiles/audit/` | audit-family reusable caller examples (`tracker-audit.yml`, `post-merge-audit.yml`, `pr-close-guard.yml`) + permissions/check-name/rollback guidance | now |
+| `profiles/e2e/` | reusable Playwright E2E caller example (`e2e.yml`) + browser/network/artifact guidance | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
 | `.github/workflows/`, `.github/actions/` | internal runner callers + `reusable-*` workflow contracts + composite actions (`release.yml` is the only runnable release caller here) | now |
@@ -361,7 +362,15 @@ writes counts, adds placeholder `knownSkips` for new skips, and regenerates `doc
 every `<!-- counts:<suite>/<mode>[/<metric>] -->...<!-- /counts:... -->` marker; humans fill in
 agreement metadata in the same PR. The guard validates schema/agreement, regenerates the canonical
 doc, and fails stale/missing docs/markers; historical docs are exempt by construction (only
-`docs.counts.markers` files are checked). Full adoption wiring:
+`docs.counts.markers` files are checked).
+
+Reusable-mode docs caller: `counts-docs.yml` → `reusable-counts.yml` (copy example:
+`profiles/counts/counts-docs.yml`) emits check context **`counts-docs / counts`**; the reusable job
+runs `guard-docs-counts.mjs --root "$GITHUB_WORKSPACE" --config "$CONFIG"` against the workspace
+(self) or the pinned `.tracker` checkout (downstream). It uploads no artifacts, needs no secrets
+(`contents: read`), and does **not** run the suite inventory/tests. When `docs.counts` is absent the
+caller is a documented no-op — require `counts-docs / counts` only in projects that adopt the
+contract; live baseline validation is downstream/C3. Full adoption wiring:
 [profiles/counts](../profiles/counts/README.md).
 
 ### 5.8 reconcile-status (close-out Project status)
@@ -627,21 +636,22 @@ version/pin/cards refresh).
 
 ## 13. Workflow catalog
 
-**Availability:** CI, security, release, and the audit family (tracker audit, post-merge audit, PR
-close guard) ship as reusable workflows with thin callers; contract/metadata verification does too,
-and desktop smoke ships as a reusable workflow with an example caller under `profiles/desktop/`.
-Web/E2E and docs reusables are **contract-only** until T05 (issue #140). Callers are the only
-runnable entry points; reusable-mode caller examples live under `profiles/` and are never executed
-in place.
+**Availability:** CI, security, release, the audit family (tracker audit, post-merge audit, PR close
+guard), contract/metadata verification, desktop smoke, E2E, and counts all ship as reusable
+workflows with thin callers. The reusable-docs workflow remains **contract-only** (not implemented);
+E2E and counts shipped in T05 (v1.4.0). Callers are the only runnable entry points; reusable-mode
+caller examples live under `profiles/` and are never executed in place.
 
 | Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
 |---|---|---|---|---|---|---|
 | CI (lint/format/unit) | push/PR | required | Linux | contents:read | none | block merge |
-| Web/E2E | push/PR/nightly | required/advisory | Linux | contents:read | none | required on main/release |
+| Web/E2E — `e2e.yml` → `reusable-e2e.yml` | push/PR/nightly (caller-owned) | advisory by default; opt-in required with recorded evidence | Linux | contents:read | none | context `e2e / e2e`; failure-only artifact upload; browser install ~0.5–1 GB/run |
+| Counts docs — `counts-docs.yml` → `reusable-counts.yml` | PR/push/dispatch | required only when the counts contract is adopted (otherwise documented no-op) | Linux | contents:read | none | context `counts-docs / counts`; guard-docs-counts only (no suite inventory); no artifacts |
 | Desktop smoke | main/tags/path/label PR | advisory PR; required release | macOS | contents:read | none | release gate |
-| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | schedule/dispatch + advisory PR | advisory by default; strict opt-in for release gates | Linux | contents:read; project read via token | optional `TRACKER_TOKEN` (advisory skips cleanly when absent; strict requires it) | context `tracker-audit / audit`; advisory never blocks, strict exits 1 on violations |
+| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | schedule/dispatch + advisory PR | advisory by default; strict opt-in for release gates | Linux | contents:read; project read (+ repo/issues read on private repos) via token | optional `TRACKER_TOKEN` (project + repo/issues read; advisory skips cleanly when absent; strict requires it) | context `tracker-audit / audit`; advisory never blocks, strict exits 1 on violations |
 | Post-merge audit — `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `pull_request` closed (merged only); dispatch revalidation with `pr-number` | advisory (opens an OI on a real bypass) | Linux | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read (caller-granted) | `GITHUB_TOKEN` automatic | context `post-merge-audit / audit`; opens `tracker-contract-exception` OI; unreadable rollup degrades loudly |
 | PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | PR opened/edited/synchronize/reopened/labeled/unlabeled | required for task PRs | Linux | contents:read, issues:read, pull-requests:read | none | context `pr-close-guard / guard`; rejects wrong closing targets |
+| E2E plumbing fixture — `e2e-fixture.yml` → `reusable-e2e.yml` | `workflow_dispatch` only | template-only (never required) | Linux | contents:read | none | context `e2e-fixture / e2e`; browsers `none` + trivial command |
 | Contract verification (`reusable-contract.yml`) | `workflow_call` (consumed by `tracker-contract` callers) | contract required; metadata project-defined | Linux | contents:read | optional `TRACKER_TOKEN` (metadata; Projects + Metadata read) | contract fails merge; metadata advisory |
 | Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
 | Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
@@ -674,6 +684,9 @@ see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 - Contract verification: `tracker-contract / contract` is required (offline, no secrets);
   `tracker-contract / metadata` is project-defined (needs `TRACKER_TOKEN`, skipped on PRs by the
   bundled caller).
+- E2E: `e2e / e2e` is advisory by default — no required-check recommendation until an adopter opts
+  in with recorded evidence. Counts: `counts-docs / counts` is required only when the counts
+  contract is adopted (otherwise the caller is a no-op); `e2e-fixture / e2e` is template-only.
 - Desktop smoke: path/label on PR; required on main/tags/release.
 - PR close guard: `pr-close-guard / guard` is required for task PRs. The pre-v1.4.0
   `pr-close-guard` context no longer exists, so update branch protection/rulesets in the same
@@ -688,7 +701,7 @@ see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Need | Source | Scope | Rules |
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
-| Tracker audit (`reusable-audit.yml`) | PAT or GitHub App installation token | project read (Projects read + Metadata read) | optional `TRACKER_TOKEN` repository secret; advisory mode skips cleanly when absent, strict mode fails with an actionable message; pass by explicit name (never `secrets: inherit`); never print; ≤90-day PAT |
+| Tracker audit (`reusable-audit.yml`) | PAT or GitHub App installation token | project read **+ repo/issues read on private repos** (PAT `project`+`repo` scopes; App Projects+Metadata+Issues read) | optional `TRACKER_TOKEN` repository secret; advisory mode skips cleanly when absent, strict mode fails with an actionable message; pass by explicit name (never `secrets: inherit`); never print; ≤90-day PAT |
 | Contract metadata | PAT or GitHub App installation token | Projects + Metadata read | `TRACKER_TOKEN` repository secret; optional (only when the reusable-contract `metadata` job runs); pass by explicit name (never `secrets: inherit`); rotate; PAT ≤90 days |
 | Post-merge audit (`reusable-post-merge-audit.yml`) | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read | least privilege; the caller job must grant at least the same block; private repos need `checks:read`/`statuses:read`/`actions:read` for `statusCheckRollup` (GraphQL resolves `checkSuite.workflowRun`) |
 | PR close guard (`reusable-pr-close-guard.yml`) | `GITHUB_TOKEN` | contents:read, issues:read, pull-requests:read | read-only: the guard fetches the live PR and referenced issues; no write scopes, no secrets |
@@ -722,7 +735,8 @@ used for the v1.3.0 release evidence.
 
 `post-merge-audit.yml` is a thin self caller of `reusable-post-merge-audit.yml` (caller job
 `post-merge-audit`, check context `post-merge-audit / audit`). It runs when a PR is merged, and on
-`workflow_dispatch` with a `pr-number` input to revalidate a past merge — the reusable workflow
+`workflow_dispatch` with a `pr-number` input to revalidate a past merge — the audit script
+(`scripts/adopt/cli/post-merge-audit.mjs`, via the repo transport with no raw `gh` in workflows)
 re-fetches the PR and verifies it is `MERGED` before auditing, which is the recovery path after a
 stale-config false OI. It checks required checks and closing-keyword/partial-PR rules.
 
@@ -742,8 +756,11 @@ the permission correction shipped in v1.3.2; v1.3.0 copied callers predate it an
 `actions: read`.
 
 A merged PR with a failed/missing required check or invalid closure opens an OI labeled
-`tracker-contract-exception` and must be resolved before release. If `statusCheckRollup` is
-unreadable because of a permission/API error, the audit degrades loudly (warning + job summary +
+`tracker-contract-exception` and must be resolved before release. Output semantics: the reusable
+job's `ok` output means the job completed (a detected bypass still completes by opening the OI) —
+`ok=true` does not mean the PR passed the audit; the OI is the durable record. If
+`statusCheckRollup` is unreadable because of a permission/API error, the audit degrades loudly
+(warning + job summary +
 `actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
 closing-keyword/partial-PR rules only, and exits 0 in advisory mode — no false check-related OI.
 Real closing violations still open an OI; non-permission errors still fail. Local parity:
@@ -883,7 +900,7 @@ gh project item-list $PROJECT_NUMBER --owner @me --format json
 | Variable | Use |
 |---|---|
 | `GH_TOKEN` / `GITHUB_TOKEN` | auth in CI; never commit |
-| `TRACKER_TOKEN` | optional tracker-audit (`reusable-audit.yml`) project-read token; advisory skips cleanly when unset, strict requires it; also the contract metadata job (`reusable-contract.yml`) secret name |
+| `TRACKER_TOKEN` | optional tracker-audit (`reusable-audit.yml`) token: project read + repo/issues read on private repos; advisory skips cleanly when unset, strict requires it; also the contract metadata job (`reusable-contract.yml`) secret name |
 | `NO_COLOR` | plain output |
 | `GH_REPO` | default repo for some `gh` commands (optional) |
 

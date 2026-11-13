@@ -1,0 +1,161 @@
+# Reusable Playwright E2E (T05 / issue #140).
+#
+# Contract: docs/ACTIONS_CATALOG.md §2.2 / §7.3 (catalog owner updates rows/status).
+# Opinionated E2E wrapper: adopter checkout → tracker composite action (`setup-node-cache`, resolved
+# from the workflow's own repository/commit via `job.workflow_repository`/`job.workflow_sha`) →
+# optional Playwright browser install → the adopter's test command → failure artifacts.
+#
+# No `tracker-ref` input: E2E runs only the adopter's own commands plus the pinned tracker action, so
+# there are no tracker scripts to check out and no pinned contract to read.
+#
+# Callers own triggers, concurrency, and path/label gating (docs/ACTIONS_CATALOG.md §3/§5.3). The
+# browser matrix is opt-in (`browsers: chromium` by default; comma lists install several; empty or
+# `none` skips the install step for projects that manage browsers themselves).
+# No secrets, no live third-party assertions (the browser download is an install step only),
+# no pull_request_target, contents: read only.
+
+name: Reusable Playwright E2E
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: '22'
+      working-directory:
+        description: Directory containing the project (package.json, Playwright config), relative to the repository root.
+        required: false
+        type: string
+        default: '.'
+      package-manager:
+        description: 'Package manager used for caching/install: npm, pnpm, or yarn.'
+        required: false
+        type: string
+        default: npm
+      install-command:
+        description: >-
+          Dependency install command. Empty uses the tracker action's lockfile-driven install
+          (`npm ci` when an npm lockfile exists); the literal `none` skips installation.
+        required: false
+        type: string
+        default: ''
+      test-command:
+        description: E2E command run from working-directory (for example `npm run e2e`).
+        required: false
+        type: string
+        default: npm run e2e
+      browsers:
+        description: >-
+          Playwright browsers to install (comma-separated list such as `chromium` or
+          `chromium,firefox`). Empty or `none` skips the browser install step.
+        required: false
+        type: string
+        default: chromium
+      artifact-path:
+        description: Paths uploaded on failure (traces/screenshots/videos). Empty disables the upload.
+        required: false
+        type: string
+        default: ''
+      artifact-name:
+        description: Artifact name used for failure artifacts.
+        required: false
+        type: string
+        default: e2e-artifacts
+      artifact-retention-days:
+        description: Artifact retention in days.
+        required: false
+        type: number
+        default: 7
+      upload-on-success:
+        description: Also upload artifacts when the test command succeeds (default false).
+        required: false
+        type: boolean
+        default: false
+      runs-on:
+        description: Runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      timeout-minutes:
+        description: Job timeout in minutes.
+        required: false
+        type: number
+        default: 20
+    outputs:
+      e2e-passed:
+        description: "'true' when the E2E test command passed."
+        value: ${{ jobs.e2e.outputs.e2e-passed }}
+      artifact-name:
+        description: Artifact name used for failure artifacts.
+        value: ${{ jobs.e2e.outputs.artifact-name }}
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+    outputs:
+      e2e-passed: ${{ steps.e2e.outcome == 'success' }}
+      artifact-name: ${{ inputs.artifact-name }}
+    steps:
+      - name: Checkout adopter repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
+          package-manager: ${{ inputs.package-manager }}
+          install-command: ${{ inputs.install-command }}
+      - name: Install Playwright browsers
+        if: ${{ inputs.browsers != '' && inputs.browsers != 'none' }}
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          BROWSERS_INPUT: ${{ inputs.browsers }}
+        run: |
+          set -euo pipefail
+          browsers="$(printf '%s' "$BROWSERS_INPUT" | tr ',' ' ' | xargs)"
+          if [ -z "$browsers" ]; then
+            echo "::notice::No Playwright browsers requested; skipping browser install."
+            exit 0
+          fi
+          if [ "$(uname -s)" = "Linux" ]; then
+            echo "+ npx playwright install --with-deps $browsers"
+            npx playwright install --with-deps $browsers
+          else
+            echo "+ npx playwright install $browsers"
+            npx playwright install $browsers
+          fi
+      - name: Run E2E tests
+        id: e2e
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          COMMAND: ${{ inputs.test-command }}
+        run: |
+          set -euo pipefail
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+      - name: Upload failure artifacts
+        if: ${{ (failure() || inputs.upload-on-success) && inputs.artifact-path != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.artifact-path }}
+          if-no-files-found: warn
+          retention-days: ${{ inputs.artifact-retention-days }}

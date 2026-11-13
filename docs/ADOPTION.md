@@ -130,7 +130,17 @@ Wire the suite job to run the counted inventory + `suite-counts check --suite ..
 on drift/flaky/malformed output) and the docs job to run `guard:docs:counts` (baseline schema +
 named-skip/reviewed agreement + generated doc/marker freshness; no test execution). Counts change ⇒
 baseline + `docs/TEST_COUNTS.md` + markers change in the same PR; new skips start as placeholders
-until a human fills `reason/coveredBy/agreedOn`. Full wiring:
+until a human fills `reason/coveredBy/agreedOn`.
+
+Reusable-mode docs caller (optional, recommended): copy
+[`profiles/counts/counts-docs.yml`](../profiles/counts/counts-docs.yml) into
+`.github/workflows/counts-docs.yml` and pin both refs to the adopted tag. Its check context is
+**`counts-docs / counts`**; the reusable `reusable-counts.yml` runs `guard-docs-counts.mjs` against
+the workspace (self) or the pinned `.tracker` checkout (downstream) — it validates baseline
+agreement + generated-doc/marker freshness and does **not** run the suite inventory/tests. When
+`docs.counts` is absent the caller is a documented no-op (the template repository's own caller is
+in that state); require `counts-docs / counts` only in projects that adopt the counts contract. This
+caller is not yet in the adoption contract's `requiredWorkflows` (T06 owns that list). Full wiring:
 [profiles/counts](../profiles/counts/README.md).
 
 ## 3. Install template/config
@@ -139,7 +149,7 @@ Copy from the tracker template (copy mode requires the full set):
 - `scripts/adopt/**` (adopter CLIs + shared libs + docs-QA CLIs); `scripts/internal/` is
   template-maintainer-only and is never copied
 - `schemas/tracker.config.schema.json`, `package.json`
-- `profiles/node/`, `profiles/desktop/` (if used), `profiles/counts/` (if the counts contract is adopted), `tests/**` (optional but recommended)
+- `profiles/node/`, `profiles/desktop/` (if used), `profiles/e2e/` (if E2E is used), `profiles/counts/` (if the counts contract is adopted — its `counts-docs.yml` caller is reusable-mode), `tests/**` (optional but recommended)
 - Release caller examples: `profiles/release/reusable/` (reusable-mode callers — copy into
   `.github/workflows/` and pin the adopted tracker tag) or `profiles/release/copy/` (copy-mode templates)
 - `.github/ISSUE_TEMPLATE/*`
@@ -192,14 +202,22 @@ option. The tag records the version; stream close requires every child task done
   the adopted template tag/SHA, grant the documented caller permissions, and update required checks
   (see [Closing-keyword guard](#closing-keyword-guard) and
   [Post-merge bypass audit](#post-merge-bypass-audit)).
+- Install the E2E and counts callers you need: copy
+  [`profiles/e2e/`](../profiles/e2e/README.md) (`e2e.yml` → `reusable-e2e.yml`) and
+  [`profiles/counts/counts-docs.yml`](../profiles/counts/counts-docs.yml) into `.github/workflows/`,
+  pin both refs to the adopted tag, and keep `contents: read` with no secrets (E2E may upload a
+  failure-only artifact; counts uploads none). `e2e / e2e` stays advisory by default; require
+  `counts-docs / counts` only when the counts contract is adopted (otherwise it is a no-op). The E2E
+  and counts reusables are not yet in the adoption contract's `requiredWorkflows` (T06 owns that
+  list).
 - Configure branch protection/rulesets:
   - required: deterministic Linux CI checks, `tracker-contract / contract`, and
     `pr-close-guard / guard` (audit-family migration; the old inline `pr-close-guard` context is
-    retired).
-  - advisory first: desktop smoke and tracker audit (`tracker-audit / audit`); the post-merge audit
-    runs after merge and reports through an OI/job summary, so it is not a merge check;
-    `tracker-contract / metadata` is project-defined (it is skipped on pull requests by the bundled
-    caller).
+    retired); add `counts-docs / counts` only once the counts contract is adopted.
+  - advisory first: desktop smoke, tracker audit (`tracker-audit / audit`), and E2E (`e2e / e2e`);
+    the post-merge audit runs after merge and reports through an OI/job summary, so it is not a merge
+    check; `tracker-contract / metadata` is project-defined (it is skipped on pull requests by the
+    bundled caller).
   - protect release tags/environments.
 - Run `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
@@ -242,7 +260,8 @@ stream after the release gate passes. Do not start feature work until the first 
 - [ ] Audit token scoped/stored; audit advisory; manual checklist run.
 - [ ] Branch protection/required checks documented; expensive jobs advisory.
 - [ ] Remote-only GUI suites declared in `verification.remoteOnly` and wired to the local guard/Playwright globalSetup (optional; absent = no-op).
-- [ ] Counts contract declared in `docs.counts`, suite workflow runs `suite-counts check`, docs workflow runs `guard:docs:counts` (optional; absent = no-op).
+- [ ] Counts contract declared in `docs.counts`, suite workflow runs `suite-counts check`, docs workflow runs `guard:docs:counts` via the reusable `counts-docs / counts` caller (optional; absent = documented no-op).
+- [ ] E2E caller adopted from `profiles/e2e/` with browsers/command configured and `e2e / e2e` kept advisory unless deliberately promoted (optional; not in the adoption contract yet).
 - [ ] First task completed through the full lifecycle.
 - [ ] Docs pinned/versioned; downstream feedback channel linked.
 - [ ] Program-level gate closed (if applicable); upgrade policy understood.
@@ -315,11 +334,12 @@ Merged PRs with failed/missing required checks or invalid closure open a `tracke
 
 Install the reusable-mode caller (`profiles/audit/post-merge-audit.yml` → `.github/workflows/`,
 pinned to the adopted tag): its check context is **`post-merge-audit / audit`**. It triggers on
-`pull_request` closed (merged only) and on manual dispatch with a `pr-number` (the reusable workflow
-revalidates that the PR is merged). The caller must grant `contents: read`, `issues: write`,
-`pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`: `issues: write` opens the
-OI/label and the three read scopes are needed for `statusCheckRollup` (its GraphQL query resolves
-`checkSuite.workflowRun`). Without `checks: read`/`statuses: read`/`actions: read` on a private repo
+`pull_request` closed (merged only) and on manual dispatch with a `pr-number`; the audit script
+(`scripts/adopt/cli/post-merge-audit.mjs`, via the repo transport — no raw `gh` in workflows)
+revalidates `state == MERGED` and re-fetches the PR before auditing. The caller must grant
+`contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`,
+`actions: read`: `issues: write` opens the OI/label and the three read scopes are needed for
+`statusCheckRollup` (its GraphQL query resolves `checkSuite.workflowRun`). Without `checks: read`/`statuses: read`/`actions: read` on a private repo
 the audit degrades to a loud warning + closure-only audit (no false check OI) instead of failing red.
 
 Set your **real check names** (not the tracker's own) so the audit does not open false bypass OIs:
@@ -338,9 +358,11 @@ bundled caller skips it on pull requests); `post-merge-audit / audit` is not a m
 not listed.
 
 Tracker audit runs are advisory by design: the `tracker-audit.yml` caller dispatches
-schedule/`workflow_dispatch`/PR runs in `mode: advisory`; without a `TRACKER_TOKEN` secret (project
-read: Projects read + Metadata read; PAT ≤90 days or GitHub App) the advisory run logs a notice and
-skips with exit 0, while `mode: strict` (release-gate opt-in) fails actionably without the token. No
+schedule/`workflow_dispatch`/PR runs in `mode: advisory`; without a `TRACKER_TOKEN` secret the
+advisory run logs a notice and skips with exit 0, while `mode: strict` (release-gate opt-in) fails
+actionably without the token. Token scope for the audit is project read **and** repo/issues read on
+private repositories: a project-scoped PAT with `project` + `repo` scopes (≤90 days) or a GitHub App
+installation token with Projects + Metadata + Issues read; store it as a repository secret. No
 artifacts are uploaded — the JSON result goes to the job log/summary.
 
 **Contract status / rollback:** the three audit reusables are shipped and documented in

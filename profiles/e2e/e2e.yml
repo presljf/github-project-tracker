@@ -1,0 +1,51 @@
+# COPY-MODE EXAMPLE — reusable-mode Playwright E2E caller (T05).
+#
+# Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
+# lives under profiles/. Copy it into your repository's .github/workflows/e2e.yml, replace the
+# pinned @v1.3.2 `uses:` ref with the exact tag/SHA you adopted (v1.4.0+ — the first release that
+# ships reusable-e2e.yml), and replace the path filters with your project's real paths (or gate on
+# the `run-e2e` label). The reusable workflow has no `tracker-ref`: it runs only your commands plus
+# the pinned tracker composite action it checks out itself, so there is nothing else to pin.
+#
+# Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-e2e.yml
+# (contract in docs/ACTIONS_CATALOG.md §7.3; profile details in profiles/e2e/README.md).
+#
+# The reusable wrapper checks out this repository, checks the tracker action source out to
+# `.tracker-actions` from the workflow's own repository/commit (`job.workflow_repository`/
+# `job.workflow_sha`), runs `setup-node-cache`, installs Playwright browsers (chromium default),
+# runs the test command from `working-directory`, and uploads traces/screenshots/videos only on
+# failure. No secrets; `contents: read` only; no live third-party assertions.
+name: E2E
+
+on:
+  pull_request:
+    # Project-specific gating: replace these paths with the real product/test paths, or remove
+    # `paths` and gate on the `run-e2e` label instead.
+    paths:
+      - 'e2e/**'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e
+    permissions:
+      contents: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-e2e.yml@v1.3.2
+    with:
+      node-version: '22'
+      working-directory: '.'
+      test-command: npm run e2e
+      browsers: chromium
+      artifact-path: |
+        test-results/**
+        playwright-report/**

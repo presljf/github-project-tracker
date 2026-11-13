@@ -145,13 +145,15 @@ copied workflows stay on their pinned pre-v1.4.0 tags; migrate in the same PR as
    `guard.requiredChecks` falls back to the legacy default list (`ci / ci-gate`, `docs-guard`,
    `pr-close-guard`), which no longer matches the reusable context, so set it explicitly. This is
    a **major** interface change per ACTIONS CATALOG §7.9.
-4. Provision `TRACKER_TOKEN` (project read: Projects read + Metadata read; project-scoped PAT ≤90
-   days or a GitHub App installation token) as a repository secret if the tracker audit should run
-   with the token; advisory runs without it log a notice and skip (exit 0), while strict
-   release-gate runs fail with an actionable message without it.
+4. Provision `TRACKER_TOKEN` as a repository secret if the tracker audit should run with the
+   token: project read **and** repo/issues read on private repos (project-scoped PAT with `project`
+   + `repo` scopes, ≤90 days, or a GitHub App installation token with Projects + Metadata + Issues
+   read). Advisory runs without it log a notice and skip (exit 0); strict release-gate runs fail
+   with an actionable message without it.
 5. Exercise both paths: a PR launches `pr-close-guard / guard` and the advisory
    `tracker-audit / audit`; a merged PR launches `post-merge-audit / audit`. Manual post-merge
-   dispatch passes `pr-number`; the reusable workflow revalidates the PR is MERGED before auditing.
+   dispatch passes `pr-number`; `scripts/adopt/cli/post-merge-audit.mjs` (via the repo transport,
+   no raw `gh` in workflows) revalidates `state == MERGED` and re-fetches the PR before auditing.
 6. Keep the old inline workflow files until the new contexts are green, then delete them. Do not
    keep old and new required contexts required side by side for long.
 7. Rollback: restore the v1.3.2 inline copies (`post-merge-audit.yml`, `pr-close-guard.yml`,
@@ -162,12 +164,51 @@ Caveats: the post-merge audit degrades loudly to a closure-only audit (warning +
 may lack `issues: write`, so OI creation can return 403 (documented pre-existing limitation: a
 detected bypass is reported in the job log and the run fails loudly instead of recording the OI).
 None of the three reusables upload artifacts; tracker-audit JSON goes to the job log/summary. The
-audit reusables are not yet in the adoption contract (T06 owns `requiredWorkflows`), so
-`verify:contract` does not pin them in v1.4.0.
+post-merge audit's `ok` output means the job completed — a detected bypass still completes the job
+by opening the OI, so `ok=true` does not mean "no bypass". The audit reusables are not yet in the
+adoption contract (T06 owns `requiredWorkflows`), so `verify:contract` does not pin them in v1.4.0.
 
 See [profiles/audit](../profiles/audit/README.md),
 [ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md), and
 [CI profile §3.7](./CI_SECURITY_PROFILE.md#37-audit-family-caller-contexts-reusable-mode).
+
+### E2E and counts reusable caller migration
+
+v1.4.0 also ships the remaining previously contract-only reusables: `reusable-e2e.yml` (Playwright
+E2E) and `reusable-counts.yml` (docs counts guard), with the self callers `e2e-fixture.yml` /
+`counts-docs.yml`. The **v1.4.0 tag is the first release shipping them**; pre-v1.4.0 pins keep
+their inline/copied layout. The consolidated six-caller adoption table is **T06-owned** — this
+block covers only the e2e/counts rows and does not restructure that table.
+
+| Old copied workflow/job | Old check context | v1.4.0 reusable contract |
+|---|---|---|
+| `web-e2e.yml` (job `e2e`) | `e2e` | `e2e / e2e` (via `reusable-e2e.yml`) |
+| `counts-docs` job | `counts-docs` | `counts-docs / counts` (via `reusable-counts.yml`) |
+
+1. Copy the caller you need — `profiles/e2e/` (E2E) and `profiles/counts/counts-docs.yml` (counts)
+   — into `.github/workflows/`, and pin the reusable-workflow `uses:` ref to the exact adopted
+   tag/SHA (v1.4.0+). The E2E reusable has **no `tracker-ref` input** (it consumes
+   `.github/actions/setup-node-cache` from its own workflow repo/sha); the counts caller pins
+   `tracker-ref` like the other reusables.
+2. No permission increase and no secrets: both callers keep `contents: read`. E2E uploads a
+   failure-only artifact (`upload-on-success: false`, default 7-day retention) — keep artifacts free
+   of credentials/cookies/personal data; counts uploads no artifacts.
+3. Update required checks in the **same PR** as the caller migration: require
+   `counts-docs / counts` only when the counts contract is adopted (otherwise the caller is a
+   documented no-op); keep `e2e / e2e` advisory unless you deliberately promote it with recorded
+   evidence. Capture real names with `gh pr checks <pr>`; renaming required checks is a major change
+   per ACTIONS CATALOG §7.9.
+4. E2E runtime/cost: the Playwright install downloads roughly 0.5–1 GB of browsers per run (no
+   browser cache in v1.4.0); `chromium` is the default `browsers` list, the timeout defaults to 20
+   minutes, and the command defaults to `npm run e2e`. Keep it path/label-gated on PRs and stub
+   external services in assertions (or declare live suites under `verification.remoteOnly[]`).
+5. Live downstream validation of the real suite/baseline wiring is **CastDeck C3 post-tag**: the
+   template's own `counts-docs` caller is a no-op (no `docs.counts`) and `e2e-fixture` is a
+   dispatch-only plumbing fixture. The E2E/counts reusables are not yet in the adoption contract's
+   `requiredWorkflows` (T06 owns that list).
+
+See [profiles/e2e](../profiles/e2e/README.md), [profiles/counts](../profiles/counts/README.md),
+and [CI profile](./CI_SECURITY_PROFILE.md) (runner/cost and check-context notes).
 
 ## Before upgrading
 

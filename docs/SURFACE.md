@@ -11,37 +11,38 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 124 |
-| Paths | 162 |
-| Shipped | 122 |
-| Contract-only | 2 |
+| Entries | 130 |
+| Paths | 168 |
+| Shipped | 129 |
+| Contract-only | 1 |
 
 ## Class map
 
 | Class | Meaning | Allowed locations | Entries | Shipped | Contract-only |
 |---|---|---|---|---|---|
-| `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 11 | 9 | 2 |
+| `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 12 | 11 | 1 |
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
-| `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 14 | 14 | 0 |
+| `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 28 | 28 | 0 |
 | `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 8 | 8 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 57 | 57 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 60 | 60 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
 
 ### reusable-workflow
 
-11 path(s) · 9 shipped · 2 contract-only.
+12 path(s) · 11 shipped · 1 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
 | `.github/workflows/reusable-audit.yml` | shipped | adopter | Reusable audit | 7.6 | `docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract` |
 | `.github/workflows/reusable-ci.yml` | shipped | adopter | Reusable Node CI | 7.2 | `docs/ACTIONS_CATALOG.md#72-reusable-ciyml-required-ci-contract` |
 | `.github/workflows/reusable-contract.yml` | shipped | adopter | Reusable contract verification | 7.10 | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract` |
+| `.github/workflows/reusable-counts.yml` | shipped | adopter | Reusable counts docs verification | 7.13 | `docs/ACTIONS_CATALOG.md#713-reusable-countsyml-counts-docs-verification-contract` |
 | `.github/workflows/reusable-desktop-smoke.yml` | shipped | adopter | Reusable desktop smoke | 7.4 | `docs/ACTIONS_CATALOG.md#74-reusable-desktop-smokeyml-desktop-smoke-contract-shipped` |
 | `.github/workflows/reusable-docs.yml` | contract-only | adopter | Reusable docs | 7.7 | `docs/ACTIONS_CATALOG.md#77-reusable-securityyml-and-reusable-docsyml` |
-| `.github/workflows/reusable-e2e.yml` | contract-only | adopter | Reusable e2e | 7.3 | `docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile` |
+| `.github/workflows/reusable-e2e.yml` | shipped | adopter | Reusable Playwright E2E | 7.3 | `docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile` |
 | `.github/workflows/reusable-guard.yml` | shipped | adopter | Reusable tracker guard | — | `docs/GUARD_DISTRIBUTION.md#no-copy-guard-distribution` |
 | `.github/workflows/reusable-post-merge-audit.yml` | shipped | adopter | Reusable post-merge bypass audit | 7.11 | `docs/ACTIONS_CATALOG.md#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract` |
 | `.github/workflows/reusable-pr-close-guard.yml` | shipped | adopter | Reusable PR close guard | 7.12 | `docs/ACTIONS_CATALOG.md#712-reusable-pr-close-guardyml-pr-close-guard-contract` |
@@ -60,7 +61,7 @@
 
 ### copy-mode
 
-18 path(s) · 18 shipped · 0 contract-only.
+20 path(s) · 20 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -68,7 +69,9 @@
 | `profiles/audit/pr-close-guard.yml` | shipped | adopter | PR close guard caller example | — | `docs/ACTIONS_CATALOG.md#712-reusable-pr-close-guardyml-pr-close-guard-contract` |
 | `profiles/audit/tracker-audit.yml` | shipped | adopter | Tracker audit caller example | — | `docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract` |
 | `profiles/contract/tracker-contract.yml` | shipped | adopter | Contract + metadata caller example | — | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract` |
+| `profiles/counts/counts-docs.yml` | shipped | adopter | Counts docs caller example | — | `docs/ACTIONS_CATALOG.md#713-reusable-countsyml-counts-docs-verification-contract` |
 | `profiles/counts/test-counts.baseline.example.json` | shipped | adopter | Counts baseline example | — | `profiles/counts/README.md` |
+| `profiles/e2e/e2e.yml` | shipped | adopter | E2E caller example | — | `docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile` |
 | `profiles/node/.editorconfig` | shipped | adopter | Node lint/format profile | — | `profiles/node/README.md` |
 | `profiles/node/.prettierignore` | shipped | adopter | Node lint/format profile | — | `profiles/node/README.md` |
 | `profiles/node/eslint.config.mjs` | shipped | adopter | Node lint/format profile | — | `profiles/node/README.md` |
@@ -135,7 +138,7 @@
 
 ### internal
 
-71 path(s) · 71 shipped · 0 contract-only.
+74 path(s) · 74 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -143,6 +146,8 @@
 | `.github/actions/setup-node-cache/README.md` | shipped | adopter | setup-node-cache README | — | `docs/ACTIONS_CATALOG.md#78-composite-action-interfaces` |
 | `.github/actions/sign-notarize-macos/README.md` | shipped | adopter | sign-notarize-macos | — | `docs/ACTIONS_CATALOG.md#78-composite-action-interfaces` |
 | `.github/workflows/ci.yml` | shipped | template | CI | — | `docs/ACTIONS_CATALOG.md#2-workflow-catalog`<br>`docs/REFERENCE.md#13-workflow-catalog` |
+| `.github/workflows/counts-docs.yml` | shipped | template | Counts docs (self caller) | — | `docs/ACTIONS_CATALOG.md#212-counts-docs-verification` |
+| `.github/workflows/e2e-fixture.yml` | shipped | template | E2E reusable plumbing fixture | — | `docs/ACTIONS_CATALOG.md#22-e2e-integration-optional-profile` |
 | `.github/workflows/main-history-guard.yml` | shipped | template | Main history guard | — | `docs/ACTIONS_CATALOG.md#2-workflow-catalog` |
 | `.github/workflows/post-merge-audit.yml` | shipped | template | Post-merge bypass audit | — | `docs/ACTIONS_CATALOG.md#2-workflow-catalog` |
 | `.github/workflows/pr-close-guard.yml` | shipped | template | PR close guard | — | `docs/REFERENCE.md#pr-closing-keyword-guard` |
@@ -200,6 +205,7 @@
 | `profiles/contract/README.md` | shipped | adopter | Contract + metadata profile | — | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract`<br>`docs/ADOPTION.md#adoption-contract-verify` |
 | `profiles/counts/README.md` | shipped | adopter | Counts contract profile (verified PASS/FAIL/SKIP) | — | `docs/REFERENCE.md#1-repository-map` |
 | `profiles/desktop/README.md` | shipped | adopter | Desktop smoke profile | — | `docs/REFERENCE.md#1-repository-map` |
+| `profiles/e2e/README.md` | shipped | adopter | E2E profile | — | `docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile` |
 | `profiles/node/README.md` | shipped | adopter | Node profile (generic) | — | `docs/REFERENCE.md#1-repository-map` |
 | `profiles/release/README.md` | shipped | adopter | Release profiles | — | `docs/REFERENCE.md#1-repository-map` |
 | `profiles/tooling/README.md` | shipped | adopter | Tooling work profile (Stream → Task) | — | `docs/REFERENCE.md#1-repository-map` |
@@ -246,7 +252,6 @@
 | Entry | Path | Note / next task |
 |---|---|---|
 | `wf:reusable-docs` | `.github/workflows/reusable-docs.yml` | — |
-| `wf:reusable-e2e` | `.github/workflows/reusable-e2e.yml` | — |
 
 ## Generated artifacts
 

@@ -1,0 +1,34 @@
+# Thin self caller for reusable-counts.yml (dogfooding the counts-docs reusable, T05 / issue #140).
+# Check context: `counts-docs / counts`.
+#
+# The tracker repository's `tracker.config.json` has NO `docs.counts` policy yet, so this run is a
+# documented no-op: `guard-docs-counts` exits 0 with "docs.counts is not configured (no-op)". The
+# real-baseline validation of the reusable is CastDeck C3 after the v1.4.0 tag (recorded on #140);
+# enabling counts in this repository requires adopting the baseline/generated-doc/marker policy
+# first (see profiles/counts/README.md).
+#
+# `tracker-ref: ''` is intentional — self mode reads the guard from this checkout, not a pinned tag.
+name: Counts docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: counts-docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  counts-docs:
+    name: counts-docs
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-counts.yml
+    with:
+      tracker-ref: ''
+      config-path: tracker.config.json
