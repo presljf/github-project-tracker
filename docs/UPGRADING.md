@@ -113,6 +113,62 @@ See [ADOPTION contract verify](./ADOPTION.md#adoption-contract-verify),
 [ACTIONS CATALOG §7.10](./ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract),
 and [profiles/contract](../profiles/contract/README.md).
 
+### Audit-family reusable workflow migration
+
+v1.4.0 adds three audit-family reusables — `reusable-pr-close-guard.yml`,
+`reusable-post-merge-audit.yml`, and `reusable-audit.yml` (shipping the previously contract-only
+tracker-audit wrapper) — and **the v1.4.0 tag is the first release shipping them**. The old inline
+copied workflows stay on their pinned pre-v1.4.0 tags; migrate in the same PR as the pin bump.
+
+| Old inline copy (v1.3.x) | Old check context | New reusable check context |
+|---|---|---|
+| `pr-close-guard.yml` | `pr-close-guard` | `pr-close-guard / guard` |
+| `post-merge-audit.yml` | `audit` (post-merge) | `post-merge-audit / audit` |
+| `tracker-audit.yml` | `audit` (tracker) | `tracker-audit / audit` |
+
+1. Copy the callers you need from `profiles/audit/` into `.github/workflows/`
+   (`pr-close-guard.yml`, `post-merge-audit.yml`, `tracker-audit.yml`) and pin **both** the
+   reusable-workflow `uses:` ref and the `tracker-ref` input to the exact tag/SHA you adopt
+   (v1.4.0+; replace the `v1.3.2` placeholders in the examples). `tracker-ref` must be a released
+   tag containing the current `scripts/adopt/**` tooling.
+2. Grant caller permissions exactly as documented (called workflows can only downgrade them):
+   - `pr-close-guard.yml`: `contents: read`, `issues: read`, `pull-requests: read` — read-only.
+   - `post-merge-audit.yml`: `contents: read`, `issues: write`, `pull-requests: read`,
+     `checks: read`, `statuses: read`, `actions: read` (`issues: write` opens the
+     `tracker-contract-exception` OI; the read scopes feed `statusCheckRollup`, which resolves
+     `checkSuite.workflowRun`).
+   - `tracker-audit.yml`: `contents: read` plus the optional `TRACKER_TOKEN` secret (project read).
+3. Update `tracker.config.json` `guard.requiredChecks` to the reusable contexts — the template's
+   audited config sets `["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]` — and update
+   branch protection/ruleset required checks **in the same PR** as the caller migration: the old
+   `pr-close-guard` context disappears when the inline workflow is replaced. An absent
+   `guard.requiredChecks` falls back to the legacy default list (`ci / ci-gate`, `docs-guard`,
+   `pr-close-guard`), which no longer matches the reusable context, so set it explicitly. This is
+   a **major** interface change per ACTIONS CATALOG §7.9.
+4. Provision `TRACKER_TOKEN` (project read: Projects read + Metadata read; project-scoped PAT ≤90
+   days or a GitHub App installation token) as a repository secret if the tracker audit should run
+   with the token; advisory runs without it log a notice and skip (exit 0), while strict
+   release-gate runs fail with an actionable message without it.
+5. Exercise both paths: a PR launches `pr-close-guard / guard` and the advisory
+   `tracker-audit / audit`; a merged PR launches `post-merge-audit / audit`. Manual post-merge
+   dispatch passes `pr-number`; the reusable workflow revalidates the PR is MERGED before auditing.
+6. Keep the old inline workflow files until the new contexts are green, then delete them. Do not
+   keep old and new required contexts required side by side for long.
+7. Rollback: restore the v1.3.2 inline copies (`post-merge-audit.yml`, `pr-close-guard.yml`,
+   `tracker-audit.yml` at that tag) and the old protection contexts.
+
+Caveats: the post-merge audit degrades loudly to a closure-only audit (warning + job summary) when
+`statusCheckRollup` is unreadable — degraded is advisory, not a clean pass. A PR merged from a fork
+may lack `issues: write`, so OI creation can return 403 (documented pre-existing limitation: a
+detected bypass is reported in the job log and the run fails loudly instead of recording the OI).
+None of the three reusables upload artifacts; tracker-audit JSON goes to the job log/summary. The
+audit reusables are not yet in the adoption contract (T06 owns `requiredWorkflows`), so
+`verify:contract` does not pin them in v1.4.0.
+
+See [profiles/audit](../profiles/audit/README.md),
+[ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md), and
+[CI profile §3.7](./CI_SECURITY_PROFILE.md#37-audit-family-caller-contexts-reusable-mode).
+
 ## Before upgrading
 
 - [ ] Read the target changelog/release notes/migration notes.

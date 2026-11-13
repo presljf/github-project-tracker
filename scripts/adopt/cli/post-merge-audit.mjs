@@ -214,6 +214,14 @@ export async function runPostMergeAudit({
         cause: err,
       });
   }
+  // The reusable caller must not shell out to `gh` (transport-only rule), so the merged-state
+  // check lives here: a post-merge audit is only meaningful for a merged PR. Dispatch revalidation
+  // for an open/closed-unmerged PR fails actionably instead of auditing it.
+  if (String(pull?.state || '').toUpperCase() !== 'MERGED') {
+    throw new Error(
+      `PR #${prNumber} is not merged (state: ${pull?.state || 'unknown'}); the post-merge audit only runs on merged pull requests`,
+    );
+  }
   const evaluation = evaluateBypass({ pull, required, degraded });
   const result = {
     ok: evaluation.ok,

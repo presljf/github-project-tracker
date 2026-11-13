@@ -1,0 +1,238 @@
+# Reusable tracker audit (T04 / issue #139 — ships the catalog contract-only wrapper).
+#
+# Contract: docs/ACTIONS_CATALOG.md §7.6 (catalog owner updates rows/status).
+# Runs `audit.mjs` in advisory (default) or strict mode. Advisory mode with no TRACKER_TOKEN skips
+# cleanly (notice + success), preserving the historical advisory behavior. Strict mode requires the
+# token and fails actionably without it. Warnings are always advisory (the script exits 0 for them).
+#
+# Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`:
+# the template repository's own caller (`tracker-audit.yml`) reads the script from its checkout; all
+# other repositories check out the pinned `tracker-ref` to `.tracker/`.
+#
+# No artifacts, no pull_request_target; the only secret is the optional TRACKER_TOKEN.
+# Runner cost: one short Linux job (the audit is API-read only; no build/test work).
+
+name: Reusable tracker audit
+
+on:
+  workflow_call:
+    inputs:
+      tracker-ref:
+        description: Exact template tag/SHA to load the audit tooling from (ignored in the template repo itself).
+        required: false
+        type: string
+        default: v1.3.2
+      config-path:
+        description: Tracker config path (working-directory-relative).
+        required: false
+        type: string
+        default: tracker.config.json
+      mode:
+        description: 'Audit mode: advisory (default; exit 0) or strict (exit 1 on violations).'
+        required: false
+        type: string
+        default: advisory
+      json:
+        description: Emit the machine-readable JSON result in the job log.
+        required: false
+        type: boolean
+        default: true
+      working-directory:
+        description: Project working directory.
+        required: false
+        type: string
+        default: '.'
+      runs-on:
+        description: Runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: '22'
+    outputs:
+      ok:
+        description: "'true' when no audit violations were found."
+        value: ${{ jobs.audit.outputs.ok }}
+      violations-count:
+        description: Number of blocking audit violations.
+        value: ${{ jobs.audit.outputs.violations-count }}
+      warnings-count:
+        description: Number of advisory warnings (never blocking).
+        value: ${{ jobs.audit.outputs.warnings-count }}
+    secrets:
+      TRACKER_TOKEN:
+        description: >-
+          Optional project-read token (project-scoped PAT or GitHub App). Advisory mode skips cleanly
+          when absent; strict mode requires it.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: audit
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    outputs:
+      ok: ${{ steps.audit.outputs.ok }}
+      violations-count: ${{ steps.audit.outputs.violations-count }}
+      warnings-count: ${{ steps.audit.outputs.warnings-count }}
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve audit paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          WORKDIR_INPUT: ${{ inputs.working-directory }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          workdir_input="${WORKDIR_INPUT:-.}"
+          case "$workdir_input" in
+            /*) workdir="$workdir_input" ;;
+            *) workdir="$GITHUB_WORKSPACE/$workdir_input" ;;
+          esac
+          [ -d "$workdir" ] || {
+            echo "::error::working-directory '$workdir_input' does not exist in the checkout."
+            exit 1
+          }
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+          fi
+
+          config="${CONFIG_PATH_INPUT:-tracker.config.json}"
+          case "$config" in
+            /*) ;;
+            *) config="$workdir/$config" ;;
+          esac
+          [ -f "$config" ] || {
+            echo "::error::tracker config not found at '$config' (mode=${mode})."
+            exit 1
+          }
+
+          [ -f "$tracker/scripts/adopt/cli/audit.mjs" ] || {
+            echo "::error::tracker audit tooling not found under '$tracker' (mode=${mode})."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+          echo "workdir=${workdir}" >> "$GITHUB_OUTPUT"
+      - name: Validate mode and audit token policy
+        id: token
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+          MODE_INPUT: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+
+          case "${MODE_INPUT}" in
+            advisory|strict) ;;
+            *)
+              echo "::error::mode must be 'advisory' or 'strict' (got '${MODE_INPUT}')."
+              exit 1
+              ;;
+          esac
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          if [ -z "${GH_TOKEN:-}" ]; then
+            if [ "${MODE_INPUT}" = "advisory" ]; then
+              echo "::notice::TRACKER_TOKEN is not configured; skipping advisory audit."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::strict mode requires the TRACKER_TOKEN secret (project read); configure it or run mode: advisory."
+              exit 1
+            fi
+          fi
+      - name: Run tracker audit
+        id: audit
+        if: ${{ steps.token.outputs.skip != 'true' }}
+        working-directory: ${{ steps.paths.outputs.workdir }}
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          JSON_MODE: ${{ inputs.json }}
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+
+          out="$(mktemp)"
+          err="$(mktemp)"
+          trap 'rm -f "$out" "$err"' EXIT
+
+          json_args=()
+          if [ "${JSON_MODE}" = "true" ]; then json_args+=(--json); fi
+
+          status=0
+          set +e
+          node "$TRACKER/scripts/adopt/cli/audit.mjs" --config "$CONFIG" "--${MODE}" "${json_args[@]}" >"$out" 2>"$err"
+          status=$?
+          set -e
+
+          if [ -s "$err" ]; then cat "$err" >&2; fi
+
+          if [ -s "$out" ]; then
+            if [ "${JSON_MODE}" = "true" ]; then
+              if ! node -e '
+                const fs = require("node:fs");
+                const result = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                const violations = Array.isArray(result.violations) ? result.violations : [];
+                const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+                fs.appendFileSync(
+                  process.env.GITHUB_OUTPUT,
+                  `ok=${result.ok ? "true" : "false"}\nviolations-count=${violations.length}\nwarnings-count=${warnings.length}\n`,
+                );
+                fs.appendFileSync(
+                  process.env.GITHUB_STEP_SUMMARY || "/dev/null",
+                  [
+                    `### Tracker audit (${process.env.MODE})`,
+                    "",
+                    `- Result: **${result.ok ? "PASS" : "VIOLATIONS"}**`,
+                    `- Violations: ${violations.length}`,
+                    `- Warnings: ${warnings.length}`,
+                    `- Repository: ${result.repository || process.env.GITHUB_REPOSITORY || ""}`,
+                    "",
+                  ].join("\n") + "\n",
+                );
+              ' "$out"; then
+                echo "::error::could not parse audit JSON output."
+                status=1
+              fi
+              echo '```json'
+              cat "$out"
+              echo '```'
+            else
+              cat "$out"
+            fi
+          fi
+
+          exit "$status"

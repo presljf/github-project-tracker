@@ -107,6 +107,14 @@ Org repos may also require SSO authorization in the browser.
 **Cause:** missing project scope or token secret.
 **Fix:** create project-scoped PAT/App token; store `TRACKER_TOKEN`; grant least privilege; never print it. For fork PRs, do not expose secrets.
 
+### Tracker audit is green but says it was skipped
+**Cause:** advisory mode ran without the optional `TRACKER_TOKEN` secret; `reusable-audit.yml` prints
+`::notice::TRACKER_TOKEN is not configured; skipping advisory audit.` and exits 0 by design.
+**Fix:** a skip is not pass evidence — configure the repo/org secret `TRACKER_TOKEN`
+(project-scoped read) so scheduled/PR advisory runs execute, or run deliberately in strict mode
+(`mode: strict`), where a missing token fails actionably. Inspect the `tracker-audit / audit` job log
+in the reusable workflow.
+
 ### Workflow can't find reusable workflow
 **Cause:** private cross-repo access restricted, or wrong repo/ref.
 **Fix:** validate access; use copy fallback (thin callers/composite actions) or make template public; pin a tag/SHA, not `main`, for stability.
@@ -114,6 +122,27 @@ Org repos may also require SSO authorization in the browser.
 ### Required check stuck/pending
 **Cause:** job name changed, workflow skipped, or path filter.
 **Fix:** update branch protection required-check names; make path-filtered required jobs always run a no-op; check Actions logs.
+
+### Post-merge audit opened a false `tracker-contract-exception` OI right after upgrade
+**Cause:** `guard.requiredChecks[]` in `tracker.config.json` still lists the pre-v1.4.0 check names
+(e.g. `pr-close-guard`), while the reusable caller now publishes `pr-close-guard / guard` (plus
+`post-merge-audit / audit` and `tracker-audit / audit`). The post-merge audit reads a missing
+required check as a bypass and opens the OI.
+**Fix:** capture the real contexts from a green run (`gh pr checks <pr>`), update
+`guard.requiredChecks` to the new list (this repo uses
+`["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]`; adopters use their own names), and update
+branch protection to the same set. Then re-run **Actions → Post-merge bypass audit → Run workflow**
+with `pr-number` = the affected PR — the reusable workflow re-fetches the PR, verifies it is
+`MERGED`, and re-audits; close the false OI with the new run link. Never keep old and new contexts
+required side by side.
+
+### Required check `pr-close-guard` stuck pending/missing after upgrade
+**Cause:** branch protection/ruleset still requires the removed pre-v1.4.0 `pr-close-guard` context;
+the migrated caller publishes `pr-close-guard / guard`, so the old required check never reports and
+merges wait.
+**Fix:** get the exact names from a green PR (`gh pr checks <pr>` or the check-runs API), update the
+ruleset/branch protection to `pr-close-guard / guard` in the same PR as the caller migration, and
+remove the old context. Keep `guard.requiredChecks[]` consistent with protection.
 
 ### `pull_request_target` security warning
 **Cause:** running untrusted PR code with secrets.
@@ -186,7 +215,12 @@ Fix the `$path`; re-run until `OK`.
 
 ### `Cannot find module` after upgrading the tracker
 **Cause:** v1.4.0 moved scripts into class-first families (no shims); copied aliases or runner workflows still point at pre-v1.4.0 locations.
-**Fix:** re-copy `scripts/adopt/**`, update copied `package.json` alias targets (names unchanged) and copied runner workflows (`post-merge-audit.yml`, `pr-close-guard.yml`, `tracker-audit.yml`, `main-history-guard.yml`); `scripts/internal/**` stays template-maintainer-only. Old tags keep the old layout, so a pinned old checkout is unaffected — see [UPGRADING](./UPGRADING.md).
+**Fix:** re-copy `scripts/adopt/**`, update copied `package.json` alias targets (names unchanged), and
+migrate the audit-family callers to the reusable-mode examples in `profiles/audit/` (v1.4.0; the
+copied `post-merge-audit.yml`, `pr-close-guard.yml`, `tracker-audit.yml` bodies are replaced by thin
+`uses:` callers — or keep copying them as a documented rollback). Update `main-history-guard.yml` as
+before; `scripts/internal/**` stays template-maintainer-only. Old tags keep the old layout, so a
+pinned old checkout is unaffected — see [UPGRADING](./UPGRADING.md).
 
 ## Network / limits / platform
 

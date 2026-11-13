@@ -81,6 +81,7 @@
 | `profiles/tooling/` | tooling work-profile selection + example config | now |
 | `profiles/counts/` | counts contract wiring + example baseline | now |
 | `profiles/contract/` | contract + metadata reusable caller example (`tracker-contract.yml`) and token/check-name guidance | now |
+| `profiles/audit/` | audit-family reusable caller examples (`tracker-audit.yml`, `post-merge-audit.yml`, `pr-close-guard.yml`) + permissions/check-name/rollback guidance | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
 | `.github/workflows/`, `.github/actions/` | internal runner callers + `reusable-*` workflow contracts + composite actions (`release.yml` is the only runnable release caller here) | now |
@@ -226,7 +227,12 @@ node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
 node scripts/adopt/cli/audit.mjs --config tracker.config.json --strict
 node scripts/adopt/cli/audit.mjs --config tracker.config.json --json
 ```
-Advisory default: prints violations, exit 0. `--strict` exits 1 on violations for release gates. Workflow: `.github/workflows/tracker-audit.yml` (scheduled/dispatch), skips safely without `TRACKER_TOKEN`.
+Advisory default: prints violations, exit 0. `--strict` exits 1 on violations for release gates.
+Workflow: reusable `reusable-audit.yml`, consumed by the thin self caller `tracker-audit.yml`
+(weekly schedule, `workflow_dispatch`, and an advisory run on pull requests); check context
+`tracker-audit / audit`. Advisory mode without `TRACKER_TOKEN` prints a `::notice::` and skips
+cleanly (exit 0); strict mode requires the token and fails actionably without it. Local parity:
+`npm run audit -- --config tracker.config.json --advisory` (or `--strict`).
 
 Warnings (for example `PROJECT_STATUS_STALE`, §5.8) are advisory by design and never change the
 exit code, including under `--strict`. Close-out and hierarchy verification commands are in
@@ -500,7 +506,7 @@ node scripts/adopt/cli/validate-config.mjs tracker.config.json
 | `verification` | no | optional `remoteOnly[]` suite policy: `id`, `workflow`, `prLabel`, `localMode` (`hidden`/`forbidden`, default forbidden), `overrideEnv`, `docs`; absent or empty = no-op |
 | `docs.counts` | no | optional verified PASS/FAIL/SKIP contract: `baseline`, `generated`, `markers[]`, `inventoryCommand`, `updateCommand`; absent = no-op |
 | `feedback` | no | upstreamRepo/issueForm/pinnedVersion/securityContact |
-| `guard` | no | `transportOnly`, `allow[]`, `requiredChecks[]` (post-merge audit check-run names; absent = default `ci / ci-gate`, `docs-guard`, `pr-close-guard`) |
+| `guard` | no | `transportOnly`, `allow[]`, `requiredChecks[]` (post-merge audit check-run names; absent = backwards-compatible legacy default `ci / ci-gate`, `docs-guard`, `pr-close-guard` — v1.4.0 reusable callers publish `post-merge-audit / audit`, `pr-close-guard / guard`, `tracker-audit / audit`, so set your real contexts) |
 | `governance` | no | versioning, publication status/license, security contact/private reporting |
 
 Validation behaviors: required/missing keys, type mismatches, disallowed extra keys, duplicate options/release/sprint keys, missing standard statuses, secret-looking values, templateRepo without version, and profile-aware field rules: the `product` profile (default) requires `fields.Release`/`fields.Sprint` and at least one release; the `tooling` profile requires a `fields.Stream` declaration and allows `releases: []`. `verification.remoteOnly[]` entries require `id`/`workflow`, reject unknown keys, enforce the `localMode` enum and env-var-name shape for `overrideEnv`, and require unique suite ids. Exit 1 with `$path: message`.
@@ -621,14 +627,21 @@ version/pin/cards refresh).
 
 ## 13. Workflow catalog
 
-**Availability:** CI, release, tracker audit, security, desktop smoke, and contract/metadata verification are shipped. Web/E2E, docs, and reusable audit are **contract-only** (not yet implemented).
+**Availability:** CI, security, release, and the audit family (tracker audit, post-merge audit, PR
+close guard) ship as reusable workflows with thin callers; contract/metadata verification does too,
+and desktop smoke ships as a reusable workflow with an example caller under `profiles/desktop/`.
+Web/E2E and docs reusables are **contract-only** until T05 (issue #140). Callers are the only
+runnable entry points; reusable-mode caller examples live under `profiles/` and are never executed
+in place.
 
 | Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
 |---|---|---|---|---|---|---|
 | CI (lint/format/unit) | push/PR | required | Linux | contents:read | none | block merge |
 | Web/E2E | push/PR/nightly | required/advisory | Linux | contents:read | none | required on main/release |
 | Desktop smoke | main/tags/path/label PR | advisory PR; required release | macOS | contents:read | none | release gate |
-| Tracker audit | schedule/dispatch/advisory PR | advisory first; release gate later | Linux | contents:read + project token | `TRACKER_TOKEN`/App | advisory/release fail |
+| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | schedule/dispatch + advisory PR | advisory by default; strict opt-in for release gates | Linux | contents:read; project read via token | optional `TRACKER_TOKEN` (advisory skips cleanly when absent; strict requires it) | context `tracker-audit / audit`; advisory never blocks, strict exits 1 on violations |
+| Post-merge audit — `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `pull_request` closed (merged only); dispatch revalidation with `pr-number` | advisory (opens an OI on a real bypass) | Linux | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read (caller-granted) | `GITHUB_TOKEN` automatic | context `post-merge-audit / audit`; opens `tracker-contract-exception` OI; unreadable rollup degrades loudly |
+| PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | PR opened/edited/synchronize/reopened/labeled/unlabeled | required for task PRs | Linux | contents:read, issues:read, pull-requests:read | none | context `pr-close-guard / guard`; rejects wrong closing targets |
 | Contract verification (`reusable-contract.yml`) | `workflow_call` (consumed by `tracker-contract` callers) | contract required; metadata project-defined | Linux | contents:read | optional `TRACKER_TOKEN` (metadata; Projects + Metadata read) | contract fails merge; metadata advisory |
 | Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
 | Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
@@ -649,13 +662,25 @@ their publishing profiles/callers and enable them deliberately for artifact rele
 | schedule | — | ✓ | optional | — |
 | workflow_dispatch | optional | ✓ | optional | dry-run |
 
+Audit-family details: the tracker audit also runs advisory on `pull_request`; the PR close guard
+runs on PR `opened`/`edited`/`synchronize`/`reopened`/`labeled`/`unlabeled`; the post-merge audit
+runs on `pull_request` **closed** (merged only) and can be re-run with `workflow_dispatch` +
+`pr-number` to revalidate an earlier merge. The tracker-audit caller also supports
+`workflow_dispatch`; those dispatches are the recovery path after a check-context/config change —
+see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
+
 ### Required-check contract
 - Required: deterministic Linux lint/format/unit/e2e/verify jobs.
 - Contract verification: `tracker-contract / contract` is required (offline, no secrets);
   `tracker-contract / metadata` is project-defined (needs `TRACKER_TOKEN`, skipped on PRs by the
   bundled caller).
 - Desktop smoke: path/label on PR; required on main/tags/release.
-- Audit: advisory initially; required only after stable release-gate policy.
+- PR close guard: `pr-close-guard / guard` is required for task PRs. The pre-v1.4.0
+  `pr-close-guard` context no longer exists, so update branch protection/rulesets in the same
+  upgrade PR that adopts the reusable caller.
+- Audit family: `post-merge-audit / audit` is advisory (it opens an OI instead of a red check);
+  `tracker-audit / audit` is advisory on PRs/schedule and may be promoted to release-gate strict
+  mode only after the board is stable.
 - Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
 
 ## 14. Token and secret matrix
@@ -663,9 +688,10 @@ their publishing profiles/callers and enable them deliberately for artifact rele
 | Need | Source | Scope | Rules |
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
-| Tracker audit | PAT or GitHub App installation token | project read/write (or read advisory) | store as secret; never print; project-scoped |
+| Tracker audit (`reusable-audit.yml`) | PAT or GitHub App installation token | project read (Projects read + Metadata read) | optional `TRACKER_TOKEN` repository secret; advisory mode skips cleanly when absent, strict mode fails with an actionable message; pass by explicit name (never `secrets: inherit`); never print; ≤90-day PAT |
 | Contract metadata | PAT or GitHub App installation token | Projects + Metadata read | `TRACKER_TOKEN` repository secret; optional (only when the reusable-contract `metadata` job runs); pass by explicit name (never `secrets: inherit`); rotate; PAT ≤90 days |
-| Post-merge audit | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read | least privilege; the copied caller must carry the same block; private repos need `checks:read`/`statuses:read`/`actions:read` for `statusCheckRollup` (GraphQL resolves `checkSuite.workflowRun`) |
+| Post-merge audit (`reusable-post-merge-audit.yml`) | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read | least privilege; the caller job must grant at least the same block; private repos need `checks:read`/`statuses:read`/`actions:read` for `statusCheckRollup` (GraphQL resolves `checkSuite.workflowRun`) |
+| PR close guard (`reusable-pr-close-guard.yml`) | `GITHUB_TOKEN` | contents:read, issues:read, pull-requests:read | read-only: the guard fetches the live PR and referenced issues; no write scopes, no secrets |
 | Release publish | `GITHUB_TOKEN`/environment secrets | contents:write | protected tag/environment |
 | Package/cloud publish | OIDC or environment secrets | least privilege | prefer short-lived |
 | Signing/notarization/container | project secrets/OIDC | minimal | skip cleanly if absent |
@@ -694,36 +720,54 @@ used for the v1.3.0 release evidence.
 
 ### Post-merge bypass audit
 
-`.github/workflows/post-merge-audit.yml` runs when a PR is merged. It checks required checks and
-closing-keyword/partial-PR rules. Required check-run names resolve from
-`guard.requiredChecks[]` in `tracker.config.json` (default when absent:
-`ci / ci-gate`, `docs-guard`, `pr-close-guard` — adopters must set their real names, e.g. CastDeck:
-`ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard`). The workflow token needs
-`contents: read`, `issues: write`, `pull-requests: read`, and (on private repos)
-`checks: read` + `statuses: read` + **`actions: read`** to read `statusCheckRollup` — its GraphQL
-query also resolves `checkSuite.workflowRun`, which needs Actions read (checks+statuses alone still
-degrade; observed on CastDeck run 43276236147). The copied caller must carry the same permissions
-block. Historical note: the fix ships in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the
-tooling stream, `[Stream] v1.3.1-maintenance`), so adopters pinned to v1.3.0 add `actions: read` to
-their copied caller.
+`post-merge-audit.yml` is a thin self caller of `reusable-post-merge-audit.yml` (caller job
+`post-merge-audit`, check context `post-merge-audit / audit`). It runs when a PR is merged, and on
+`workflow_dispatch` with a `pr-number` input to revalidate a past merge — the reusable workflow
+re-fetches the PR and verifies it is `MERGED` before auditing, which is the recovery path after a
+stale-config false OI. It checks required checks and closing-keyword/partial-PR rules.
+
+Required check-run names resolve from `guard.requiredChecks[]` in `tracker.config.json` (absent =
+backwards-compatible default `ci / ci-gate`, `docs-guard`, `pr-close-guard`). Adopting the v1.4.0
+reusable callers changes the check contexts, so set the new names in the same PR — this repository
+uses `["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]`; adopters set their real names (e.g.
+CastDeck: `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard / guard`). A stale list still
+naming the removed `pr-close-guard` context makes the audit treat the missing required check as a
+bypass and open a false OI — see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
+
+The caller job must grant at least `contents: read`, `issues: write` (opens the
+`tracker-contract-exception` OI/label), `pull-requests: read`, `checks: read`, `statuses: read`, and
+**`actions: read`**: `statusCheckRollup` also resolves `checkSuite.workflowRun`, which needs Actions
+read (checks+statuses alone still degrade; observed on CastDeck run 43276236147). Historical note:
+the permission correction shipped in v1.3.2; v1.3.0 copied callers predate it and must add
+`actions: read`.
 
 A merged PR with a failed/missing required check or invalid closure opens an OI labeled
 `tracker-contract-exception` and must be resolved before release. If `statusCheckRollup` is
 unreadable because of a permission/API error, the audit degrades loudly (warning + job summary +
 `actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
 closing-keyword/partial-PR rules only, and exits 0 in advisory mode — no false check-related OI.
-Real closing violations still open an OI; non-permission errors still fail.
+Real closing violations still open an OI; non-permission errors still fail. Local parity:
+`GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<merged-pr> npm run audit:post-merge --
+--config tracker.config.json` (the script reads the repo/PR from the environment; it opens an OI on
+a real bypass).
 
 ### PR closing-keyword guard
 
-`.github/workflows/pr-close-guard.yml` enforces:
+`pr-close-guard.yml` is a thin self caller of `reusable-pr-close-guard.yml` (caller job
+`pr-close-guard`, check context `pr-close-guard / guard`). It enforces:
 
 - a task PR completes via exactly a closing keyword (`Closes/Fixes/Resolves #N`) targeting a task issue;
 - a PR labeled `partial` must use `Refs #N` / `Part of #N` and must not close the task;
 - closing a sprint/release tracker issue is rejected.
 
-GitHub's project linked-PR field follows closing keywords, so this guard keeps task completion and
-the board's linked PRs consistent.
+The caller grants read-only permissions (`contents: read`, `issues: read`,
+`pull-requests: read`) — the guard fetches the live PR and referenced issues and writes nothing, so
+no `issues: write` is required. The pre-v1.4.0 `pr-close-guard` check context no longer exists;
+branch protection/rulesets must require `pr-close-guard / guard` in the same upgrade PR. GitHub's
+project linked-PR field follows closing keywords, so this guard keeps task completion and the
+board's linked PRs consistent. Local parity:
+`GITHUB_REPOSITORY=owner/repo PR_NUMBER=<pr> npm run guard:pr-close` (the script reads the live PR;
+`PR_BODY`/`PR_BRANCH`/`PR_LABELS` env are optional overrides).
 
 ### Adoption contract verifier
 
@@ -839,7 +883,7 @@ gh project item-list $PROJECT_NUMBER --owner @me --format json
 | Variable | Use |
 |---|---|
 | `GH_TOKEN` / `GITHUB_TOKEN` | auth in CI; never commit |
-| `TRACKER_TOKEN` | tracker-audit advisory workflow + contract metadata job (`reusable-contract.yml`) secret name |
+| `TRACKER_TOKEN` | optional tracker-audit (`reusable-audit.yml`) project-read token; advisory skips cleanly when unset, strict requires it; also the contract metadata job (`reusable-contract.yml`) secret name |
 | `NO_COLOR` | plain output |
 | `GH_REPO` | default repo for some `gh` commands (optional) |
 

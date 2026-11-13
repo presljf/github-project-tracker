@@ -39,6 +39,28 @@ Project config allowlist:
 
 Once branch protection is available, require this check (`Tracker guard / guard` or the caller job context) in addition to CI.
 
+## Adopting project: audit family (no-copy reusable)
+
+The audit family follows the same no-copy model as the transport guard: only thin callers live in
+the adopting repository, and the implementation runs from the pinned tracker checkout. v1.4.0 ships
+them as reusable workflows; copy the caller examples from [profiles/audit](../profiles/audit/README.md)
+and pin both the `uses:` ref and the `tracker-ref` input to the adopted tag.
+
+| Workflow | Caller | Check context | Caller job permissions |
+|---|---|---|---|
+| Tracker audit | `tracker-audit.yml` → `reusable-audit.yml` | `tracker-audit / audit` | `contents: read`; optional `TRACKER_TOKEN` secret (advisory skips cleanly, strict requires it) |
+| Post-merge audit | `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `post-merge-audit / audit` | `contents: read`, `issues: write`, `pull-requests`/`checks`/`statuses`/`actions` read |
+| PR close guard | `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | `pr-close-guard / guard` | `contents`/`issues`/`pull-requests` read (read-only) |
+
+Copying a whole audit workflow or its script is now the **fallback**, not the model — this supersedes
+the v1.3.x copied-workflow guidance. If private cross-repo access is blocked, keep the previous
+copied workflows as a documented rollback until access is restored or the template is public, and
+update `guard.requiredChecks[]` plus branch-protection contexts in the same change (old and new
+contexts must not be required side by side). Workflow contracts: [ACTIONS CATALOG
+§2](./ACTIONS_CATALOG.md#2-workflow-catalog) and §7.6 (tracker audit), §7.11 (post-merge
+audit), §7.12 (PR close guard); permission and check-context details:
+[CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md).
+
 ## Local projects
 
 If the project carries `scripts/adopt/**` (copied mode), run:
