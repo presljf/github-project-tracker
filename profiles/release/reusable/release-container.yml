@@ -37,6 +37,13 @@ on:
         required: false
         type: boolean
         default: false
+      contract-gate:
+        description: >-
+          Opt in to the adoption-contract gate (verify-tooling + verify-contract + offline
+          release-gate) before build. Default false; the open-OI check stays a release-procedure step.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +69,9 @@ jobs:
       version: ${{ inputs.version }}
       dry-run: ${{ inputs.dry-run }}
       publish: ${{ inputs.publish }}
+      # Opt in to the v1.4.0 adoption-contract gate; tracker-ref is the exact adopted tag.
+      contract-gate: ${{ inputs.contract-gate }}
+      tracker-ref: v1.3.2
       # Template placeholder: builds a dependency-free `FROM scratch` image so the container
       # pipeline (build -> save -> guarded push) is exercisable without a project Dockerfile.
       # Replace with the project's real `docker build` command; the reusable workflow saves the

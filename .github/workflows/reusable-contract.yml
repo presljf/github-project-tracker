@@ -31,7 +31,7 @@ on:
   workflow_call:
     inputs:
       tracker-ref:
-        description: Exact template tag/SHA to load the contract and verification tooling from.
+        description: Exact template release tag (`@v<version>`) to load the contract and verification tooling from.
         required: false
         type: string
         default: v1.3.2

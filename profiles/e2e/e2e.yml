@@ -2,7 +2,7 @@
 #
 # Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
 # lives under profiles/. Copy it into your repository's .github/workflows/e2e.yml, replace the
-# pinned @v1.3.2 `uses:` ref with the exact tag/SHA you adopted (v1.4.0+ — the first release that
+# pinned @v1.3.2 `uses:` ref with the exact release tag (`@v<version>`) you adopted (v1.4.0+ — the first release that
 # ships reusable-e2e.yml), and replace the path filters with your project's real paths (or gate on
 # the `run-e2e` label). The reusable workflow has no `tracker-ref`: it runs only your commands plus
 # the pinned tracker composite action it checks out itself, so there is nothing else to pin.

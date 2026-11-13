@@ -118,8 +118,8 @@ Batch related edits locally instead of scattering partial remote runs:
 
 - Batch related edits; run one `npm run gate:local` per reviewable checkpoint (not per file and not
   only at PR time). The gate runs the ordered local stack — tests, lint, format, docs, config/
-  tooling/contract/surface guards, release gate, docs coverage — and prints `GATE_LOCAL_OK n/n` on
-  success or `GATE_LOCAL_FAIL n/n` plus failing tails.
+  tooling/contract/surface/tracked-hygiene guards, release gate, docs coverage — and prints
+  `GATE_LOCAL_OK n/n` on success or `GATE_LOCAL_FAIL n/n` plus failing tails.
 - Local green is checkpoint evidence, not remote evidence: attach the `GATE_LOCAL_OK ...` line (or
   `--json` result) and push only at PR head/final. CI repeats the independent check; remote-only
   suites still need their remote run (§Remote-only suites).

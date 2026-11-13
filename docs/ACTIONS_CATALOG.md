@@ -34,6 +34,7 @@ This page is the single source of truth for the Actions layer. The [playbook §1
   - [7.11 `reusable-post-merge-audit.yml` — post-merge bypass audit contract](#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract)
   - [7.12 `reusable-pr-close-guard.yml` — PR close guard contract](#712-reusable-pr-close-guardyml-pr-close-guard-contract)
   - [7.13 `reusable-counts.yml` — counts docs verification contract](#713-reusable-countsyml-counts-docs-verification-contract)
+  - [7.14 Required adoption contract (v1.4.0)](#714-required-adoption-contract-v140)
 - [8. Hybrid D adoption model](#8-hybrid-d-adoption-model)
 - [9. Guardrails: no secrets, no live calls, guarded publishing](#9-guardrails-no-secrets-no-live-calls-guarded-publishing)
 - [10. Validation, T15 handoff, and change protocol](#10-validation-t15-handoff-and-change-protocol)
@@ -66,7 +67,7 @@ Three invariants follow from the definitions:
 | E2E — `e2e.yml` → `reusable-e2e.yml` | PR path/label; optional nightly | advisory by default; required only if project opts in; context `e2e / e2e` | `ubuntu-latest` | Playwright browser E2E wrapper (browsers per run) | `contents: read` | none | failure-only traces/screenshots/videos when `artifact-path` set; 7d default | Advisory unless promoted; flaky E2E never auto-promoted; install/test failures fail the job |
 | Counts docs — `counts-docs.yml` → `reusable-counts.yml` | `pull_request`; `push` main; `workflow_dispatch` | advisory until `docs.counts` adopted, then required (`counts-docs / counts`) | `ubuntu-latest` | Verified counts docs contract: baseline agreement + generated doc + inline markers | `contents: read` | none | none — console output only | Drift/stale doc or markers fail; absent `docs.counts` is a documented no-op (exit 0); local parity `npm run guard:docs:counts` |
 | Desktop smoke — `desktop-smoke.yml` → `reusable-desktop-smoke.yml` | PR path/label; `push` main paths; tags `v*`; `workflow_dispatch` | advisory on PR; **required release gate** | macOS (`macos-15` baseline) | Native shell/package smoke | `contents: read` | none (unsigned smoke) | smoke logs/summary, 7d | Advisory on PR; blocks release tag gate |
-| Release — `release.yml` → `reusable-release.yml` | `push` tags matching `automation.tagPattern`; `workflow_dispatch` (dry-run default) | **release gate** (not a PR check) | Linux generic/container/package; macOS for signed desktop | Validate version, build, checksum, publish or dry-run | `contents: write` (publish job only); `id-token: write` for OIDC; `packages: write` for container profile | `release` environment secrets; OIDC; `RELEASE_TOKEN` only if org policy requires | archives/dmg/image digest/package + `SHA256SUMS`, 30–90d | Fail closed; dry-run never publishes; tag/version mismatch fails |
+| Release — `release.yml` → `reusable-release.yml` | `push` tags matching `automation.tagPattern`; `workflow_dispatch` (dry-run default) | **release gate** (not a PR check); opt-in `contract-gate` runs before build | Linux generic/container/package; macOS for signed desktop | Validate version/contract (opt-in), build, checksum, publish or dry-run | `contents: write` (publish job only); `id-token: write` for OIDC; `packages: write` for container profile; contract gate `contents: read` only | `release` environment secrets; OIDC; `RELEASE_TOKEN` only if org policy requires; no secret for the contract gate | archives/dmg/image digest/package + `SHA256SUMS`, 30–90d; gate uploads none | Fail closed; dry-run never publishes; tag/version mismatch fails; enabled gate fails on required-caller/tooling/contract violations |
 | Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | weekly `schedule`; `workflow_dispatch`; advisory `pull_request` | advisory (default); strict opt-in per project | `ubuntu-latest` | Tracker invariants via `audit.mjs` | caller + job `contents: read`; project read via scoped token | `TRACKER_TOKEN` (`required: false`; project read; advisory skips cleanly when absent, strict fails actionably) | none — JSON in the job log + job summary | Advisory = never blocks; strict = fails gate; invalid mode/config errors fail; missing token skips advisory |
 | Post-merge audit — `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `pull_request` closed (merged only); `workflow_dispatch` with `pr-number` | advisory (opens OI on a real bypass); context `post-merge-audit / audit` | `ubuntu-latest` | Required-check + closing-keyword/partial-PR audit of merged PRs | caller grants `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` (called job's union) | `GITHUB_TOKEN` (automatic; caller must grant the same block) | none — job summary | Advisory: opens `tracker-contract-exception` OI instead of a red X; unreadable rollup degrades to warning + closure-only (exit 0, no false OI); non-merged `pr-number` fails actionably |
 | PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | `pull_request` opened/edited/synchronize/reopened/labeled/unlabeled | required: `pr-close-guard / guard` | `ubuntu-latest` | Closing-keyword and partial-PR rules for tracker task PRs | caller grants `contents: read`, `issues: read`, `pull-requests: read` (read-only) | none (`GITHUB_TOKEN` automatic) | none — job summary | Violations fail the PR check; guard is read-only (no `issues: write`) |
@@ -86,7 +87,7 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 ### 2.1 CI (required)
 
 - **Purpose:** deterministic lint/format/unit gates that can be enforced on `main`.
-- **Wiring:** `ci.yml` thin caller → `reusable-ci.yml`; local ref in this repo, pinned tag/SHA downstream.
+- **Wiring:** `ci.yml` thin caller → `reusable-ci.yml`; local ref in this repo, pinned release tag downstream (`@v<version>`; the adoption-contract verifier requires the tag form for required workflows).
 - **Trigger detail:** `pull_request` (`opened`, `synchronize`, `reopened`, `ready_for_review`), `push` to `main`, plus `merge_group` when a merge queue is enabled.
 - **Required-check set:** `lint`, `format`, `test` as listed in `workflows.ci.requiredChecks`; expose one aggregate gate (`ci-gate`) to keep protection stable (§3.2).
 - **Gating:** none. A required workflow must not use `paths`/`paths-ignore`; docs-only PRs still run the cheap CI gate.
@@ -97,7 +98,7 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 
 ### 2.2 E2E / integration (optional profile)
 
-- **Shipped (T05):** thin caller `e2e.yml` → [`reusable-e2e.yml`](#73-reusable-e2eyml-e2e-contract-optional-profile); copy the caller from [`profiles/e2e/e2e.yml`](../profiles/e2e/e2e.yml) and pin the adopted tag/SHA. Check context: `e2e / e2e`.
+- **Shipped (T05):** thin caller `e2e.yml` → [`reusable-e2e.yml`](#73-reusable-e2eyml-e2e-contract-optional-profile); copy the caller from [`profiles/e2e/e2e.yml`](../profiles/e2e/e2e.yml) and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `e2e / e2e`.
 - **Purpose:** browser end-to-end validation where the product needs it — a Playwright wrapper that keeps caller logic thin.
 - **Trigger detail:** `pull_request` path- or `run-e2e`-label gated; optional nightly `schedule` off-peak; `workflow_dispatch`.
 - **Required status:** advisory by default. Promotion requires deterministic behavior, <15 min on Linux, no secrets, a flake rate recorded over at least a week, and a recorded project decision. Never required on PRs before promotion.
@@ -128,7 +129,7 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 - **Profiles:** `generic` (GitHub Release assets), `desktop` (signed/notarized macOS), `container` (GHCR image), `package` (npm/PyPI with provenance). The value is a free-form string in config (`workflows.release.profile`); this catalog's canonical name for the GitHub Release profile is `generic` (the example configs also use `github-release` — keep the caller, profile template, and config value identical). Additional project profiles are project-local. The macOS/container/package callers for these profiles ship as non-runnable copy examples under `profiles/release/reusable/`; copy one into `.github/workflows/` and pin the adopted tag before use (`profiles/` is never executed).
 - **Trigger detail:** `push` on tags matching `automation.tagPattern` (`^v\d+\.\d+\.\d+$`); `workflow_dispatch` with `publish` defaulting to `false` (dry-run). No publish path from PR events.
 - **Required status:** release gate, not a PR required check.
-- **Permissions/secrets:** job-scoped `contents: write`; `id-token: write` only for OIDC publishing; `packages: write` only for the container profile; signing/notarization secrets are environment secrets on protected `release`. All publish steps guarded by tag + environment (§9).
+- **Permissions/secrets:** job-scoped `contents: write`; `id-token: write` only for OIDC publishing; `packages: write` only for the container profile; signing/notarization secrets are environment secrets on protected `release`. The opt-in contract gate requests `contents: read` only and uses no secret. All publish steps guarded by tag + environment (§9).
 - **Artifacts:** profile artifacts plus `SHA256SUMS` (sorted, deterministic); 30–90 days and as release assets.
 - **Failure mode:** fail closed. Dry-run never publishes; tag/version mismatch fails; missing signing secrets skips signing cleanly (ad-hoc fallback documented) rather than publishing unsigned silently.
 - **Local parity:** build + `shasum -a 256`/`sha256sum`; generic `gh release create --draft`; desktop `codesign`/`xcrun notarytool` dry-run with placeholder env; container `docker build`; package `npm pack --dry-run` (§6).
@@ -136,7 +137,7 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 ### 2.5 Tracker audit (advisory first)
 
 - **Purpose:** run `audit.mjs` against the configured project and report tracker invariant violations; advisory by default, strict only as a deliberate release-gate opt-in.
-- **Reusable caller:** `tracker-audit.yml` (thin caller) → [`reusable-audit.yml`](#76-reusable-audityml-tracker-audit-contract); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/README.md) and pin the adopted tag/SHA. Check context: `tracker-audit / audit`.
+- **Reusable caller:** `tracker-audit.yml` (thin caller) → [`reusable-audit.yml`](#76-reusable-audityml-tracker-audit-contract); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/README.md) and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `tracker-audit / audit`.
 - **Trigger detail:** weekly `schedule` (Mondays 15:00 UTC), `workflow_dispatch`, and — new in T04 — advisory `pull_request`; projects may also run it on `push` to `main`.
 - **Required status:** advisory first; strict is a release-gate opt-in (`mode: strict`), never the default PR check.
 - **Token:** `TRACKER_TOKEN` (`required: false`) with project read **and** repo/issues read for private adopters (classic PAT `project` + `repo`; fine-grained Projects read + Metadata read + repository contents/issues read; project-scoped PAT ≤90 days — or a GitHub App installation token with Projects: read + repository read). Advisory mode with no token prints a notice and skips cleanly (exit 0); strict mode requires the token and fails with an actionable message. Never printed or uploaded.
@@ -168,9 +169,9 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 ### 2.8 Tracker contract + metadata verification
 
 - **Purpose:** verify that an adopting repository still satisfies the pinned tracker contract — tooling versions/config and the adoption contract — and that its live GitHub Project metadata matches that contract (fields/options, issue types, release → sprint → task hierarchy).
-- **Reusable caller:** `tracker-contract.yml` (thin caller) → [`reusable-contract.yml`](#710-reusable-contractyml-contract-metadata-verification-contract); copy the caller from [`profiles/contract/`](../profiles/contract/README.md) and pin the adopted tag/SHA. The template repository dogfoods the same contract with its own thin caller.
+- **Reusable caller:** `tracker-contract.yml` (thin caller) → [`reusable-contract.yml`](#710-reusable-contractyml-contract-metadata-verification-contract); copy the caller from [`profiles/contract/`](../profiles/contract/README.md) and pin the adopted release tag (`@v<version>`; the contract requires the tag form). The template repository dogfoods the same contract with its own thin caller.
 - **Trigger detail:** `pull_request`; `push` to `main`; `workflow_dispatch`. The contract job is offline and runs on every event. The metadata job needs `TRACKER_TOKEN`, so fork PRs run contract-only; **adopter callers** set `metadata` from the event (for example `${{ github.event_name != 'pull_request' }}`) and push/dispatch runs exercise both jobs.
-- **Template self caller (dogfood):** `.github/workflows/tracker-contract.yml` keeps `metadata: false` — the template repository runs the **tooling** work profile (Stream → Task), whose native types/hierarchy do not match the product-mode metadata mapping the contract encodes, and `verify-metadata` is not `workProfile`-aware yet. The gap is recorded as accepted debt (`contract/debt-register.json`) and its metadata verification is deferred to that follow-up; the contract job still dogfoods the reusable on every PR/push.
+- **Template self caller (dogfood):** `.github/workflows/tracker-contract.yml` keeps `metadata: false` — the template repository runs the **tooling** work profile (Stream → Task), whose native types/hierarchy do not match the product-mode metadata mapping the contract encodes, and `verify-metadata` is not `workProfile`-aware yet. The gap is recorded as accepted debt `debt-019` (`contract/debt-register.json`); T06 reviewed it and kept it accepted for v1.4.0, with a tooling-aware metadata contract deferred to v1.5.0. The contract job still dogfoods the reusable on every PR/push.
 - **Required status / check contexts:** contract verification is required per project (`tracker-contract / contract`); metadata is project-defined (`tracker-contract / metadata`) and only requirable where the caller actually runs metadata on the gated events. The bundled callers skip metadata on pull requests (`metadata: false`), so keep that context off PR required-check lists unless the project deliberately runs metadata on every PR.
 - **Permissions/secrets:** caller and both jobs use `contents: read` only; no write scopes. `TRACKER_TOKEN` is optional and used only by the metadata job: project-scoped PAT (Projects read + Metadata read, ≤90 days) or a GitHub App installation token; pass it explicitly by name, never `secrets: inherit`.
 - **Artifacts:** none — job logs/summary only.
@@ -489,7 +490,7 @@ Required-check mapping: the implementation exposes `ci / prepare`, `ci / lint`, 
 
 ### 7.3 `reusable-e2e.yml` — E2E contract (optional profile)
 
-**Availability:** shipped (T05) — `.github/workflows/reusable-e2e.yml`, `on: workflow_call` only, job `e2e`. The template's own plumbing fixture is `.github/workflows/e2e-fixture.yml` (dispatch-only, `browsers: none`; context `e2e-fixture / e2e`, never an adopter check); adopters copy [`profiles/e2e/e2e.yml`](../profiles/e2e/e2e.yml) and pin the adopted tag/SHA. Check context: `e2e / e2e`. There is no `tracker-ref` input — the wrapper runs only the adopter's commands plus the pinned tracker composite action it checks out itself.
+**Availability:** shipped (T05) — `.github/workflows/reusable-e2e.yml`, `on: workflow_call` only, job `e2e`. The template's own plumbing fixture is `.github/workflows/e2e-fixture.yml` (dispatch-only, `browsers: none`; context `e2e-fixture / e2e`, never an adopter check); adopters copy [`profiles/e2e/e2e.yml`](../profiles/e2e/e2e.yml) and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `e2e / e2e`. There is no `tracker-ref` input — the wrapper runs only the adopter's commands plus the pinned tracker composite action it checks out itself.
 
 | Interface | Definition |
 |---|---|
@@ -565,10 +566,10 @@ the adopted tag), with standalone copy-mode templates under `profiles/release/co
 
 | Interface | Definition |
 |---|---|
-| Inputs | `profile` (generic/macos/container/package) default `generic`; `version`; `tag-pattern` default `^v\d+\.\d+\.\d+$`; `dry-run` default `true`; `publish` default `false`; `artifact-globs` default `dist/**`; `checksum-algorithm` default `sha256`; `build-command`; `working-directory`; `node-version`; `macos-runner`; `macos-team-id`; `macos-signing-identity`; `image-name`; `package-registries`; `artifact-name`; `retention-days`; release metadata inputs (`release-name`, `draft`, `prerelease`) |
+| Inputs | `profile` (generic/macos/container/package) default `generic`; `version`; `tag-pattern` default `^v\d+\.\d+\.\d+$`; `dry-run` default `true`; `publish` default `false`; `artifact-globs` default `dist/**`; `checksum-algorithm` default `sha256`; `build-command`; `working-directory`; `node-version`; `macos-runner`; `macos-team-id`; `macos-signing-identity`; `image-name`; `package-registries`; `artifact-name`; `retention-days`; release metadata inputs (`release-name`, `draft`, `prerelease`); opt-in contract gate: `contract-gate` default `false`, `tracker-ref` default `v1.3.2` (exact release tag; v1.4.0+ for downstream), `contract-path` default `''`, `config-path` default `tracker.config.json` |
 | Outputs | `version`, `artifacts`, `checksums-file`, `release-url` (empty on dry-run), `dry-run` |
-| Secrets | `RELEASE_TOKEN` (optional, only when org policy forbids the default token for publishing); `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD` (optional, desktop profile); `NPM_TOKEN` (optional, package profile when OIDC trusted publishing is unavailable) — all `required: false`; team ID / signing identity are non-secret inputs |
-| Permissions | caller grants `contents: write`; `id-token: write` only for OIDC publish jobs; `packages: write` only for container profile |
+| Secrets | `RELEASE_TOKEN` (optional, only when org policy forbids the default token for publishing); `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD` (optional, desktop profile); `NPM_TOKEN` (optional, package profile when OIDC trusted publishing is unavailable) — all `required: false`; team ID / signing identity are non-secret inputs. The opt-in contract gate uses no secret |
+| Permissions | caller grants `contents: write`; `id-token: write` only for OIDC publish jobs; `packages: write` only for container profile; the opt-in `contract-gate` job requests `contents: read` only (no new caller grant) |
 | Environment | called workflow declares `environment: release`; callers cannot set the environment on a reusable-workflow job |
 | Runner | `ubuntu-latest` generic/container/package; macOS for desktop |
 | Artifacts | profile artifacts + `SHA256SUMS`; release assets on publish |
@@ -576,13 +577,28 @@ the adopted tag), with standalone copy-mode templates under `profiles/release/co
 
 Input semantics: `dry-run: true` (the default) performs the full build/validation/checksum without publishing; `publish: true` is only honored when `dry-run` is false and the ref is a matching tag or an explicit dispatch. Guards: all publish steps run only when `github.ref` matches the tag pattern or `workflow_dispatch` explicitly requested publish, inside the `release` environment. Missing signing secrets are a documented skip (ad-hoc fallback), never a silent unsigned publish.
 
+**Opt-in adoption-contract gate (`contract-gate`, T06):** when true, a `contract-gate` job runs
+before `build`; `build` waits for it and tolerates it being disabled (`skipped`), so the default
+`false` path is unchanged. The job checks out the adopter (submodules recursive), checks out
+`tracker-ref` into `.tracker` when not in the template repository, fetches the optional tracker
+submodule tags, then runs `verify-tooling`, `verify-contract`, and the offline half of
+`release-gate` (no `--repo`). It requests `contents: read` only: adding `issues: read` here would
+invalidate every caller that does not already grant it at pin-upgrade time (GitHub validates the
+reusable permission graph even for skipped jobs). The open `tracker-contract-exception` OI check
+therefore remains the release-procedure step `npm run gate:release -- --repo owner/repo`. The gate
+fails the release on a missing/stale required caller, tooling drift, or a contract violation; it
+uploads no artifacts and uses no secrets. `config-path` is honoured by all three gate steps (verify-tooling, verify-contract, and
+release-gate now accept `--config`). `tracker-ref` is ignored in self mode (the template repository
+reads its own checkout); downstream must pass the exact adopted release tag (v1.4.0+, which contains
+`scripts/adopt/**`).
+
 ### 7.6 `reusable-audit.yml` — tracker audit contract
 
-**Availability:** shipped (T04) — `.github/workflows/reusable-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/tracker-audit.yml` (self mode passes `tracker-ref: ''`); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/tracker-audit.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `tracker-audit / audit` (caller job `tracker-audit` / called job `audit`).
+**Availability:** shipped (T04) — `.github/workflows/reusable-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/tracker-audit.yml` (self mode passes `tracker-ref: ''`); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/tracker-audit.yml) into `.github/workflows/` and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `tracker-audit / audit` (caller job `tracker-audit` / called job `audit`).
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA to load `audit.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative); `mode` string default `advisory` — validated `advisory`/`strict`; `json` boolean default `true` (echo the JSON result in the job log); `working-directory` string default `'.'`; `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag to load `audit.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative); `mode` string default `advisory` — validated `advisory`/`strict`; `json` boolean default `true` (echo the JSON result in the job log); `working-directory` string default `'.'`; `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `ok` (`'true'`/`'false'`), `violations-count`, `warnings-count` (empty when the advisory run skips for a missing token) |
 | Secrets | `TRACKER_TOKEN` (`required: false`; project read **and** repo/issues read for private adopters — classic PAT `project` + `repo`; fine-grained Projects read + Metadata read + repository contents/issues read). Advisory mode with no token: notice + clean skip (exit 0). Strict mode with no token: actionable failure |
 | Permissions | `contents: read` (caller and job); project read comes only from the token |
@@ -684,11 +700,11 @@ Composite action rules:
 
 ### 7.10 `reusable-contract.yml` — contract + metadata verification contract
 
-**Availability:** shipped (T03) — `.github/workflows/reusable-contract.yml`, `on: workflow_call` only. The template's own thin caller is `.github/workflows/tracker-contract.yml` (self mode passes `tracker-ref: ''` so the contract and tooling come from the caller checkout). Adopters copy the caller example from [`profiles/contract/`](../profiles/contract/README.md) into `.github/workflows/tracker-contract.yml` and pin the adopted tag/SHA. Behavior summary: §2.8.
+**Availability:** shipped (T03) — `.github/workflows/reusable-contract.yml`, `on: workflow_call` only. The template's own thin caller is `.github/workflows/tracker-contract.yml` (self mode passes `tracker-ref: ''` so the contract and tooling come from the caller checkout). Adopters copy the caller example from [`profiles/contract/`](../profiles/contract/README.md) into `.github/workflows/tracker-contract.yml` and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Behavior summary: §2.8.
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact template tag/SHA to load the adoption contract + verification tooling from; self mode passes `''` to use the caller checkout); `config-path` string default `tracker.config.json` (working-directory-relative; default `.` = repository root; feeds `verify-tooling` only); `contract-path` string default `''` (empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream); `runs-on` string default `ubuntu-latest`; `version-guard-command` string default `''` (optional trusted offline command; runs in a separate `version-guard` job that never checks out the pinned template ref); `metadata` boolean default `true` (live metadata job; requires the secret; pass `false` on fork PRs); `working-directory` string default `'.'`; `submodule-path` string default `.tracker-os` (tracker submodule whose pinned tag `verify-tooling` checks; missing → notice + skip); `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact template release tag to load the adoption contract + verification tooling from; self mode passes `''` to use the caller checkout); `config-path` string default `tracker.config.json` (working-directory-relative; default `.` = repository root; feeds `verify-tooling` only); `contract-path` string default `''` (empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream); `runs-on` string default `ubuntu-latest`; `version-guard-command` string default `''` (optional trusted offline command; runs in a separate `version-guard` job that never checks out the pinned template ref); `metadata` boolean default `true` (live metadata job; requires the secret; pass `false` on fork PRs); `working-directory` string default `'.'`; `submodule-path` string default `.tracker-os` (tracker submodule whose pinned tag `verify-tooling` checks; missing → notice + skip); `node-version` string default `'22'` |
 | Outputs | `contract-ok` (`'true'` when `verify-tooling` and `verify-contract` both pass); `metadata-ok` (`'true'` when the metadata job passes; empty when the job is skipped) |
 | Secrets | `TRACKER_TOKEN` (`required: false`; required only when `metadata: true`) — project read (Projects read + Metadata read); PAT ≤90 days or a GitHub App installation token; pass explicitly by name, never `secrets: inherit` |
 | Permissions | `contents: read` only (workflow and both jobs); no write scopes, no artifacts, no `pull_request_target` |
@@ -706,17 +722,17 @@ Composite action rules:
 - `config-path` only feeds `verify-tooling`; `verify-contract`/`verify-metadata` read the repository-root/`working-directory` `tracker.config.json`, so keep `project.number` set there for metadata checks.
 - No artifacts are uploaded, no write permissions are requested, and there is no `pull_request_target` path; fork PRs get no secrets and should pass `metadata: false`.
 
-**Consumers:** the template's own `.github/workflows/tracker-contract.yml` self caller (required checks in this repository) and adopting repositories that copy [`profiles/contract/tracker-contract.yml`](../profiles/contract/tracker-contract.yml) into `.github/workflows/` and pin the adopted tag/SHA. Release workflows do not call this contract.
+**Consumers:** the template's own `.github/workflows/tracker-contract.yml` self caller (required checks in this repository) and adopting repositories that copy [`profiles/contract/tracker-contract.yml`](../profiles/contract/tracker-contract.yml) into `.github/workflows/` and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Release workflows do not call this contract.
 
 **Migration note (v1.3.x adopters):** replace the copied `tracker-contract.yml` + `tracker-metadata.yml` workflows with one caller that pins this reusable workflow. The old contexts `tracker-contract`/`tracker-metadata` become `tracker-contract / contract` and `tracker-contract / metadata`; update branch protection/ruleset required checks in the same PR that upgrades the pin (major per §7.9) and keep the old copies until the new contexts are green. Full steps, token setup, and local verification: [profiles/contract/README.md](../profiles/contract/README.md).
 
 ### 7.11 `reusable-post-merge-audit.yml` — post-merge bypass audit contract
 
-**Availability:** shipped (T04) — `.github/workflows/reusable-post-merge-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/post-merge-audit.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/post-merge-audit.yml`](../profiles/audit/post-merge-audit.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `post-merge-audit / audit` (caller job `post-merge-audit` / called job `audit`).
+**Availability:** shipped (T04) — `.github/workflows/reusable-post-merge-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/post-merge-audit.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/post-merge-audit.yml`](../profiles/audit/post-merge-audit.yml) into `.github/workflows/` and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `post-merge-audit / audit` (caller job `post-merge-audit` / called job `audit`).
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA for the audit tooling; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative; required-check names come from `guard.requiredChecks[]`); `working-directory` string default `'.'`; `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual dispatch must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag for the audit tooling; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative; required-check names come from `guard.requiredChecks[]`); `working-directory` string default `'.'`; `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual dispatch must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `ok` (`'true'` when the audit job completed; a detected bypass still completes by opening the OI, and a degraded rollup passes with a warning) |
 | Secrets | none — the automatic `GITHUB_TOKEN` is used |
 | Permissions | called job declares `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`; the caller must grant at least that union |
@@ -737,11 +753,11 @@ Composite action rules:
 
 ### 7.12 `reusable-pr-close-guard.yml` — PR close guard contract
 
-**Availability:** shipped (T04) — `.github/workflows/reusable-pr-close-guard.yml`, `on: workflow_call` only, job `guard`. The template's own caller is `.github/workflows/pr-close-guard.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/pr-close-guard.yml`](../profiles/audit/pr-close-guard.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `pr-close-guard / guard` (caller job `pr-close-guard` / called job `guard`).
+**Availability:** shipped (T04) — `.github/workflows/reusable-pr-close-guard.yml`, `on: workflow_call` only, job `guard`. The template's own caller is `.github/workflows/pr-close-guard.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/pr-close-guard.yml`](../profiles/audit/pr-close-guard.yml) into `.github/workflows/` and pin the adopted release tag (`@v<version>`; the contract requires the tag form). Check context: `pr-close-guard / guard` (caller job `pr-close-guard` / called job `guard`).
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA for the guard tooling; ignored in the template repo itself); `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual invocations must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag for the guard tooling; ignored in the template repo itself); `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual invocations must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | none (pass/fail job) |
 | Secrets | none — the automatic `GITHUB_TOKEN` is used |
 | Permissions | called job declares `contents: read`, `issues: read`, `pull-requests: read`; the caller grants the same read-only union. No `issues: write` is required or granted |
@@ -765,7 +781,7 @@ Composite action rules:
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA to load `guard-docs-counts.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (repository-root-relative; `docs.counts` configures the contract); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag to load `guard-docs-counts.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (repository-root-relative; `docs.counts` configures the contract); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `counts-ok` (`'true'` when the guard passed, or when no `docs.counts` policy is configured) |
 | Secrets | none |
 | Permissions | `contents: read` (caller and job) |
@@ -782,6 +798,50 @@ Composite action rules:
 **Consumers:** the template's own `.github/workflows/counts-docs.yml` (no-op until counts are adopted; context `counts-docs / counts`) and adopting repositories using [`profiles/counts/counts-docs.yml`](../profiles/counts/counts-docs.yml). The suite-side inventory and `suite-counts check` job stay adopter-side ([profiles/counts/README.md](../profiles/counts/README.md)).
 
 **Migration note (v1.3.x adopters):** the counts docs check is new in v1.4.0 (no old context). Adopters wiring `docs.counts` add this caller as `counts-docs / counts` and make it required once the policy is live; before that it is a no-op.
+
+### 7.14 Required adoption contract (v1.4.0)
+
+**Availability:** shipped (T06). `contract/adoption-contract.json` marks six reusable callers as
+`requiredWorkflows[]`; `verify-contract` enforces presence and the exact pin. This is the D3
+breaking-upgrade contract — a repository that re-pins to v1.4.0 must carry all six callers, even if
+some suites stay advisory, disabled by trigger, or no-op.
+
+| `requiredWorkflows[].id` | Reusable | Bundled caller | New context | Required status |
+|---|---|---|---|---|
+| `contract` | `reusable-contract.yml` | `profiles/contract/tracker-contract.yml` | `tracker-contract / contract`; `tracker-contract / metadata` | contract required; metadata project-defined |
+| `post-merge-audit` | `reusable-post-merge-audit.yml` | `profiles/audit/post-merge-audit.yml` | `post-merge-audit / audit` | post-merge record, not a merge check |
+| `pr-close-guard` | `reusable-pr-close-guard.yml` | `profiles/audit/pr-close-guard.yml` | `pr-close-guard / guard` | required |
+| `audit` | `reusable-audit.yml` | `profiles/audit/tracker-audit.yml` | `tracker-audit / audit` | advisory; strict is a release-gate opt-in |
+| `e2e` | `reusable-e2e.yml` | `profiles/e2e/e2e.yml` | `e2e / e2e` | advisory unless promoted |
+| `counts` | `reusable-counts.yml` | `profiles/counts/counts-docs.yml` | `counts-docs / counts` | required only when `docs.counts` is adopted; otherwise no-op |
+
+Enforcement and limits:
+
+- The verifier scans `.github/workflows/*.yml` for a `uses:` ref whose path equals
+  `requiredWorkflows[].reusable` and requires the ref to end in the exact `@v<trackerVersion>`
+  release tag. It also requires any `tracker-ref:` input in that caller to equal the same tag
+  (empty/expression/SHA/no-`v` values fail). Missing, floating, SHA-pinned, no-`v`, and stale-pin
+  refs fail. The check is presence + pin only: caller job names, triggers, path/label gates, and
+  the decision to promote a context stay project-owned (the contract cannot know an adopter's check
+  names).
+- The pin source is `contract.trackerVersion`, which `npm run release:bump` updates with
+  `automation.templateVersion`; do not duplicate a per-entry pin in the contract.
+- Exception path: `tracker.overrides.json` with `id` (the required id), an upstream GitHub issue
+  URL, a reason, and a non-expired `expires` date. Missing callers without an override, malformed
+  overrides, and expired overrides fail. The release gate also fails on any open
+  `tracker-contract-exception` OI.
+- Self-repo mode: when `config.repository === contract.repository` (the template itself),
+  `verify-contract` skips the downstream `requiredProfiles`/`requiredDocs`/`requiredWorkflows`
+  checks and still enforces `templateVersion`/required config. The template dogfoods all six with
+  local `./.github/workflows/reusable-*.yml` refs (`tracker-ref: ''` where the workflow has that
+  input; the E2E fixture has none); the shipped contract shape is covered by tests.
+- Release integration: `reusable-release.yml` has an opt-in `contract-gate` input (default false)
+  that runs the offline half of this contract before build. Open-OI enforcement stays in the
+  release procedure (`npm run gate:release -- --repo owner/repo`) because requiring `issues: read`
+  in the reusable would invalidate existing callers' permission grants (§7.5).
+- Migration and the consolidated old→new table: [UPGRADING § Required adoption
+  contract](./UPGRADING.md#required-adoption-contract-six-reusable-callers). Rollback before the
+  tag: revert the contract entries; after the tag: dated `plan-change` + OI-linked override.
 
 ---
 
@@ -977,6 +1037,7 @@ Machine-checkable implementation status — every class, path, status, audience,
 - [ ] Required check names captured from a green run and documented; aggregate `ci-gate` present; no `paths` filter on required workflows.
 - [ ] Secret-less CI run passes; fork-PR behavior verified (no secrets, read-only token).
 - [ ] Dispatch dry-run for release leaves no release/assets behind; tag guard rejects a non-matching tag (test on a scratch repo).
+- [ ] `verify-contract` fixture matrix covers the six v1.4.0 `requiredWorkflows` entries (present/missing/mis-pinned) and the release dry-run with `contract-gate: true` passes while default `false` is unchanged.
 - [ ] Signing/checksum actions skip cleanly when secret inputs are empty and fail loudly on bad input.
 - [ ] Audit caller still skips cleanly with an unset `TRACKER_TOKEN`, and strict mode fails on violations.
 - [ ] E2E fixture run recorded (or the CastDeck C3 dependency recorded for the Playwright/browser path).

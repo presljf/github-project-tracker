@@ -28,6 +28,30 @@
     {
       "id": "desktop-smoke",
       "reusable": "presljf/github-project-tracker/.github/workflows/reusable-desktop-smoke.yml"
+    },
+    {
+      "id": "contract",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-contract.yml"
+    },
+    {
+      "id": "post-merge-audit",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-post-merge-audit.yml"
+    },
+    {
+      "id": "pr-close-guard",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml"
+    },
+    {
+      "id": "audit",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-audit.yml"
+    },
+    {
+      "id": "e2e",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-e2e.yml"
+    },
+    {
+      "id": "counts",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-counts.yml"
     }
   ],
   "requiredProfiles": ["node"],

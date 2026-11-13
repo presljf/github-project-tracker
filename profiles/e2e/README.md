@@ -14,9 +14,13 @@ adopter caller owns only triggers, path/label gating, the command, and the artif
   [`.github/workflows/e2e-fixture.yml`](../../.github/workflows/e2e-fixture.yml) — dispatch-only,
   `browsers: none`, proves the wiring; check context `e2e-fixture / e2e`.
 
-v1.4.0 is the first release that ships `reusable-e2e.yml`; older pins keep their copied E2E jobs.
-`profiles/` is never executed by GitHub: copy the caller into `.github/workflows/` and pin the
-adopted tag/SHA. The reusable workflow has **no `tracker-ref` input** — it runs only the adopter's own
+v1.4.0 is the first release that ships `reusable-e2e.yml` and the caller is a `requiredWorkflows`
+entry in the adoption contract (presence + pin enforced by `verify-contract`); a project without E2E
+may make the caller dispatch-only or path/label-gated, and `e2e / e2e` stays advisory. Older pins
+keep their copied E2E jobs. `profiles/` is never executed by GitHub: copy the caller into
+`.github/workflows/` and pin the
+adopted release tag (`@v<version>`; the contract requires the tag form). The reusable workflow has
+**no `tracker-ref` input** — it runs only the adopter's own
 commands plus the action it checks out itself — so the `uses:` ref is the only pin.
 
 ## Inputs

@@ -17,13 +17,69 @@ function collectWorkflowFiles(root) {
     .filter((f) => /\.(ya?ml)$/.test(f))
     .map((f) => path.join(dir, f));
 }
-function usesRefs(files) {
-  const refs = [];
-  for (const file of files) {
-    const text = fs.readFileSync(file, 'utf8');
-    for (const match of text.matchAll(/uses:\s*['"]?([^'"\s#]+)['"]?/g)) refs.push({ file, ref: match[1] });
+/**
+ * Split each workflow file into top-level job blocks (after `jobs:`). The job indentation is
+ * derived from the first job key, so valid 2-space and 4-space layouts both work; blank lines and
+ * full-line comments (at any indent) are ignored, and a column-0 comment never ends the job map.
+ * Scanning per job keeps a `tracker-ref` attached to the caller that actually uses it and avoids
+ * cross-caller attribution in combined files.
+ */
+function collectWorkflowJobs(root) {
+  const jobs = [];
+  for (const file of collectWorkflowFiles(root)) {
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    let inJobs = false;
+    let jobIndent = null;
+    let current = null;
+    const flush = () => {
+      if (current) jobs.push({ file, id: current.id, text: current.lines.join('\n') });
+      current = null;
+    };
+    for (const line of lines) {
+      if (!inJobs) {
+        if (/^jobs:\s*(?:#.*)?$/.test(line)) inJobs = true;
+        continue;
+      }
+      if (line.trim() === '' || /^\s*#/.test(line)) continue;
+      const indent = line.match(/^\s*/)[0].length;
+      if (indent === 0) break;
+      const key = /^(\s+)([A-Za-z_][\w-]*):\s*(?:#.*)?$/.exec(line);
+      if (jobIndent === null) {
+        if (!key) continue;
+        jobIndent = indent;
+      }
+      if (indent === jobIndent && key) {
+        flush();
+        current = { id: key[2], lines: [line] };
+        continue;
+      }
+      if (current && indent > jobIndent) current.lines.push(line);
+    }
+    flush();
   }
+  return jobs;
+}
+/**
+ * Real `uses:` mapping lines only: line-anchored, comments excluded, trailing YAML comments
+ * tolerated. A commented-out `# uses: ...` line must never satisfy a required caller.
+ */
+function usesRefs(text) {
+  const refs = [];
+  for (const match of text.matchAll(/^\s*uses:\s*(['"]?)([^'"\s#]+)\1\s*(?:#.*)?$/gm)) refs.push(match[2]);
   return refs;
+}
+/**
+ * `tracker-ref:` values in one job block. Captures the whole value (so expressions fail), strips a
+ * trailing YAML comment, then unwraps quotes. Empty values stay empty and fail downstream.
+ */
+function trackerValues(text) {
+  const values = [];
+  for (const match of text.matchAll(/^\s*tracker-ref:\s*(.*?)\s*$/gm)) {
+    const raw = match[1].replace(/\s+#.*$/, '').trim();
+    const quoted = /^(['"])(.*)\1$/.exec(raw);
+    values.push(quoted ? quoted[2] : raw);
+  }
+  return values;
 }
 /**
  * The contract's own repository ships the contract, reusable workflows and adopter docs rather than
@@ -60,9 +116,16 @@ export function verifyContract({ root, contract, config, overrides = {} }) {
     if (!config?.profiles?.[profile]) violations.push(`required profile missing: ${profile}`);
   for (const doc of contract.requiredDocs || [])
     if (!fs.existsSync(path.join(root, doc))) violations.push(`required docs missing: ${doc}`);
-  const refs = usesRefs(collectWorkflowFiles(root));
+  const jobs = collectWorkflowJobs(root);
   for (const requirement of contract.requiredWorkflows || []) {
-    const matches = refs.filter((entry) => entry.ref.split('@')[0] === requirement.reusable);
+    const matches = [];
+    for (const job of jobs) {
+      for (const ref of usesRefs(job.text)) {
+        if (ref.split('@')[0] === requirement.reusable) {
+          matches.push({ file: job.file, job: job.id, ref, text: job.text });
+        }
+      }
+    }
     const override = (overrides.overrides || []).find((entry) => entry.id === requirement.id);
     if (override) {
       if (!override.issue || !/^https:\/\/github\.com\/.+\/issues\/\d+$/.test(override.issue))
@@ -79,10 +142,18 @@ export function verifyContract({ root, contract, config, overrides = {} }) {
       continue;
     }
     for (const match of matches) {
-      if (!match.ref.endsWith(`@v${version}`) && !match.ref.endsWith(`@${version}`)) {
+      const relative = path.relative(root, match.file);
+      if (!match.ref.endsWith(`@v${version}`)) {
         violations.push(
-          `${requirement.id} ref not pinned to v${version}: ${path.relative(root, match.file)} ${match.ref}`,
+          `${requirement.id} ref not pinned to v${version}: ${relative} job ${match.job} ${match.ref} (use the exact @v${version} release tag; SHA and no-v refs are not accepted)`,
         );
+      }
+      for (const trackerRef of trackerValues(match.text)) {
+        if (trackerRef !== `v${version}`) {
+          violations.push(
+            `${requirement.id} tracker-ref not pinned to v${version}: ${relative} job ${match.job} ${trackerRef || '<empty>'} (the reusable tooling pin must match the caller ref)`,
+          );
+        }
       }
     }
   }
@@ -97,7 +168,9 @@ function main() {
   const root = path.resolve(get('root', '.'));
   const contractPath = path.resolve(get('contract', path.join(root, 'contract', 'adoption-contract.json')));
   const contract = readJson(contractPath);
-  const config = readJson(path.join(root, 'tracker.config.json'));
+  const configArg = get('config');
+  const configPath = configArg ? path.resolve(configArg) : path.join(root, 'tracker.config.json');
+  const config = readJson(configPath);
   const overridePath = path.join(root, contract.overrideManifest || 'tracker.overrides.json');
   const overrides = fs.existsSync(overridePath) ? readJson(overridePath) : {};
   const result = verifyContract({ root, contract, config, overrides });

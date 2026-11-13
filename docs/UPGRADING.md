@@ -72,6 +72,79 @@ Adopter steps:
 No config change is required beyond bumping `automation.templateVersion` to the exact target tag;
 adopters who migrate to the reusable contract caller also provision the `TRACKER_TOKEN` secret (below).
 
+### Required adoption contract (six reusable callers)
+
+v1.4.0 marks the six new reusable callers as **required** for every repository that re-pins.
+`contract/adoption-contract.json` gains `requiredWorkflows[]` entries for them and
+`verify-contract` fails when one is absent **or** when its `uses:` ref is not pinned to the exact
+adopted tag (`@v<trackerVersion>`). This is the breaking-upgrade decision D3; the callers are thin
+and trigger-owned, so a project that does not run a suite still needs the caller file (make it
+dispatch-only or path/label-gated), while only the documented contexts below are merge-required.
+
+| Required reusable | Bundled caller | Replaces (v1.3.x) | Old context | New context | Gating |
+|---|---|---|---|---|---|
+| `reusable-contract.yml` | `profiles/contract/tracker-contract.yml` | copied `tracker-contract.yml` + `tracker-metadata.yml` | `tracker-contract`, `tracker-metadata` | `tracker-contract / contract`, `tracker-contract / metadata` | `contract` required; `metadata` project-defined |
+| `reusable-post-merge-audit.yml` | `profiles/audit/post-merge-audit.yml` | inline `post-merge-audit.yml` | `audit` (post-merge) | `post-merge-audit / audit` | post-merge record; not a merge check |
+| `reusable-pr-close-guard.yml` | `profiles/audit/pr-close-guard.yml` | inline `pr-close-guard.yml` | `pr-close-guard` | `pr-close-guard / guard` | required |
+| `reusable-audit.yml` | `profiles/audit/tracker-audit.yml` | inline `tracker-audit.yml` | `audit` (tracker) | `tracker-audit / audit` | advisory; strict is a release-gate opt-in |
+| `reusable-e2e.yml` | `profiles/e2e/e2e.yml` | inline `web-e2e` job | `e2e` | `e2e / e2e` | advisory unless deliberately promoted |
+| `reusable-counts.yml` | `profiles/counts/counts-docs.yml` | inline `counts-docs` job | `counts-docs` | `counts-docs / counts` | required only once `docs.counts` is adopted; otherwise documented no-op |
+
+Rules:
+
+1. Copy each required caller from `profiles/` into `.github/workflows/` and pin **both** refs — the
+   reusable-workflow `uses:` ref and the `tracker-ref` input — to the exact adopted release tag
+   (`@v<version>`, v1.4.0+; earlier tags do not contain `scripts/adopt/**` or the v1.4.0 contract).
+   The `requiredWorkflows` check accepts only the tag form and a matching `tracker-ref`: a SHA,
+   no-`v` ref, empty `tracker-ref`, or stale tooling pin fails. `reusable-e2e.yml` has no
+   `tracker-ref` input; its `uses:` ref is the only pin. The examples use `v1.3.2` placeholders
+   until the tag exists; replace them with the acquired tag.
+2. The contract enforces **presence + exact pin**, not caller job names or triggers (those stay
+   project-owned). The contexts in the table are the bundled callers' defaults; capture your real
+   names from a green run and update branch protection/rulesets plus `guard.requiredChecks[]` in the
+   same PR. Do not require `post-merge-audit / audit`, `tracker-audit / audit`, or `e2e / e2e`
+   unless the project records that decision; `counts-docs / counts` becomes required only with the
+   counts policy.
+3. `tracker.overrides.json` is the only exception path: an entry needs `id` (the
+   `requiredWorkflows[].id`), an upstream GitHub issue URL, a reason, and a non-expired expiry. A
+   missing caller with no override fails; an expired override fails.
+4. The template repository self-dogfoods all six with local `./.github/workflows/reusable-*.yml`
+   refs (self mode: `tracker-ref: ''` where the workflow has that input; the E2E fixture has no
+   `tracker-ref`). `verify-contract` intentionally skips downstream `requiredWorkflows` checks in
+   the contract's own repository; the shipped contract shape is covered by tests instead.
+5. Rollback: before the v1.4.0 tag exists, revert the contract entries; after the tag, remove a
+   caller only through a dated `plan-change` and an OI-linked override. The v1.3.2 tag keeps the old
+   inline workflows for a full rollback.
+
+### Opt-in release contract gate (`contract-gate`)
+
+`reusable-release.yml` adds an opt-in `contract-gate` input (default `false`, so existing release
+workflows keep their behaviour). When enabled, a `contract-gate` job runs **before build**:
+`verify-tooling` + `verify-contract` + the offline half of `release-gate`, against the pinned
+`tracker-ref` checkout (downstream) or the caller checkout (self mode). It requests `contents: read`
+only; enabling it therefore needs **no new caller permission** or secret.
+
+```yaml
+jobs:
+  release:
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.4.0
+    with:
+      contract-gate: true
+      tracker-ref: v1.4.0
+```
+
+The open `tracker-contract-exception` OI half of `release-gate` needs `issues: read`. Because GitHub
+validates the reusable-workflow permission graph even for skipped jobs, requiring it here would
+invalidate every existing caller that only grants contents/packages/id-token; the open-OI check
+therefore stays an explicit **release-procedure** step:
+`npm run gate:release -- --repo owner/repo` (it fails on open OIs) before tagging/publishing. The
+gate's offline half still fails the release on a missing/stale required caller, tooling drift, or a
+contract violation.
+
 ### Reusable contract + metadata check migration
 
 v1.4.0 adds `.github/workflows/reusable-contract.yml` (dogfooded here by
@@ -86,9 +159,10 @@ migrate in the same PR as the pin bump:
 
 1. Copy `profiles/contract/tracker-contract.yml` into `.github/workflows/` and replace **both**
    `@v1.3.2` refs — the reusable-workflow `uses:` ref and the `tracker-ref` input — with the exact
-   tag/SHA you adopt (v1.4.0+). `tracker-ref` must be a released tag that contains the new
-   `scripts/adopt/**` tooling and `contract/adoption-contract.json`; replace the example's
-   `v1.3.2` placeholders rather than relying on them.
+   release tag (`@v<version>`) you adopt (v1.4.0+; the requiredWorkflows check does not accept a
+   SHA pin). `tracker-ref` must be a released tag that contains the new `scripts/adopt/**` tooling
+   and `contract/adoption-contract.json`; replace the example's `v1.3.2` placeholders rather than
+   relying on them.
 2. Create/refresh the `TRACKER_TOKEN` repository secret: project-scoped PAT with Projects +
    Metadata **read** (≤90 days) or a GitHub App installation token, stored as a repository secret
    (never in config, comments, or artifacts), passed explicitly by name (never `secrets: inherit`),
@@ -128,9 +202,10 @@ copied workflows stay on their pinned pre-v1.4.0 tags; migrate in the same PR as
 
 1. Copy the callers you need from `profiles/audit/` into `.github/workflows/`
    (`pr-close-guard.yml`, `post-merge-audit.yml`, `tracker-audit.yml`) and pin **both** the
-   reusable-workflow `uses:` ref and the `tracker-ref` input to the exact tag/SHA you adopt
-   (v1.4.0+; replace the `v1.3.2` placeholders in the examples). `tracker-ref` must be a released
-   tag containing the current `scripts/adopt/**` tooling.
+   reusable-workflow `uses:` ref and the `tracker-ref` input to the exact release tag
+   (`@v<version>`) you adopt (v1.4.0+; the requiredWorkflows check does not accept a SHA pin).
+   Replace the `v1.3.2` placeholders in the examples; `tracker-ref` must be a released tag
+   containing the current `scripts/adopt/**` tooling.
 2. Grant caller permissions exactly as documented (called workflows can only downgrade them):
    - `pr-close-guard.yml`: `contents: read`, `issues: read`, `pull-requests: read` — read-only.
    - `post-merge-audit.yml`: `contents: read`, `issues: write`, `pull-requests: read`,
@@ -165,8 +240,9 @@ may lack `issues: write`, so OI creation can return 403 (documented pre-existing
 detected bypass is reported in the job log and the run fails loudly instead of recording the OI).
 None of the three reusables upload artifacts; tracker-audit JSON goes to the job log/summary. The
 post-merge audit's `ok` output means the job completed — a detected bypass still completes the job
-by opening the OI, so `ok=true` does not mean "no bypass". The audit reusables are not yet in the
-adoption contract (T06 owns `requiredWorkflows`), so `verify:contract` does not pin them in v1.4.0.
+by opening the OI, so `ok=true` does not mean "no bypass". All three audit reusables are in the
+v1.4.0 adoption contract's `requiredWorkflows`; `verify:contract` fails a missing or non-pinned
+caller, while the check contexts above remain caller-defined.
 
 See [profiles/audit](../profiles/audit/README.md),
 [ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md), and
@@ -177,19 +253,23 @@ See [profiles/audit](../profiles/audit/README.md),
 v1.4.0 also ships the remaining previously contract-only reusables: `reusable-e2e.yml` (Playwright
 E2E) and `reusable-counts.yml` (docs counts guard), with the self callers `e2e-fixture.yml` /
 `counts-docs.yml`. The **v1.4.0 tag is the first release shipping them**; pre-v1.4.0 pins keep
-their inline/copied layout. The consolidated six-caller adoption table is **T06-owned** — this
-block covers only the e2e/counts rows and does not restructure that table.
+their inline/copied layout. The consolidated six-caller adoption table is above; this block covers
+the e2e/counts detail (the same pin rules apply).
 
 | Old copied workflow/job | Old check context | v1.4.0 reusable contract |
 |---|---|---|
 | `web-e2e.yml` (job `e2e`) | `e2e` | `e2e / e2e` (via `reusable-e2e.yml`) |
 | `counts-docs` job | `counts-docs` | `counts-docs / counts` (via `reusable-counts.yml`) |
 
+Old contexts were caller-defined copies; the table shows the template's v1.3.x defaults. Capture the
+adopter's real names before deleting the old workflows (for example CastDeck's inline E2E job was
+`web-e2e` and its post-merge job was `post-merge-audit`, not the template's `audit`).
+
 1. Copy the caller you need — `profiles/e2e/` (E2E) and `profiles/counts/counts-docs.yml` (counts)
    — into `.github/workflows/`, and pin the reusable-workflow `uses:` ref to the exact adopted
-   tag/SHA (v1.4.0+). The E2E reusable has **no `tracker-ref` input** (it consumes
-   `.github/actions/setup-node-cache` from its own workflow repo/sha); the counts caller pins
-   `tracker-ref` like the other reusables.
+   release tag (`@v<version>`, v1.4.0+; no SHA pin for a required workflow). The E2E reusable has
+   **no `tracker-ref` input** (it consumes `.github/actions/setup-node-cache` from its own workflow
+   repo/sha); the counts caller pins `tracker-ref` like the other reusables.
 2. No permission increase and no secrets: both callers keep `contents: read`. E2E uploads a
    failure-only artifact (`upload-on-success: false`, default 7-day retention) — keep artifacts free
    of credentials/cookies/personal data; counts uploads no artifacts.
@@ -204,15 +284,42 @@ block covers only the e2e/counts rows and does not restructure that table.
    external services in assertions (or declare live suites under `verification.remoteOnly[]`).
 5. Live downstream validation of the real suite/baseline wiring is **CastDeck C3 post-tag**: the
    template's own `counts-docs` caller is a no-op (no `docs.counts`) and `e2e-fixture` is a
-   dispatch-only plumbing fixture. The E2E/counts reusables are not yet in the adoption contract's
-   `requiredWorkflows` (T06 owns that list).
+   dispatch-only plumbing fixture. Both reusables are required callers in the v1.4.0 adoption
+   contract (`requiredWorkflows`), but their contexts stay advisory/no-op until the project opts in.
 
 See [profiles/e2e](../profiles/e2e/README.md), [profiles/counts](../profiles/counts/README.md),
 and [CI profile](./CI_SECURITY_PROFILE.md) (runner/cost and check-context notes).
 
+### Post-tag downstream migration check (CastDeck C1–C3)
+
+This is a **verification item, not implementation** in the tracker release. After the `v1.4.0` tag
+exists, the only known adopter (CastDeck) migrates in Sprint 0.5.8 and the tracker side checks the
+result without modifying CastDeck from the release task:
+
+1. **C1 — pin wave + contract:** `.tracker-os` → `v1.4.0`; `automation.templateVersion`,
+   `pinnedVersion`, caller `uses:` refs, and `tracker-ref` inputs at `v1.4.0`; the contract
+   caller replaces the old `tracker-contract`/`tracker-metadata` copies; inline contract-gate
+   removed in favor of `contract-gate: true`; copied script paths under `scripts/adopt/**`.
+2. **C2 — audit family:** post-merge audit, PR close guard, and tracker audit become thin callers;
+   `guard.requiredChecks[]` and branch-protection contexts updated to
+   `post-merge-audit / audit`, `pr-close-guard / guard`, `tracker-audit / audit` in the same PR; the
+   advisory audit caller carries the weekly `schedule` + `workflow_dispatch` drift backstop.
+   **C2 is deferred until after the v1.4.0 tag** (it cannot run against an untagged contract).
+3. **C3 — E2E + counts:** the `web-e2e` job becomes a `reusable-e2e` caller and the `counts-docs`
+   job a `reusable-counts` caller; this is the first real Playwright/browser and counts-baseline
+   validation. **C3 is deferred until after the v1.4.0 tag**; the template's `e2e-fixture` only
+   proved plumbing (`browsers: none`) and its `counts-docs` is a no-op.
+4. **Check (read-only):** run `verify:contract` against a scratch copy of the adopter at the
+   v1.4.0 pin and confirm all ten `requiredWorkflows` resolve at the pin (the four pre-existing plus
+   the six v1.4.0 entries), the old/new contexts above are the ones branch protection records, and
+   the adopter's post-merge audit run is non-degraded. Record the run/PR URLs on the tracker release
+   task; do not edit CastDeck from the tracker release.
+
 ## Before upgrading
 
 - [ ] Read the target changelog/release notes/migration notes.
+- [ ] Inventory the six required reusable callers (contract, post-merge audit, PR close guard,
+      tracker audit, E2E, counts) and the old→new check-context renames before re-pinning.
 - [ ] Confirm your current pin (`automation.templateVersion`).
 - [ ] Check copied-file/overrides list in your project docs.
 - [ ] Ensure no uncommitted work in copied config/workflows.
@@ -232,8 +339,8 @@ Never edit a reusable workflow in the downstream repo; override via inputs/confi
 (`config.repository === contract.repository`), it prints
 `self-repo: downstream contract checks skipped`, skips the downstream-adopter checks (required
 profile/docs/workflow pins) and still checks `templateVersion`/required-config alignment. Downstream
-behaviour is unchanged, so `release:bump` + `gate:release` work for tracker releases (v1.3.0
-evidence) and `stream.mjs close`'s default gate command works for Tracker OS Streams (T06).
+behaviour is unchanged, so `release:bump` + `gate:release` work for tracker releases (v1.3.0 and
+v1.4.0 evidence) and `stream.mjs close`'s default gate command works for Tracker OS Streams.
 
 ## Upgrade procedure
 
@@ -244,7 +351,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);
-   - caller workflow refs/tags (pin exact tag/SHA);
+   - caller workflow refs/tags (pin exact release tags for required workflows; the contract verifier rejects SHA pins);
    - copied files (re-copy + re-apply overrides).
 4. **Validate config:**
    ```bash

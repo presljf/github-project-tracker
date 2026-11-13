@@ -36,6 +36,7 @@ const EXPECTED_IDS = [
   'dependency-guard',
   'surface',
   'surface-check',
+  'hygiene',
   'debt',
   'docs-coverage',
   'counts',
@@ -99,7 +100,7 @@ function runWithFakes(options = {}) {
 
 test('step table has the documented deterministic order and unique ids', () => {
   assert.deepEqual(STEP_IDS, EXPECTED_IDS);
-  assert.equal(LOCAL_STEPS.length, 16);
+  assert.equal(LOCAL_STEPS.length, 17);
   const ids = new Set();
   const titles = new Set();
   for (const step of LOCAL_STEPS) {
@@ -158,11 +159,11 @@ test('git-dependent steps skip with a notice when origin/main is unavailable', (
   const { spawn, result } = runWithFakes({ checkGitRef: () => false });
   assert.equal(result.ok, true);
   assert.equal(result.counts.skipped, 2);
-  assert.equal(result.counts.executed, 14);
-  assert.equal(result.counts.passed, 14);
+  assert.equal(result.counts.executed, 15);
+  assert.equal(result.counts.passed, 15);
   assert.equal(result.counts.failed, 0);
   assert.equal(result.counts.notRun, 0);
-  assert.equal(spawn.calls.length, 14);
+  assert.equal(spawn.calls.length, 15);
 
   const dependency = result.results.find((step) => step.id === 'dependency-guard');
   const coverage = result.results.find((step) => step.id === 'docs-coverage');
@@ -176,7 +177,7 @@ test('git-dependent steps skip with a notice when origin/main is unavailable', (
   const { counts } = result;
   assert.equal(counts.passed + counts.failed + counts.skipped + counts.notRun, counts.total);
   const human = formatHuman(result);
-  assert.match(human, /GATE_LOCAL_OK 14\/14 \(2 skipped\)/);
+  assert.match(human, /GATE_LOCAL_OK 15\/15 \(2 skipped\)/);
   assert.match(human, /dependency-guard — skipped:/);
 });
 
@@ -189,8 +190,8 @@ test('git-dependent steps run when the base ref resolves locally', () => {
   const { spawn, result } = runWithFakes({ checkGitRef, base: 'v9.9.9' });
   assert.equal(result.ok, true);
   assert.equal(result.counts.skipped, 0);
-  assert.equal(result.counts.executed, 16);
-  assert.equal(spawn.calls.length, 16);
+  assert.equal(result.counts.executed, 17);
+  assert.equal(spawn.calls.length, 17);
   assert.ok(calls.includes('v9.9.9'));
 
   const coverageCall = spawn.calls.find((call) => call.stepId === 'docs-coverage');
@@ -205,7 +206,7 @@ test('a required npm alias missing from package.json fails the step without spaw
   assert.equal(result.ok, false);
   assert.equal(result.counts.failed, 1);
   assert.equal(result.counts.executed, 2);
-  assert.equal(result.counts.notRun, 14);
+  assert.equal(result.counts.notRun, 15);
   const lint = result.results.find((step) => step.id === 'lint');
   assert.equal(lint.status, 'failed');
   assert.match(lint.error, /required npm alias not defined: lint/);
@@ -222,7 +223,7 @@ test('fail-fast stops after the first failing step and aggregates the result', (
   assert.equal(result.counts.failed, 1);
   assert.equal(result.counts.executed, 3);
   assert.equal(result.counts.passed, 2);
-  assert.equal(result.counts.notRun, 13);
+  assert.equal(result.counts.notRun, 14);
   assert.equal(spawn.calls.length, 3);
   const failed = result.results.find((step) => step.id === 'format');
   assert.equal(failed.status, 'failed');
@@ -246,10 +247,10 @@ test('--continue runs every step and reports all failures', () => {
     continueOnFailure: true,
   });
   assert.equal(result.ok, false);
-  assert.equal(result.counts.executed, 16);
+  assert.equal(result.counts.executed, 17);
   assert.equal(result.counts.failed, 1);
   assert.equal(result.counts.notRun, 0);
-  assert.equal(spawn.calls.length, 16);
+  assert.equal(spawn.calls.length, 17);
 });
 
 test('a timed-out child fails the step with a timeout marker', () => {
@@ -273,7 +274,7 @@ test('a timed-out child fails the step with a timeout marker', () => {
 test('formatHuman prints GATE_LOCAL_OK n/n when every attempted step passes', () => {
   const { result } = runWithFakes();
   const human = formatHuman(result);
-  assert.match(human, /GATE_LOCAL_OK 16\/16$/m);
+  assert.match(human, /GATE_LOCAL_OK 17\/17$/m);
   assert.doesNotMatch(human, /GATE_LOCAL_FAIL/);
 });
 
@@ -315,9 +316,10 @@ test('--list --json emits the deterministic step table', () => {
 test('--list prints the ordered table without running steps', () => {
   const result = runCli(['--list']);
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /Local gate step table \(16 steps, deterministic order\)/);
+  assert.match(result.stdout, /Local gate step table \(17 steps, deterministic order\)/);
   assert.match(result.stdout, /1\. unit-tests — npm run test/);
-  assert.match(result.stdout, /15\. docs-coverage — node scripts\/adopt\/docs\/guard-docs\.mjs --base/);
+  assert.match(result.stdout, /14\. hygiene — npm run guard:hygiene/);
+  assert.match(result.stdout, /16\. docs-coverage — node scripts\/adopt\/docs\/guard-docs\.mjs --base/);
 });
 
 test('unknown options exit 2', () => {

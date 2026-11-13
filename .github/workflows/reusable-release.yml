@@ -21,6 +21,15 @@
 #   against the caller checkout), so the checksum/signing logic is inlined here for reusable
 #   mode. The `checksum` and `sign-notarize-macos` composite actions are the copy-mode/local
 #   contract (see profiles/release/** and docs/RELEASE_PROFILES.md).
+#
+# Adoption-contract gate (opt-in, default `false`): when `contract-gate: true`, the `contract_gate`
+# job runs `verify-tooling` + `verify-contract` + the offline half of `release-gate` against the
+# pinned tracker checkout BEFORE build. It requests `contents: read` only, so every existing caller
+# (contents/packages/id-token write) stays valid and default-false runs are unchanged. The open-OI
+# half of release-gate (`--repo`) needs `issues: read`; requiring that here would invalidate every
+# caller that does not grant it at pin-upgrade time (GitHub validates the permission graph even for
+# skipped jobs), so the open-OI check remains an explicit release-procedure step
+# (`npm run gate:release -- --repo owner/repo`) documented in docs/ACTIONS_CATALOG.md §7.5.
 name: Reusable Release
 
 on:
@@ -146,6 +155,36 @@ on:
         type: boolean
         required: false
         default: false
+      contract-gate:
+        description: >-
+          Run verify-tooling + verify-contract + the offline release gate before build (opt-in;
+          default false). Requesting contents: read only keeps existing caller permission grants
+          valid; the open-OI half of release-gate stays a release-procedure step.
+        type: boolean
+        required: false
+        default: false
+      tracker-ref:
+        description: >-
+          Exact template release tag (`@v<version>`) used only by the opt-in contract gate to load the adoption contract
+          and verification tooling. Ignored when this workflow runs in the template repository itself.
+        type: string
+        required: false
+        default: v1.3.2
+      contract-path:
+        description: >-
+          Adoption contract path for the opt-in contract gate (repository-root-relative or absolute).
+          Empty auto-detects contract/adoption-contract.json in the template repository and
+          .tracker/contract/adoption-contract.json downstream.
+        type: string
+        required: false
+        default: ''
+      config-path:
+        description: >-
+          Tracker config path honoured by verify-tooling, verify-contract, and release-gate in the
+          opt-in contract gate (repository-root-relative or absolute).
+        type: string
+        required: false
+        default: tracker.config.json
     outputs:
       version:
         description: 'Validated semantic version (without leading v).'
@@ -375,9 +414,131 @@ jobs:
             echo "| Checksum | \`${CHECKSUM_ALGORITHM}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  # Opt-in adoption-contract gate. Its own job keeps the checks and their failure boundary explicit:
+  # `build` waits for it when enabled and ignores it when disabled. It reads the contract/tooling
+  # from the pinned tracker checkout (downstream) or the caller checkout (self mode) and requests
+  # `contents: read` only, so existing callers stay valid. No artifacts and no writes.
+  contract_gate:
+    name: contract-gate
+    if: ${{ inputs.contract-gate }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Checkout tracker contract and tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve contract gate paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          CONTRACT_PATH_INPUT: ${{ inputs.contract-path }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+            default_contract="$GITHUB_WORKSPACE/contract/adoption-contract.json"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+            default_contract="$GITHUB_WORKSPACE/.tracker/contract/adoption-contract.json"
+          fi
+
+          contract="${CONTRACT_PATH_INPUT:-}"
+          if [ -z "$contract" ]; then
+            contract="$default_contract"
+          else
+            case "$contract" in
+              /*) ;;
+              *) contract="$GITHUB_WORKSPACE/$contract" ;;
+            esac
+          fi
+          config="${CONFIG_PATH_INPUT:-tracker.config.json}"
+          case "$config" in
+            /*) ;;
+            *) config="$GITHUB_WORKSPACE/$config" ;;
+          esac
+
+          [ -f "$contract" ] || {
+            echo "::error::adoption contract not found at '$contract' (mode=${mode}; pass contract-path or tracker-ref)."
+            exit 1
+          }
+          [ -f "$config" ] || {
+            echo "::error::tracker config not found at '$config' (mode=${mode})."
+            exit 1
+          }
+          [ -f "$tracker/scripts/adopt/cli/verify-contract.mjs" ] || {
+            echo "::error::verification tooling not found under '$tracker' (mode=${mode}; the contract gate needs tracker-ref v1.4.0+ with scripts/adopt/**)."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "contract=${contract}" >> "$GITHUB_OUTPUT"
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+      - name: Fetch pinned tracker submodule tags
+        run: |
+          set -euo pipefail
+          # verify-tooling checks the canonical `.tracker-os` path; the release gate keeps that
+          # fixed convention (no separate submodule-path input).
+          submodule_path=".tracker-os"
+          if [ -d "$submodule_path" ] && git -C "$submodule_path" rev-parse --git-dir >/dev/null 2>&1; then
+            echo "Fetching tags for tracker submodule '$submodule_path' (verify-tooling checks the pinned tag)."
+            git -C "$submodule_path" fetch --tags --force
+          else
+            echo "::notice::No tracker submodule at '$submodule_path'; verify-tooling skips the pinned-submodule tag check."
+          fi
+      - name: Verify tooling contract
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/verify-tooling.mjs" --root "$GITHUB_WORKSPACE" --contract "$CONTRACT" --tracker-config "$CONFIG"
+      - name: Verify adoption contract
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/verify-contract.mjs" --root "$GITHUB_WORKSPACE" --contract "$CONTRACT" --config "$CONFIG"
+      - name: Run release gate (offline contract half)
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+          # No --repo: the open tracker-contract-exception OI check needs issues: read. Keeping this
+          # job within contents: read preserves every existing caller grant (default-false runs must
+          # not invalidate the permission graph). The open-OI step stays in the release procedure.
+          node "$TRACKER/scripts/adopt/cli/release-gate.mjs" --root "$GITHUB_WORKSPACE" --contract "$CONTRACT" --config "$CONFIG"
+
   build:
     name: build
-    needs: prepare
+    needs: [prepare, contract_gate]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (needs.contract_gate.result == 'success' || needs.contract_gate.result == 'skipped') }}
     runs-on: ${{ needs.prepare.outputs.runner }}
     timeout-minutes: 45
     permissions:

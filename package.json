@@ -16,6 +16,7 @@
     "docs:check": "node scripts/adopt/docs/check-docs.mjs",
     "rate-limit": "node scripts/adopt/cli/rate-limit.mjs",
     "guard:gh": "node scripts/adopt/cli/guard-gh-transport.mjs",
+    "guard:hygiene": "node scripts/internal/verify-hygiene.mjs",
     "guard:scope": "node scripts/adopt/cli/guard-scope.mjs",
     "guard:docs": "node scripts/adopt/docs/guard-docs.mjs",
     "merge-pr": "node scripts/adopt/cli/merge-pr.mjs",

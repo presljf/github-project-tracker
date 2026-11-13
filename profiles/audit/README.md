@@ -21,17 +21,20 @@ the audit token remain project choices; the verification logic is the pinned tem
   [post-merge-audit.yml](../../.github/workflows/post-merge-audit.yml),
   [pr-close-guard.yml](../../.github/workflows/pr-close-guard.yml).
 
-The audit family is part of the v1.4.0 adoption path; v1.4.0 is the first release that ships the
-`reusable-*` audit workflows (pre-v1.4.0 pins keep the old copied layout). `profiles/` is never
-executed by GitHub: copy the callers into `.github/workflows/` and pin the adopted tag/SHA.
+The audit family is part of the v1.4.0 adoption path and all three callers are
+`requiredWorkflows` entries in `contract/adoption-contract.json`; `verify-contract` fails a missing
+or non-pinned caller. v1.4.0 is the first release that ships the `reusable-*` audit workflows
+(pre-v1.4.0 pins keep the old copied layout). `profiles/` is never
+executed by GitHub: copy the callers into `.github/workflows/` and pin the adopted release tag
+(`@v<version>`; the contract requires the tag form, and `tracker-ref` must match).
 
 ## Install
 
 1. Copy the callers you use into `.github/workflows/`: `tracker-audit.yml`,
    `post-merge-audit.yml`, and/or `pr-close-guard.yml`.
 2. Replace **both** pinned `@v1.3.2` refs in each copied file — the `uses:` reusable-workflow ref
-   and the `tracker-ref` input — with the exact tag/SHA you adopted (v1.4.0+; prefer SHA when tags
-   are not protected). Never `@main`.
+   and the `tracker-ref` input — with the exact release tag (`@v<version>`) you adopted (v1.4.0+;
+   the requiredWorkflows check rejects SHA pins). Never `@main`.
 3. Keep the caller permissions exactly as shown (they are the called jobs' union; the called
    workflow can only reduce them).
 4. Configure the audit token if you run the tracker audit (see below); the other two use the

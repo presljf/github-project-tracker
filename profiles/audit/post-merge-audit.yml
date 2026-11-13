@@ -3,7 +3,7 @@
 # Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
 # lives under profiles/. Copy it into your repository's .github/workflows/post-merge-audit.yml,
 # replace both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
-# with the exact tag/SHA you adopted (v1.4.0+ — the first release that ships
+# with the exact release tag (`@v<version>`) you adopted (v1.4.0+ — the first release that ships
 # reusable-post-merge-audit.yml), and update your required checks (old→new mapping in
 # profiles/audit/README.md).
 #
