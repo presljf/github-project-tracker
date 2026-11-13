@@ -24,7 +24,7 @@ jobs:
       config-path: tracker.config.json
 ```
 
-The reusable workflow checks out the project and the pinned tracker guard, then runs the same checked-in implementation. No guard code is copied into the project. It invokes the pinned tracker checkout's npm aliases (`guard:gh`, `guard:docs`), so the caller is layout-independent: the same `tracker-ref` works for a v1.3.x checkout (old script layout) and a v1.4.0+ checkout (`scripts/adopt/**`), because the aliases resolve inside the pinned checkout.
+The reusable workflow checks out the project and the pinned tracker guard, then runs the same checked-in implementation. No guard code is copied into the project. It invokes the pinned tracker checkout's npm aliases (`guard:gh`, `guard:docs`), so the workflow body does not hard-code either script layout and the same caller works across the v1.4.0 class-first move. Align `tracker-ref` with the layout your project copies: v1.3.2 and earlier ship `scripts/github|docs/**`; v1.4.0+ ships `scripts/adopt/**`. An old-layout guard run against a new-layout project copy (or vice versa) reports missing paths, so upgrade the ref together with the copied scripts.
 
 Project config allowlist:
 
