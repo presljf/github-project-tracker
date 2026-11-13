@@ -80,6 +80,7 @@
 | `profiles/desktop/` | desktop smoke caller + remote-only local guard | now |
 | `profiles/tooling/` | tooling work-profile selection + example config | now |
 | `profiles/counts/` | counts contract wiring + example baseline | now |
+| `profiles/contract/` | contract + metadata reusable caller example (`tracker-contract.yml`) and token/check-name guidance | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
 | `.github/workflows/`, `.github/actions/` | internal runner callers + `reusable-*` workflow contracts + composite actions (`release.yml` is the only runnable release caller here) | now |
@@ -620,7 +621,7 @@ version/pin/cards refresh).
 
 ## 13. Workflow catalog
 
-**Availability:** CI, release, tracker audit, security, and desktop smoke are shipped. Web/E2E, docs, and reusable audit are **contract-only** (not yet implemented).
+**Availability:** CI, release, tracker audit, security, desktop smoke, and contract/metadata verification are shipped. Web/E2E, docs, and reusable audit are **contract-only** (not yet implemented).
 
 | Workflow | Trigger | Required | Runner | Permissions | Secrets/token | Failure |
 |---|---|---|---|---|---|---|
@@ -628,6 +629,7 @@ version/pin/cards refresh).
 | Web/E2E | push/PR/nightly | required/advisory | Linux | contents:read | none | required on main/release |
 | Desktop smoke | main/tags/path/label PR | advisory PR; required release | macOS | contents:read | none | release gate |
 | Tracker audit | schedule/dispatch/advisory PR | advisory first; release gate later | Linux | contents:read + project token | `TRACKER_TOKEN`/App | advisory/release fail |
+| Contract verification (`reusable-contract.yml`) | `workflow_call` (consumed by `tracker-contract` callers) | contract required; metadata project-defined | Linux | contents:read | optional `TRACKER_TOKEN` (metadata; Projects + Metadata read) | contract fails merge; metadata advisory |
 | Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
 | Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
 
@@ -649,6 +651,9 @@ their publishing profiles/callers and enable them deliberately for artifact rele
 
 ### Required-check contract
 - Required: deterministic Linux lint/format/unit/e2e/verify jobs.
+- Contract verification: `tracker-contract / contract` is required (offline, no secrets);
+  `tracker-contract / metadata` is project-defined (needs `TRACKER_TOKEN`, skipped on PRs by the
+  bundled caller).
 - Desktop smoke: path/label on PR; required on main/tags/release.
 - Audit: advisory initially; required only after stable release-gate policy.
 - Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
@@ -659,6 +664,7 @@ their publishing profiles/callers and enable them deliberately for artifact rele
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents:read | default; least privilege |
 | Tracker audit | PAT or GitHub App installation token | project read/write (or read advisory) | store as secret; never print; project-scoped |
+| Contract metadata | PAT or GitHub App installation token | Projects + Metadata read | `TRACKER_TOKEN` repository secret; optional (only when the reusable-contract `metadata` job runs); pass by explicit name (never `secrets: inherit`); rotate; PAT ≤90 days |
 | Post-merge audit | `GITHUB_TOKEN` | contents:read, issues:write, pull-requests:read, checks:read, statuses:read, actions:read | least privilege; the copied caller must carry the same block; private repos need `checks:read`/`statuses:read`/`actions:read` for `statusCheckRollup` (GraphQL resolves `checkSuite.workflowRun`) |
 | Release publish | `GITHUB_TOKEN`/environment secrets | contents:write | protected tag/environment |
 | Package/cloud publish | OIDC or environment secrets | least privilege | prefer short-lived |
@@ -833,7 +839,7 @@ gh project item-list $PROJECT_NUMBER --owner @me --format json
 | Variable | Use |
 |---|---|
 | `GH_TOKEN` / `GITHUB_TOKEN` | auth in CI; never commit |
-| `TRACKER_TOKEN` | advisory tracker-audit workflow secret name |
+| `TRACKER_TOKEN` | tracker-audit advisory workflow + contract metadata job (`reusable-contract.yml`) secret name |
 | `NO_COLOR` | plain output |
 | `GH_REPO` | default repo for some `gh` commands (optional) |
 

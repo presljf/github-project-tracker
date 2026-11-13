@@ -11,33 +11,34 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 114 |
-| Paths | 152 |
-| Shipped | 111 |
+| Entries | 118 |
+| Paths | 156 |
+| Shipped | 115 |
 | Contract-only | 3 |
 
 ## Class map
 
 | Class | Meaning | Allowed locations | Entries | Shipped | Contract-only |
 |---|---|---|---|---|---|
-| `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 8 | 5 | 3 |
+| `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 9 | 6 | 3 |
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
-| `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 10 | 10 | 0 |
+| `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 11 | 11 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 28 | 28 | 0 |
 | `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 8 | 8 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 54 | 54 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 56 | 56 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
 
 ### reusable-workflow
 
-8 path(s) · 5 shipped · 3 contract-only.
+9 path(s) · 6 shipped · 3 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
 | `.github/workflows/reusable-audit.yml` | contract-only | adopter | Reusable audit | 7.6 | `docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract` |
 | `.github/workflows/reusable-ci.yml` | shipped | adopter | Reusable Node CI | 7.2 | `docs/ACTIONS_CATALOG.md#72-reusable-ciyml-required-ci-contract` |
+| `.github/workflows/reusable-contract.yml` | shipped | adopter | Reusable contract verification | 7.10 | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract` |
 | `.github/workflows/reusable-desktop-smoke.yml` | shipped | adopter | Reusable desktop smoke | 7.4 | `docs/ACTIONS_CATALOG.md#74-reusable-desktop-smokeyml-desktop-smoke-contract-shipped` |
 | `.github/workflows/reusable-docs.yml` | contract-only | adopter | Reusable docs | 7.7 | `docs/ACTIONS_CATALOG.md#77-reusable-securityyml-and-reusable-docsyml` |
 | `.github/workflows/reusable-e2e.yml` | contract-only | adopter | Reusable e2e | 7.3 | `docs/ACTIONS_CATALOG.md#73-reusable-e2eyml-e2e-contract-optional-profile` |
@@ -57,10 +58,11 @@
 
 ### copy-mode
 
-14 path(s) · 14 shipped · 0 contract-only.
+15 path(s) · 15 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
+| `profiles/contract/tracker-contract.yml` | shipped | adopter | Contract + metadata caller example | — | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract` |
 | `profiles/counts/test-counts.baseline.example.json` | shipped | adopter | Counts baseline example | — | `profiles/counts/README.md` |
 | `profiles/node/.editorconfig` | shipped | adopter | Node lint/format profile | — | `profiles/node/README.md` |
 | `profiles/node/.prettierignore` | shipped | adopter | Node lint/format profile | — | `profiles/node/README.md` |
@@ -128,7 +130,7 @@
 
 ### internal
 
-68 path(s) · 68 shipped · 0 contract-only.
+70 path(s) · 70 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -142,6 +144,7 @@
 | `.github/workflows/release.yml` | shipped | template, adopter | Release (generic) | — | `docs/RELEASE_PROFILES.md` |
 | `.github/workflows/security.yml` | shipped | template | Security | — | `docs/ACTIONS_CATALOG.md#2-workflow-catalog` |
 | `.github/workflows/tracker-audit.yml` | shipped | template, adopter | Tracker audit (advisory) | — | `docs/ACTIONS_CATALOG.md#2-workflow-catalog` |
+| `.github/workflows/tracker-contract.yml` | shipped | template | Tracker contract + metadata (self caller) | — | `docs/ACTIONS_CATALOG.md#28-tracker-contract-metadata-verification`<br>`docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract` |
 | `contract/adoption-contract.json` | shipped | template, adopter | Adoption contract | — | `docs/REFERENCE.md#adoption-contract-verifier`<br>`docs/ADOPTION.md#adoption-contract-verify` |
 | `contract/debt-register.json` | shipped | template | Tech-debt register | — | `docs/TECH_DEBT.md` |
 | `contract/exceptions/metadata-exceptions.json` | shipped | template | Metadata exceptions | — | `docs/REFERENCE.md#14-token-and-secret-matrix` |
@@ -188,6 +191,7 @@
 | `docs/reference-cards/task-lifecycle.md` | shipped | adopter | Reference-card sources | — | — |
 | `docs/reference-cards/token-secret-matrix.md` | shipped | adopter | Reference-card sources | — | — |
 | `docs/reference-cards/troubleshooting-audit.md` | shipped | adopter | Reference-card sources | — | — |
+| `profiles/contract/README.md` | shipped | adopter | Contract + metadata profile | — | `docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract`<br>`docs/ADOPTION.md#adoption-contract-verify` |
 | `profiles/counts/README.md` | shipped | adopter | Counts contract profile (verified PASS/FAIL/SKIP) | — | `docs/REFERENCE.md#1-repository-map` |
 | `profiles/desktop/README.md` | shipped | adopter | Desktop smoke profile | — | `docs/REFERENCE.md#1-repository-map` |
 | `profiles/node/README.md` | shipped | adopter | Node profile (generic) | — | `docs/REFERENCE.md#1-repository-map` |

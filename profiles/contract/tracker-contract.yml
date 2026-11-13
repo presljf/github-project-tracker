@@ -1,0 +1,48 @@
+# COPY-MODE EXAMPLE — reusable-mode contract + metadata caller (T03).
+#
+# Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
+# lives under profiles/. Copy it into your repository's .github/workflows/tracker-contract.yml,
+# replace both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
+# with the exact tag/SHA you adopted (v1.4.0+ — the first release that ships
+# reusable-contract.yml), and update your required checks to the new contexts (old→new mapping in
+# profiles/contract/README.md).
+#
+# Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-contract.yml
+# (contract in docs/ACTIONS_CATALOG.md §2.8/§7.10; profile details in profiles/contract/README.md).
+#
+# Replaces the two v1.3.x copied workflows (`tracker-contract.yml` + `tracker-metadata.yml`):
+# contract verification is offline and runs on every PR and push to main; metadata verification
+# needs TRACKER_TOKEN (Projects read), so it stays off on fork PRs and runs on push/dispatch.
+name: Tracker contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracker-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tracker-contract:
+    name: tracker-contract
+    # GitHub requires the caller job to grant at least the union of permissions declared by the
+    # called reusable workflow's jobs; both jobs declare contents: read only.
+    permissions:
+      contents: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-contract.yml@v1.3.2
+    with:
+      tracker-ref: v1.3.2
+      config-path: tracker.config.json
+      # Fork pull requests never receive repository secrets, so metadata stays off there; it runs
+      # on push to main and workflow_dispatch, where TRACKER_TOKEN is available.
+      metadata: ${{ github.event_name != 'pull_request' }}
+      # Optional trusted local version-consistency guard, for example:
+      # version-guard-command: node scripts/version-guard.mjs
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

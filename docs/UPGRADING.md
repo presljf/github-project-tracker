@@ -69,7 +69,49 @@ Adopter steps:
    (`npm run verify:surface`) keep the shipped surface machine-checkable; adopters do not copy
    either.
 
-No config change is required beyond bumping `automation.templateVersion` to the exact target tag.
+No config change is required beyond bumping `automation.templateVersion` to the exact target tag;
+adopters who migrate to the reusable contract caller also provision the `TRACKER_TOKEN` secret (below).
+
+### Reusable contract + metadata check migration
+
+v1.4.0 adds `.github/workflows/reusable-contract.yml` (dogfooded here by
+`.github/workflows/tracker-contract.yml`); the **v1.4.0 tag is the first release shipping it**.
+Pre-v1.4.0 pinned copies keep their old copied workflows and layout until the pin is upgraded, so
+migrate in the same PR as the pin bump:
+
+| Old copied v1.3.x workflow | Old check context | New reusable check context |
+|---|---|---|
+| `tracker-contract.yml` (verify-contract) | `tracker-contract` | `tracker-contract / contract` |
+| `tracker-metadata.yml` (verify-metadata) | `tracker-metadata` | `tracker-contract / metadata` |
+
+1. Copy `profiles/contract/tracker-contract.yml` into `.github/workflows/` and replace **both**
+   `@v1.3.2` refs — the reusable-workflow `uses:` ref and the `tracker-ref` input — with the exact
+   tag/SHA you adopt (v1.4.0+). `tracker-ref` must be a released tag that contains the new
+   `scripts/adopt/**` tooling and `contract/adoption-contract.json`; replace the example's
+   `v1.3.2` placeholders rather than relying on them.
+2. Create/refresh the `TRACKER_TOKEN` repository secret: project-scoped PAT with Projects +
+   Metadata **read** (≤90 days) or a GitHub App installation token, stored as a repository secret
+   (never in config, comments, or artifacts), passed explicitly by name (never `secrets: inherit`),
+   and rotated on the tracker's token schedule. It is required only when `metadata: true` (the
+   default).
+3. Update branch protection/rulesets to the new contexts in the **same PR** as the pin upgrade:
+   require `tracker-contract / contract`; treat `tracker-contract / metadata` as project-defined.
+   The bundled caller sets `metadata: false` on pull requests (fork PRs never receive the secret),
+   so a required **PR** context for metadata would stay pending — keep it advisory unless the
+   project runs metadata on every PR deliberately.
+4. Fork PRs: `metadata: false` is mandatory there (GitHub withholds secrets from forks); the
+   `contract` job still runs offline with no secrets. Keep
+   `secrets: TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}` so push/`workflow_dispatch` runs metadata.
+5. `config-path` caveat: it feeds `verify-tooling` only (default `tracker.config.json`, resolved
+   under `working-directory`); `verify-contract` and the `metadata` job read `tracker.config.json`
+   from the repository root / working directory. A renamed config file is not followed by metadata.
+6. `project.number` must be set in `tracker.config.json` or metadata verification fails (it reads
+   live project fields). `submodule-path` defaults to `.tracker-os` and only feeds the
+   pinned-submodule tag check — a missing submodule is a notice + skip, not a failure.
+
+See [ADOPTION contract verify](./ADOPTION.md#adoption-contract-verify),
+[ACTIONS CATALOG §7.10](./ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract),
+and [profiles/contract](../profiles/contract/README.md).
 
 ## Before upgrading
 
