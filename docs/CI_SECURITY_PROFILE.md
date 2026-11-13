@@ -267,8 +267,10 @@ input) to the exact adopted tag. v1.4.0 is the first release that ships
   (`verify-contract`); it needs no secret and is safe for fork PRs.
 - `metadata` reads live project metadata (`verify-metadata`), fails fast when `TRACKER_TOKEN` is
   absent, and needs `project.number` in `tracker.config.json`. GitHub withholds secrets from fork
-  PRs, so the bundled caller sets `metadata: ${{ github.event_name != 'pull_request' }}` — metadata
-  runs on `push` / `workflow_dispatch` only. Do **not** put `tracker-contract / metadata` in
+  PRs, so adopter callers set `metadata` from the event (for example
+  `${{ github.event_name != 'pull_request' }}`) and metadata runs on `push` / `workflow_dispatch`
+  only there; the template repository's own self caller keeps `metadata: false` (tooling profile;
+  see the dogfood bullet below). Do **not** put `tracker-contract / metadata` in
   required **PR** checks: a skipped job leaves the context pending and blocks merges. Keep it
   project-defined/advisory unless the project deliberately runs metadata on every PR.
 - Token: `TRACKER_TOKEN` is a project-scoped PAT (Projects read + Metadata read, ≤90 days) or a
