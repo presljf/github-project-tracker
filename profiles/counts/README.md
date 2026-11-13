@@ -63,7 +63,46 @@ Supported result formats (`--runner auto|playwright|node-test|verify`):
 drift prints the exact count/skip diff plus `docs:counts:update` guidance and exits 1. `--json`
 gives a machine-readable result. Flaky > 0 always fails. Unknown/malformed runner output fails loudly.
 
-## 3. Update + agree workflow
+## 3. Reusable counts-docs caller (T05)
+
+The docs-side half of the contract ships as a pinned reusable workflow
+(`.github/workflows/reusable-counts.yml`); the counted-runner suite job stays adopter-side. Copy
+[`counts-docs.yml`](./counts-docs.yml) into `.github/workflows/` and replace both pinned `@v1.3.2`
+refs (the `uses:` reusable-workflow ref and the `tracker-ref` input) with the exact tag/SHA you
+adopted (v1.4.0+ — the first release that ships it).
+
+| Input | Type | Default | Meaning |
+|---|---|---|---|
+| `tracker-ref` | string | `v1.3.2` | Exact tag/SHA to load `guard-docs-counts.mjs` from (ignored in the template repo itself). |
+| `config-path` | string | `tracker.config.json` | Tracker config path (repository-root-relative); `docs.counts` configures the contract. |
+| `runs-on` | string | `ubuntu-latest` | Runner label. |
+| `node-version` | string | `'22'` | Node.js version used by the guard. |
+
+Output: `counts-ok` (`'true'` when the guard passed, or when no `docs.counts` policy is configured).
+Caller job `counts-docs` / called job `counts` → check context `counts-docs / counts`; permissions
+`contents: read` only; no secrets; no artifacts.
+
+Behavior: self mode keys on the canonical template slug (the template's own caller passes
+`tracker-ref: ''`); downstream checks the pinned template tag out to `.tracker/` and runs
+`guard-docs-counts.mjs --root <workspace> --config <config-path>`. Absent `docs.counts` is a
+documented no-op (`docs counts guard: docs.counts is not configured (no-op).`, exit 0), so adopting
+the caller before wiring counts is safe; once counts are adopted, make `counts-docs / counts` a
+required check. The reusable workflow never runs the suite inventory — pair it with the
+adopter-side `suite-counts check` job (§2).
+
+Local parity:
+
+```bash
+npm run guard:docs:counts -- --root . --config tracker.config.json
+```
+
+Expected: the no-policy no-op line, or
+`docs counts contract OK — N suite(s) / M mode(s); generated doc and K marker file(s) current.`;
+drift/stale output exits 1 with exact fix guidance. Downstream acceptance is CastDeck C3 (first
+real baseline after the v1.4.0 tag); the template repo has no `docs.counts` policy yet, so its own
+`counts-docs.yml` run is a documented no-op.
+
+## 4. Update + agree workflow
 
 Counts change => **the same PR** changes the baseline, generated doc, and markers:
 
@@ -84,7 +123,7 @@ CI gates for adopters:
 - docs job: `guard-docs-counts` (baseline schema/agreement + generated doc/marker freshness);
   it does **not** run tests, so it stays fast and deterministic.
 
-## 4. Inline markers
+## 5. Inline markers
 
 Current-state docs can quote verified numbers without hardcoding them:
 
@@ -102,7 +141,7 @@ configured marker files; the guard fails on stale/unknown/unclosed markers and o
 Historical docs are exempt by construction: only files listed in `docs.counts.markers` are checked,
 so past release/acceptance records are never rewritten.
 
-## 5. Rollback
+## 6. Rollback
 
 Delete the `docs.counts` block (and the generated/baseline/marker files if desired). Absent config is
 a no-op; suite jobs and docs return to their previous behaviour.

@@ -291,7 +291,6 @@ test('only reusable-audit declares the optional TRACKER_TOKEN secret; outputs ar
   assert.deepEqual(callSecrets(read(AUDIT)), { TRACKER_TOKEN: { required: 'false' } });
   assert.deepEqual(callOutputs(read(POST_MERGE)), { ok: '${{ jobs.audit.outputs.ok }}' });
   assert.deepEqual(callOutputs(read(CLOSE_GUARD)), {});
-  assert.ok(!stripComments(read(POST_MERGE)).match(/^ {4}outputs:/m) || true);
   assert.match(read(POST_MERGE), /ok:\n {8}description:[\s\S]*?value: \$\{\{ jobs\.audit\.outputs\.ok \}\}/);
 });
 

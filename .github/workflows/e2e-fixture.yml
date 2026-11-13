@@ -1,0 +1,33 @@
+# Dispatch-only E2E reusable plumbing fixture (T05 / issue #140).
+#
+# Purpose: prove the reusable-e2e wiring end to end without adding Playwright to this repository —
+# the caller checkout, the `.tracker-actions` self-checkout via
+# `job.workflow_repository`/`job.workflow_sha`, the `setup-node-cache` action, the adopter command
+# step, and the conditional artifact upload (disabled here because artifact-path is empty).
+# Check context: `e2e-fixture / e2e`.
+#
+# This deliberately does NOT exercise the Playwright browser-install path (browsers: none) and is not
+# an adopter example. Playwright/browser validation and downstream-adopter acceptance are CastDeck C3
+# after the v1.4.0 tag (recorded on #140); the adopter caller example lives in `profiles/e2e/`.
+#
+# This is an internal runner, not a reusable workflow: it must never declare `workflow_call`.
+name: E2E reusable fixture
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-fixture:
+    name: e2e-fixture
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-e2e.yml
+    with:
+      browsers: none
+      install-command: none
+      test-command: 'node -e "console.log(''e2e fixture ok'')"'
+      artifact-path: ''
+      working-directory: '.'

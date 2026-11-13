@@ -192,9 +192,11 @@ jobs:
           json_args=()
           if [ "${JSON_MODE}" = "true" ]; then json_args+=(--json); fi
 
+          # Bash 3.2 (macOS) + `set -u` treats an empty array expansion as unbound; the
+          # ${arr[@]+"${arr[@]}"} form expands safely when empty and quotes elements otherwise.
           status=0
           set +e
-          node "$TRACKER/scripts/adopt/cli/audit.mjs" --config "$CONFIG" "--${MODE}" "${json_args[@]}" >"$out" 2>"$err"
+          node "$TRACKER/scripts/adopt/cli/audit.mjs" --config "$CONFIG" "--${MODE}" ${json_args[@]+"${json_args[@]}"} >"$out" 2>"$err"
           status=$?
           set -e
 

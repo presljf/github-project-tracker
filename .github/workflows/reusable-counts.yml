@@ -1,0 +1,116 @@
+# Reusable counts docs verification (T05 / issue #140).
+#
+# Contract: docs/ACTIONS_CATALOG.md §2.12 / §7.13 (catalog owner updates the rows).
+# Runs only `guard-docs-counts.mjs`: validates the committed counts baseline (schema + named-skip /
+# reviewed agreement), regenerates the canonical generated doc, and fails when that doc or any
+# configured inline marker is stale. The suite inventory and counted-runner wrappers stay
+# adopter-side by design; this workflow never runs tests.
+#
+# Absent `docs.counts` config is a no-op (`guard-docs-counts` exits 0 with a notice), so adopting a
+# caller before wiring counts is safe.
+#
+# Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`:
+# the template repository's own caller (`counts-docs.yml`) reads the guard from its checkout; every
+# other repository checks out the pinned `tracker-ref` to `.tracker/` and reads the guard from that
+# tag. The PR merge SHA is deliberately not used for self detection.
+#
+# No artifacts, no secrets, no pull_request_target, contents: read only.
+
+name: Reusable counts docs verification
+
+on:
+  workflow_call:
+    inputs:
+      tracker-ref:
+        description: Exact template tag/SHA to load the counts guard from (ignored in the template repo itself).
+        required: false
+        type: string
+        default: v1.3.2
+      config-path:
+        description: Tracker config path (repository-root-relative); `docs.counts` configures the contract.
+        required: false
+        type: string
+        default: tracker.config.json
+      runs-on:
+        description: Runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: '22'
+    outputs:
+      counts-ok:
+        description: "'true' when the counts docs guard passed, or when no docs.counts policy is configured (no-op)."
+        value: ${{ jobs.counts.outputs.counts-ok }}
+
+permissions:
+  contents: read
+
+jobs:
+  counts:
+    name: counts
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    outputs:
+      counts-ok: ${{ steps.counts.outputs.ok }}
+    steps:
+      - name: Checkout adopter repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve counts paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+          fi
+
+          config="$GITHUB_WORKSPACE/${CONFIG_PATH_INPUT:-tracker.config.json}"
+
+          [ -f "$config" ] || {
+            echo "::error::tracker config not found at '$config' (mode=${mode})."
+            exit 1
+          }
+          [ -f "$tracker/scripts/adopt/cli/guard-docs-counts.mjs" ] || {
+            echo "::error::counts guard not found under '$tracker' (mode=${mode}; check tracker-ref)."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+      - name: Verify counts docs contract
+        id: counts
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/guard-docs-counts.mjs" --root "$GITHUB_WORKSPACE" --config "$CONFIG"
+          echo "ok=true" >> "$GITHUB_OUTPUT"

@@ -39,6 +39,10 @@ This profile centralizes CI and security logic once, in reusable workflows, and 
 | [pr-close-guard.yml](../.github/workflows/pr-close-guard.yml) | Thin self caller (PR edit events); check context `pr-close-guard / guard`. |
 | [reusable-contract.yml](../.github/workflows/reusable-contract.yml) | Reusable contract + metadata verification via `on: workflow_call`: offline `contract` job (verify-tooling/verify-contract, no secrets) and live `metadata` job (verify-metadata, optional `TRACKER_TOKEN` with Projects + Metadata read). |
 | [tracker-contract.yml](../.github/workflows/tracker-contract.yml) | Thin self caller for this repository; check contexts `tracker-contract / contract` and `tracker-contract / metadata`. |
+| [reusable-e2e.yml](../.github/workflows/reusable-e2e.yml) | Reusable Playwright E2E via `on: workflow_call` (job `e2e`): installs dependencies through the pinned `setup-node-cache` composite action resolved from the workflow's own repo/sha (`.tracker-actions`), default command `npm run e2e`, browser list default `chromium` (`none` skips), failure-only artifact upload; `contents: read`, no secrets, no `tracker-ref` input. |
+| [reusable-counts.yml](../.github/workflows/reusable-counts.yml) | Reusable counts guard via `on: workflow_call` (job `counts`): runs `guard-docs-counts.mjs` against the workspace (self) or pinned `.tracker` (downstream); no artifacts, no secrets. |
+| [counts-docs.yml](../.github/workflows/counts-docs.yml) | Thin self caller (PR/push/dispatch, no-op here because this config declares no `docs.counts`); check context `counts-docs / counts`. |
+| [e2e-fixture.yml](../.github/workflows/e2e-fixture.yml) | Dispatch-only plumbing fixture for the reusable E2E contract (browsers `none`, trivial test command); check context `e2e-fixture / e2e`; template-only. |
 | [dependabot.yml](../.github/dependabot.yml) | Weekly grouped version updates for npm and GitHub Actions. |
 | `docs/CI_SECURITY_PROFILE.md` | This runbook: CI contract, required-check/branch-protection procedure, security defaults, tokens, runners/cost, pinning, local parity, dry-run rules. |
 
@@ -103,7 +107,7 @@ A called workflow job reports as `<caller job> / <called job>`. Through the bund
 | `ci / prepare` | no (pre-flight command/lockfile resolution; do not require) |
 | `ci / ci-gate` | recommended single aggregate gate (fails if any CI job did not succeed) |
 
-`ci / ci-gate` is the summary job (`name: ci-gate`, id `summary`) that `needs` the four check jobs. T09's catalog recommends requiring this one aggregate check; the individual contexts remain available for projects that prefer granular required checks. The workflow also exposes `result` and `checks-passed` workflow-call outputs. Security contexts are `security / dependency-review` (PR dependency review) and `codeql` (the plain opt-in CodeQL job). Audit-family contexts are `pr-close-guard / guard` (required), `post-merge-audit / audit` (post-merge only), and `tracker-audit / audit` (advisory) — see §3.7.
+`ci / ci-gate` is the summary job (`name: ci-gate`, id `summary`) that `needs` the four check jobs. T09's catalog recommends requiring this one aggregate check; the individual contexts remain available for projects that prefer granular required checks. The workflow also exposes `result` and `checks-passed` workflow-call outputs. Security contexts are `security / dependency-review` (PR dependency review) and `codeql` (the plain opt-in CodeQL job). Audit-family contexts are `pr-close-guard / guard` (required), `post-merge-audit / audit` (post-merge only), and `tracker-audit / audit` (advisory) — see §3.7. E2E/counts contexts are `e2e / e2e` (advisory by default; opt-in to required), `counts-docs / counts` (required only when the counts contract is adopted), and the template-only fixture `e2e-fixture / e2e`.
 
 Renaming the caller job (`ci`) or any called job changes these exact strings and silently breaks existing branch protection/rulesets. Capture the names from a real run before requiring them:
 
@@ -200,6 +204,11 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
   `post-merge-audit / audit` as a merge check (it runs on merged PRs and reports through the job
   summary/OI); keep `tracker-audit / audit` advisory, with strict mode as a release-gate opt-in
   (see §3.7).
+- E2E/counts callers: `e2e / e2e` stays advisory by default (no required-check recommendation
+  until an adopter opts in and records the decision); `counts-docs / counts` is required only when
+  the project adopts the `docs.counts` contract (otherwise the caller is a documented no-op); the
+  `e2e-fixture / e2e` context exists only in the template plumbing fixture and must not be
+  required.
 - Branch protection/rulesets and `tracker.config.json` `workflows.ci.requiredChecks` are the two records of required checks. The config currently stores short names (`lint`, `format`, `test`); platform protection stores full contexts (`ci / lint`, ...). Keep them in sync by convention; reconciling the short-name mapping is a T09/T12 follow-up (this profile does not edit the config).
 
 ### 3.2 Current platform state (verified 2026-11-11)
@@ -218,6 +227,12 @@ migrates the callers — the old `pr-close-guard` context disappears with the ol
 recommended required list becomes `ci / ci-gate`, `docs-guard`, and `pr-close-guard / guard` (the
 tracker self-config `guard.requiredChecks` carries exactly that list); `post-merge-audit / audit` is
 not a merge check and `tracker-audit / audit` stays advisory.
+
+The T05 self callers do not change this repository's required set: `counts-docs.yml` is a
+documented no-op here because `tracker.config.json` declares no `docs.counts` (real-baseline
+validation is a downstream/C3 concern), and `e2e-fixture.yml` is a dispatch-only plumbing fixture;
+both remain off required-check lists. The reusable E2E contract (`e2e / e2e`) is advisory by
+default — adopters that promote it do so in their own protection/ruleset with recorded evidence.
 
 ### 3.3 Inspect current protections
 
@@ -329,7 +344,7 @@ called workflows can only downgrade the caller token):
 | --- | --- | --- |
 | PR close guard | Read-only: fetches the live PR + referenced issues to validate closing keywords and partial-PR rules | `contents: read`, `issues: read`, `pull-requests: read` |
 | Post-merge audit | Opens the `tracker-contract-exception` OI/label; `statusCheckRollup` also resolves `checkSuite.workflowRun`, which needs Actions read | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` |
-| Tracker audit | Reads the project only; no write scopes. Optional `TRACKER_TOKEN` secret (project read: Projects read + Metadata read) | `contents: read` |
+| Tracker audit | Reads the project/issues only; no write scopes. Optional `TRACKER_TOKEN` secret (project + repo/issues read — see token scope below) | `contents: read` |
 
 Required-check guidance:
 
@@ -340,9 +355,10 @@ Required-check guidance:
   and opens an OI for a real bypass; the release gate blocks while an OI is open.
 - Keep `tracker-audit / audit` advisory (`mode: advisory`); strict mode (`mode: strict`) is a
   release-gate opt-in. Advisory mode without `TRACKER_TOKEN` logs a notice and skips with exit 0;
-  strict mode without the token fails with an actionable message. Token scope: project read
-  (Projects read + Metadata read; project-scoped PAT ≤90 days or a GitHub App installation token),
-  stored as a repository secret, never in config/logs/artifacts.
+  strict mode without the token fails with an actionable message. Token scope: project read **and**
+  repo/issues read for private adopters — a project-scoped PAT with `project` + `repo` scopes
+  (≤90 days) or a GitHub App installation token with Projects + Metadata + Issues read. Store it as
+  a repository secret; never in config/logs/artifacts.
 - Config caveat: if `guard.requiredChecks` is absent, the post-merge audit falls back to the legacy
   default list (`ci / ci-gate`, `docs-guard`, `pr-close-guard`), which no longer matches the
   reusable context — set the list explicitly when migrating or every merge is flagged as a bypass.
@@ -426,7 +442,7 @@ Secret scanning and push protection are GitHub repository settings, not workflow
 | Dependency review | `GITHUB_TOKEN` | `contents: read` | automatic | No secrets; PR comments disabled by default. |
 | CodeQL (opt-in) | `GITHUB_TOKEN` | job-level `security-events: write` + reads | automatic | Enabled by variable/dispatch; never required; fork PRs skipped. |
 | Dependabot private registries | Dependabot secret | registry read | Dependabot secrets | Never inline in `dependabot.yml`. |
-| Tracker audit (`reusable-audit.yml`) | `TRACKER_TOKEN`/App | project **read** | repository secret | Optional: advisory mode without the token logs a notice and skips (exit 0); strict mode without it fails with an actionable message. JSON goes to the job log/summary — no artifacts. Never in config/logs/artifacts. |
+| Tracker audit (`reusable-audit.yml`) | `TRACKER_TOKEN`/App | project **read** + repo/issues read (`project`+`repo` PAT scopes; App Projects+Metadata+Issues read) | repository secret | Optional: advisory mode without the token logs a notice and skips (exit 0); strict mode without it fails with an actionable message. JSON goes to the job log/summary — no artifacts. Never in config/logs/artifacts. |
 | Contract metadata (other profile) | `TRACKER_TOKEN`/App | project **read** (Projects + Metadata read) | repository secret | Optional: required only when the reusable-contract `metadata` job runs (`metadata: true`, default). PAT ≤90 days or a GitHub App installation token; pass explicitly by name (never `secrets: inherit`). Fork PRs receive no secret, so callers pass `metadata: false` there; rotate on the tracker token schedule; never in config/logs/artifacts. |
 | Release publish (other profile) | `GITHUB_TOKEN`/environment/OIDC | `contents: write` | protected environment | Separate profile; dry-run first, publish explicit. |
 
@@ -449,6 +465,13 @@ Rules:
 - Cache: npm caching is enabled automatically only when an npm lockfile exists; the reusable workflow passes `cache: npm` and the detected lockfile path. No lockfile -> no cache, no failure.
 - Keep artifact retention short. Do not upload dependency trees or secrets.
 - CodeQL runs on the weekly schedule (Mondays 16:00 UTC) only when enabled; scheduled scans should stay off-peak.
+- Reusable E2E (`e2e / e2e`) is Playwright on Linux: the browser install step downloads roughly
+  0.5–1 GB per run (no browser cache in v1.4.0), `chromium` is the default browser list, and the job
+  timeout defaults to 20 minutes. Keep it advisory/path- or label-gated on PRs and budget the
+  install time; pass a narrower `browsers` list (or `none` to skip browser setup) for fixture/smoke
+  checks.
+- Reusable counts (`counts-docs / counts`) is a short Linux job that runs the docs guard only (no
+  suite inventory/test execution), so its cost is negligible next to the test suites it documents.
 - Gate expensive jobs with path/label conditions (section 7), but keep required jobs always-running.
 
 ## 7. Selective path and label gating
@@ -474,6 +497,7 @@ All actions used by this profile are pinned to full commit SHAs with the exact r
 | --- | --- | --- | --- |
 | `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1` | `v7.0.1` | CI and security workflows |
 | `actions/setup-node` | `949feb2413d6458794dcd2491c4babbbce0c15c1` | `v7.1.0` | Reusable CI |
+| `actions/upload-artifact` | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` | `v7.0.2` | Reusable E2E (failure-only artifact upload) |
 | `actions/dependency-review-action` | `a1d282b36b6f3519aa1f3fc636f609c47dddb294` | `v5.0.0` | Reusable security |
 | `github/codeql-action/init` + `/analyze` | `9418214df1f2c4b8128c770156c409013b07d6b9` | `v3.39.3` | Security caller (opt-in) |
 
@@ -548,6 +572,14 @@ No live third-party calls or publishing happen in this profile. CodeQL/dependenc
 - Dry-run/opt-in by design: CodeQL is off by default; dependency review skips cleanly where unavailable; Dependabot has no auto-merge; no workflow publishes artifacts or packages.
 - Do not interpolate untrusted event data (PR titles/branches/issue bodies) into `run:` scripts; pass it through `env` if needed.
 - Fork PRs get a read-only token and no secrets; the CodeQL job skips fork PRs, and dependency review requires no secrets.
+- Playwright network policy: the reusable E2E install step downloads browsers — that is a setup
+  step, not a live third-party assertion (no browser cache exists in v1.4.0). Test assertions must
+  not depend on live third-party services: stub external services (or run against local fixtures),
+  and treat any live-call suite as remote-only under `verification.remoteOnly[]` (REFERENCE §5.6)
+  rather than a required local check.
+- E2E artifacts can leak data: upload only on failure (`upload-on-success: false`), keep the default
+  7-day retention short, and ensure traces/screenshots/videos contain no credentials, cookies, or
+  personal data before the job uploads them. Counts/reusable audit jobs upload no artifacts.
 - Before committing workflow changes, scan for accidental credentials:
 
   ```bash
@@ -635,11 +667,12 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 
 ## Post-merge bypass audit
 
-`.github/workflows/post-merge-audit.yml` is the thin caller for `reusable-post-merge-audit.yml`. It detects merged PRs with failed/missing required checks or invalid closing-keyword usage and opens a `tracker-contract-exception` OI; release must not proceed until resolved. Check context: `post-merge-audit / audit`. It triggers on `pull_request` closed (merged only, filtered in the caller) plus a manual dispatch that passes `pr-number`; the reusable workflow revalidates the PR state is MERGED before auditing.
+`.github/workflows/post-merge-audit.yml` is the thin caller for `reusable-post-merge-audit.yml`. It detects merged PRs with failed/missing required checks or invalid closing-keyword usage and opens a `tracker-contract-exception` OI; release must not proceed until resolved. Check context: `post-merge-audit / audit`. It triggers on `pull_request` closed (merged only, filtered in the caller) plus a manual dispatch that passes `pr-number`. The `state == MERGED` revalidation is implemented in `scripts/adopt/cli/post-merge-audit.mjs` through the repo's transport (no raw `gh` calls in the workflows): a dispatch for an open/closed-unmerged PR fails actionably, and the audit re-fetches the PR rather than trusting the event payload.
 
 - **Caller permissions (least privilege):** `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`. The caller must grant this block (called workflows can only downgrade it): `issues: write` opens the OI/label, while `checks: read` + `statuses: read` + **`actions: read`** are required for `statusCheckRollup` — its GraphQL query also resolves `checkSuite.workflowRun`, which needs Actions read (observed on CastDeck run 43276236147: success-but-degraded with only checks+statuses).
 - **Required check names:** resolve from `guard.requiredChecks[]` in `tracker.config.json`; the template's audited config sets `["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]` (the retired `pr-close-guard` context is gone). If the key is absent the script falls back to the legacy default (`pr-close-guard`), which no longer matches the reusable context — set the list explicitly. Adopters must set their real check contexts (e.g. CastDeck: `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard / guard`).
 - **Degraded mode:** if `statusCheckRollup` is unreadable due to a permission/API error, the audit prints a loud warning + job summary (`actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, enforces the closing-keyword/partial rules only, and exits 0 — it does not fail red and does not open a false check-related OI. Real closing-keyword/partial violations still open an OI; non-permission errors still fail.
+- **Output semantics:** the reusable job's `ok` output means the job completed (the audit ran and, for a detected bypass, the OI was opened) — `ok=true` does **not** mean "no bypass". The audit is advisory: a real bypass still completes the job by opening the `tracker-contract-exception` OI, and the release gate blocks while that OI is open.
 - **Fork-PR caveat:** a PR merged from a fork can leave the audit run without `issues: write`, so OI creation returns 403. This is a documented pre-existing limitation: a detected bypass is reported in the job log and the job fails loudly at OI creation rather than recording the OI — review and open the follow-up manually.
 - **v1.3.0 actions:read correction (historical; fixed in v1.3.2):** the v1.3.0 tag shipped `checks: read` + `statuses: read` guidance before the Actions-read requirement was found live; the correction landed post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`) and is included in v1.3.2. Adopters pinned to v1.3.0 add `actions: read` to their copied caller; CastDeck's caller fix is tracked in its C3 PR.
 - **Evidence:** after private-repo adoption, verify a merged PR run completes green (degraded warning acceptable only until the permissions are applied) and record the run URL.
