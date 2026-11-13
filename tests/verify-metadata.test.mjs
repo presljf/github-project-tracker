@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyTitle, evaluateMetadata } from '../scripts/github/verify-metadata.mjs';
+import { classifyTitle, evaluateMetadata } from '../scripts/adopt/cli/verify-metadata.mjs';
 
 const contract = {
   metadata: {

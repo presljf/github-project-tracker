@@ -10,9 +10,13 @@
 #   is the release tag and `dry-run` is false; both are still gated by the protected `release`
 #   environment (configure required reviewers before relying on publish).
 #
-# Adopters: copy this caller, keep `.github/workflows/reusable-release.yml` in sync (or call the
-# template by pinned ref — see docs/RELEASE_PROFILES.md), and replace the build-command with your
-# project's real build. Never publish from a pull_request event; this workflow has no PR trigger.
+# Adopters: for the macOS/container/package profiles, copy the matching caller example from
+# profiles/release/reusable/ into .github/workflows/ and pin the template ref to the tag you
+# adopted (replace @v1.3.2 in the copied file). For the generic profile, copy this caller and keep
+# .github/workflows/reusable-release.yml in sync (or call the template by pinned ref — see
+# docs/RELEASE_PROFILES.md), and replace the build-command with your project's real build.
+# GitHub executes only .github/workflows/, so profiles/ examples never run in place.
+# Never publish from a pull_request event; this workflow has no PR trigger.
 name: Release (generic)
 
 on:

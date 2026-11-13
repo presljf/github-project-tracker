@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { RateState } from '../scripts/github/lib/rate-state.mjs';
+import { RateState } from '../scripts/adopt/lib/rate-state.mjs';
 
 function tempState() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tracker-rate-'));

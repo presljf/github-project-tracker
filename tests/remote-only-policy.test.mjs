@@ -4,21 +4,21 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { validateConfig } from '../scripts/github/validate-config.mjs';
+import { validateConfig } from '../scripts/adopt/cli/validate-config.mjs';
 import {
   DEFAULT_OVERRIDE_ENV,
   GUARD_STATUS,
   evaluateRemoteOnlyPolicy,
   isRemoteRunner,
   resolveRemoteOnlyPolicy,
-} from '../scripts/github/lib/verification-policy.mjs';
-import { evaluateTooling } from '../scripts/github/verify-tooling.mjs';
+} from '../scripts/adopt/lib/verification-policy.mjs';
+import { evaluateTooling } from '../scripts/adopt/cli/verify-tooling.mjs';
 import createPlaywrightRemoteGuard, {
   createPlaywrightRemoteGuard as createGuardNamed,
-} from '../scripts/github/playwright-remote-guard.mjs';
+} from '../scripts/adopt/lib/playwright-remote-guard.mjs';
 
 const REPO_ROOT = process.cwd();
-const GUARD = path.join(REPO_ROOT, 'scripts/github/guard-local-suite.mjs');
+const GUARD = path.join(REPO_ROOT, 'scripts/adopt/cli/guard-local-suite.mjs');
 
 const STATUSES = ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'];
 const DESKTOP_SUITE = {
@@ -406,7 +406,7 @@ test('playwright helper can load tracker.config.json from a path and is dependen
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-  const source = fs.readFileSync(path.join(REPO_ROOT, 'scripts/github/playwright-remote-guard.mjs'), 'utf8');
+  const source = fs.readFileSync(path.join(REPO_ROOT, 'scripts/adopt/lib/playwright-remote-guard.mjs'), 'utf8');
   assert.doesNotMatch(source, /from\s+['"]@playwright\/test['"]/, 'helper must not import @playwright/test');
   assert.equal(createPlaywrightRemoteGuard, createGuardNamed);
 });

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateConfig } from '../scripts/github/validate-config.mjs';
-import { getWorkProfileAdapter, resolveWorkProfile } from '../scripts/github/lib/work-profile.mjs';
-import { auditTracker, collectAuditData, issueKind } from '../scripts/github/audit.mjs';
-import { checkDoR, doneTask, startTask } from '../scripts/github/task.mjs';
-import { closeStream, openStream, streamTitle } from '../scripts/github/stream.mjs';
-import { ensureSingleSelectOption, mergeSingleSelectOption } from '../scripts/github/project-field-option.mjs';
+import { validateConfig } from '../scripts/adopt/cli/validate-config.mjs';
+import { getWorkProfileAdapter, resolveWorkProfile } from '../scripts/adopt/lib/work-profile.mjs';
+import { auditTracker, collectAuditData, issueKind } from '../scripts/adopt/cli/audit.mjs';
+import { checkDoR, doneTask, startTask } from '../scripts/adopt/cli/task.mjs';
+import { closeStream, openStream, streamTitle } from '../scripts/adopt/cli/stream.mjs';
+import { ensureSingleSelectOption, mergeSingleSelectOption } from '../scripts/adopt/cli/project-field-option.mjs';
 import { FakeTaskGitHub } from './helpers/fake-task-github.mjs';
 
 // ---------------------------------------------------------------------------
@@ -451,11 +451,11 @@ test('stream close refuses open children, red release gate, and missing evidence
       }),
     /--evidence or --evidence-file is required/,
   );
-  const greenGate = async () => ({ ok: true, command: 'node scripts/github/release-gate.mjs' });
+  const greenGate = async () => ({ ok: true, command: 'node scripts/adopt/cli/release-gate.mjs' });
   const redGate = async () => ({
     ok: false,
     exitCode: 1,
-    command: 'node scripts/github/release-gate.mjs',
+    command: 'node scripts/adopt/cli/release-gate.mjs',
     output: 'contract FAILED',
   });
   const closable = () =>
@@ -485,7 +485,7 @@ test('stream close records ### Stream close evidence with children, gate result,
     stream: 30,
     evidence: 'rehearsal: all tasks done; npm test 112/112',
     tag: 'v1.3.0',
-    gateRunner: async () => ({ ok: true, command: 'node scripts/github/release-gate.mjs' }),
+    gateRunner: async () => ({ ok: true, command: 'node scripts/adopt/cli/release-gate.mjs' }),
   });
   assert.equal(result.ok, true);
   assert.equal(result.tag, 'v1.3.0');
@@ -575,7 +575,7 @@ test('closed rehearsal stream: open → task start/done → stream close → aud
     github,
     stream: opened.issue,
     evidence: 'rehearsal complete: task #2 closed with PR + evidence',
-    gateRunner: async () => ({ ok: true, command: 'node scripts/github/release-gate.mjs' }),
+    gateRunner: async () => ({ ok: true, command: 'node scripts/adopt/cli/release-gate.mjs' }),
   });
   assert.equal(closed.ok, true);
   assert.equal(github.issues.find((entry) => entry.number === opened.issue).state, 'CLOSED');

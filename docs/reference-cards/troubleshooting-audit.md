@@ -25,8 +25,8 @@
 gh --version && gh auth status
 gh project list --owner @me --format json
 gh project field-list PROJECT_NUMBER --owner @me --format json
-node scripts/github/validate-config.mjs tracker.config.json
-node scripts/github/audit.mjs --config tracker.config.json --advisory
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
 ```
 
 ## Audit checklist (10 invariants)

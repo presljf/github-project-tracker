@@ -1,0 +1,10 @@
+{
+  "write": {
+    ".github/workflows/extra.yml": "name: Extra\n\non:\n  push:\n\npermissions:\n  contents: read\n\njobs:\n  extra:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo extra\n"
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_UNCLASSIFIED_FILE"
+    ]
+  }
+}

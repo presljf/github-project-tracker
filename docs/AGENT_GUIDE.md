@@ -58,7 +58,7 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - **Hidden local = non-authoritative feedback.** It is allowed only when the suite declares
   `localMode: hidden`; never cite it as release evidence.
 - **Override env = human debugging only.** It prints a loud warning; agents must not set it.
-- Playwright suites wire `scripts/github/playwright-remote-guard.mjs` as `globalSetup` so the run
+- Playwright suites wire `scripts/adopt/lib/playwright-remote-guard.mjs` as `globalSetup` so the run
   fails before any window is created. Full reference: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
 ## Verified counts (aware and agree)
@@ -117,10 +117,10 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - Update parent sprint/release if exit/gates affected.
 - **Reconcile Project Status after every merge.** `Closes #` closes the issue before the `done` path
   and `task.mjs done` refuses closed issues (`#N is not open`). Run
-  `node scripts/github/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run
+  `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run
   with `--apply` until the report says every closed item is Done.
 - **Verify the board after a merge or raw board creation:** assert the expected tree and run
-  `node scripts/github/audit.mjs --config tracker.config.json --advisory`, then attach the result as
+  `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory`, then attach the result as
   close-out evidence. Commands: [REFERENCE §5.8–5.9](./REFERENCE.md#58-reconcile-status-close-out-project-status).
 - Do not claim completion for unverified work; mark Blocked/defer instead.
 

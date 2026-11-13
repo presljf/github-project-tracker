@@ -1,0 +1,10 @@
+{
+  "write": {
+    ".github/workflows/demo.yml": "name: Demo\n\non:\n  workflow_call:\n\npermissions:\n  contents: read\n\njobs:\n  demo:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo demo\n"
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_WORKFLOW_CALL_INVALID"
+    ]
+  }
+}

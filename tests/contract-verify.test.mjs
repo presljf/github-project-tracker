@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { verifyContract } from '../scripts/github/verify-contract.mjs';
+import { verifyContract } from '../scripts/adopt/cli/verify-contract.mjs';
 
 const contract = {
   trackerVersion: '1.2.1',

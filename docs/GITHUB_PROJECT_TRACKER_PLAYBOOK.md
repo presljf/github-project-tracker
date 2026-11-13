@@ -13,11 +13,11 @@ Related artifacts:
 | `docs/HOW_TO_USE.md`, `docs/QUICKSTART.md`, `docs/REFERENCE.md`, `docs/TROUBLESHOOTING.md`, `docs/ADOPTION.md`, `docs/UPGRADING.md`, `docs/AGENT_GUIDE.md`, `docs/MULTI_PROJECT.md` | exhaustive task-oriented usage docs/reference/adoption/upgrade/agent/multi-project | existing |
 | `docs/DOCS_STYLE_GUIDE.md`, `docs/reference-cards/` | doc standards and seven printable one-page cards | existing (T13) |
 | `docs/ACTIONS_CATALOG.md` | Actions catalog + token/runner matrices | existing (T09/T15/T10) |
-| `tracker.config.example.json`, `schemas/tracker.config.schema.json`, `scripts/github/validate-config.mjs` | config contract/validation/examples | existing (T02) |
+| `tracker.config.example.json`, `schemas/tracker.config.schema.json`, `scripts/adopt/cli/validate-config.mjs` | config contract/validation/examples | existing (T02) |
 | `tracker.config.json` | adopting project's own pinned config | created per project at adoption |
-| `scripts/github/bootstrap.mjs` | idempotent setup from config | existing (T03) |
-| `scripts/github/audit.mjs` | invariant audit | existing (T04) |
-| `scripts/github/task.mjs` | check-in/update/review/block/done CLI | existing (T05) |
+| `scripts/adopt/cli/bootstrap.mjs` | idempotent setup from config | existing (T03) |
+| `scripts/adopt/cli/audit.mjs` | invariant audit | existing (T04) |
+| `scripts/adopt/cli/task.mjs` | check-in/update/review/block/done CLI | existing (T05) |
 | `.github/ISSUE_TEMPLATE/*`, `PULL_REQUEST_TEMPLATE.md` | issue/PR intake | existing |
 | `docs/comment-templates/` | copy-paste lifecycle comments | existing (T02) |
 | `profiles/node/` | generic Node lint/format profile (ESLint/Prettier/editorconfig/ignore) | existing (T14) |
@@ -290,7 +290,7 @@ Abort/rollback: if the task cannot start, set Blocked or return to Todo with a c
 4. Set Status **Done**; confirm issue is closed.
 5. Reconcile Project Status for issues auto-closed by the merge: issue closure does not update the
    field and `task.mjs done` refuses closed issues, so run
-   `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply` (REFERENCE §5.8).
+   `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply` (REFERENCE §5.8).
 6. Post check-out comment (§15.3) with evidence, deviations, follow-ups.
 7. Update parent sprint/release tracker if this task affects exit/gates.
 
@@ -351,7 +351,7 @@ Any scope, acceptance, estimate, gate, or policy change requires:
 
 ## 9. Audit invariants
 
-Run the tracker audit regularly (`node scripts/github/audit.mjs --config tracker.config.json --advisory`; `--strict` for release gates).
+Run the tracker audit regularly (`node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory`; `--strict` for release gates).
 
 Invariants:
 - Every open issue has a native type (or documented fallback) and a milestone when it belongs to a release.
@@ -683,4 +683,4 @@ Source = <project>; label `source:downstream`; no secrets/vulnerability details.
 - `docs/DOCS_STYLE_GUIDE.md` + `docs/reference-cards/` — documentation standards and printable cards
 - `docs/ACTIONS_CATALOG.md` — workflow catalog and token/runner matrices
 - `tracker.config.example.json` — config schema/examples
-- `scripts/github/bootstrap.mjs`, `audit.mjs`, `task.mjs` — automation
+- `scripts/adopt/cli/bootstrap.mjs`, `audit.mjs`, `task.mjs` — automation

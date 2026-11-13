@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "set": {
+      "wf:demo": {
+        "path": ".github/workflows/missing.yml"
+      }
+    }
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_MANIFEST_MISSING_FILE"
+    ]
+  }
+}

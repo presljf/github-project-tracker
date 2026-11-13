@@ -26,4 +26,4 @@ jobs:
             echo "TRACKER_TOKEN is not configured; skipping advisory audit."
             exit 0
           fi
-          node scripts/github/audit.mjs --config tracker.config.json --advisory
+          node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory

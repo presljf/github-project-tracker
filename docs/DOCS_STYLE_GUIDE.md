@@ -201,7 +201,7 @@ The printable pack lives in [docs/reference-cards/](./reference-cards/README.md)
 - **One page, one topic.** Optimize for A4 and US Letter; content is sized to fit both. Never shrink below readable print sizes — cut content instead.
 - **Three artifacts:** Markdown source, generated print-ready HTML, and committed A4 + Letter PDFs. Generated files are not edited by hand.
 - **Required content:** card number/title, docs version + target template, concise bullets/tables, primary cross-links, placeholders only, no secrets or chat context.
-- **Regenerate in the same PR** when commands/fields/statuses/tokens/policies change: `node scripts/docs/build-cards.mjs`.
+- **Regenerate in the same PR** when commands/fields/statuses/tokens/policies change: `node scripts/internal/build-cards.mjs`.
 - **Print CSS must include `@page` size and print margins**; browser-print fallback is documented in the cards README.
 - **Freshness gate:** T12 checks card content against the implemented CLI/config and regenerates with `--check` before the release tag.
 - Cards summarize; if a card needs more than one page, move detail to the handbook and shorten the card.
@@ -300,9 +300,9 @@ Use this checklist for fresh-eyes validation and ordinary docs review. Mark evid
 
    ```bash
    git diff --check
-   node scripts/docs/build-cards.mjs --check   # only when cards are affected
+   node scripts/internal/build-cards.mjs --check   # only when cards are affected
    npm test
-   node scripts/github/validate-config.mjs tracker.config.json   # only when config examples change
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json   # only when config examples change
    ```
 
 4. Check fences/links and run the §11 checklist against your own diff.

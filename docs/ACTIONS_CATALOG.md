@@ -3,7 +3,7 @@
 **Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
 **Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
-**Availability key:** **shipped** = YAML exists in this repo; **contract-only** = interface documented here but not yet implemented. Contract-only items are never claimed as shipped.
+**Availability key:** **shipped** = a runnable workflow/action YAML exists in this repo (`.github/workflows/` or `.github/actions/`); **contract-only** = interface documented here but not yet implemented. Files under `profiles/` are non-runnable examples/copy sources — GitHub never executes them, so they are not counted as shipped workflows. Contract-only items are never claimed as shipped.
 
 This page is the single source of truth for the Actions layer. The [playbook §10](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md#10-actions-and-ci-cd-contract) keeps the conceptual model, [REFERENCE §13–16](./REFERENCE.md#13-workflow-catalog) keeps the quick lookup tables, and this catalog keeps the full catalog and stable interfaces. All three must stay consistent.
 
@@ -63,7 +63,9 @@ Three invariants follow from the definitions:
 | Security — `security.yml` (Dependabot + dependency review + optional CodeQL) | PR dependency review; weekly/monthly `schedule`; CodeQL opt-in | Dependabot default; dependency review advisory then required; CodeQL opt-in advisory | `ubuntu-latest` | Dependency/supply-chain/code scanning | `contents: read`; `security-events: write` (CodeQL job only); `pull-requests: write` only if commenting | none | CodeQL SARIF → code scanning; summary otherwise | Dependency-review policy failure when required; CodeQL advisory until stable |
 | Docs — `docs.yml` → `reusable-docs.yml` | PR/push paths `docs/**`, `**/*.md`; `workflow_dispatch` | optional advisory; can be required for docs-only repos | `ubuntu-latest` | Markdown fence/link/consistency checks | `contents: read` | none | report summary, 7d | Advisory by default; broken fences/relative links fail |
 
-**Shipped vs contract-only:** shipped: `ci.yml`/`reusable-ci.yml`, `security.yml`/`reusable-security.yml`, `release.yml`+macOS/container/package callers/`reusable-release.yml`, checksum/sign-notarize composite actions, the advisory `tracker-audit.yml`, `pr-close-guard.yml`, `post-merge-audit.yml`, and `main-history-guard.yml`. Shipped desktop smoke: `reusable-desktop-smoke.yml` plus the caller example in `profiles/desktop/`. Contract-only: `e2e.yml`/`reusable-e2e.yml`, `docs.yml`/`reusable-docs.yml`, `reusable-audit.yml`, and `setup-node-cache` (CI setup/cache is inlined in `reusable-ci.yml`).
+The three reusable-mode profile callers (`release-macos.yml`, `release-container.yml`, `release-package.yml`) are **non-runnable copy examples** under `profiles/release/reusable/`: `.github/workflows/` holds only the internal runners plus the `reusable-*` contracts, and `release.yml` is the only runnable release caller. Copy an example into `.github/workflows/` and pin the adopted tag — `profiles/` itself is never executed by GitHub.
+
+**Shipped vs contract-only:** shipped: `ci.yml`/`reusable-ci.yml`, `security.yml`/`reusable-security.yml`, `release.yml` (the only runnable release caller)/`reusable-release.yml` (whose macOS/container/package callers live as non-runnable examples under `profiles/release/reusable/`), checksum/sign-notarize composite actions, the advisory `tracker-audit.yml`, `pr-close-guard.yml`, `post-merge-audit.yml`, and `main-history-guard.yml`. Shipped desktop smoke: `reusable-desktop-smoke.yml` plus the caller example in `profiles/desktop/`. Contract-only: `e2e.yml`/`reusable-e2e.yml`, `docs.yml`/`reusable-docs.yml`, `reusable-audit.yml`, and `setup-node-cache` (CI setup/cache is inlined in `reusable-ci.yml`).
 
 ### 2.1 CI (required)
 
@@ -106,7 +108,7 @@ Three invariants follow from the definitions:
 ### 2.4 Release (release gate)
 
 - **Purpose:** turn a release tag or an explicit dispatch into validated, checksummed, published artifacts — or a safe dry-run.
-- **Profiles:** `generic` (GitHub Release assets), `desktop` (signed/notarized macOS), `container` (GHCR image), `package` (npm/PyPI with provenance). The value is a free-form string in config (`workflows.release.profile`); this catalog's canonical name for the GitHub Release profile is `generic` (the example configs also use `github-release` — keep the caller, profile template, and config value identical). Additional project profiles are project-local.
+- **Profiles:** `generic` (GitHub Release assets), `desktop` (signed/notarized macOS), `container` (GHCR image), `package` (npm/PyPI with provenance). The value is a free-form string in config (`workflows.release.profile`); this catalog's canonical name for the GitHub Release profile is `generic` (the example configs also use `github-release` — keep the caller, profile template, and config value identical). Additional project profiles are project-local. The macOS/container/package callers for these profiles ship as non-runnable copy examples under `profiles/release/reusable/`; copy one into `.github/workflows/` and pin the adopted tag before use (`profiles/` is never executed).
 - **Trigger detail:** `push` on tags matching `automation.tagPattern` (`^v\d+\.\d+\.\d+$`); `workflow_dispatch` with `publish` defaulting to `false` (dry-run). No publish path from PR events.
 - **Required status:** release gate, not a PR required check.
 - **Permissions/secrets:** job-scoped `contents: write`; `id-token: write` only for OIDC publishing; `packages: write` only for the container profile; signing/notarization secrets are environment secrets on protected `release`. All publish steps guarded by tag + environment (§9).
@@ -116,7 +118,7 @@ Three invariants follow from the definitions:
 
 ### 2.5 Tracker audit (advisory first)
 
-- **Purpose:** run `scripts/github/audit.mjs` against the configured project and report tracker invariant violations.
+- **Purpose:** run `scripts/adopt/cli/audit.mjs` against the configured project and report tracker invariant violations.
 - **Trigger detail:** existing `tracker-audit.yml` runs Mondays 15:00 UTC and on `workflow_dispatch`; optionally an advisory run on `push` to `main` (throttled by the project) or on PRs once the workflow is stable.
 - **Required status:** advisory first; required only at release gates after a stable policy exists (`workflows.audit.mode: required`). Never required on PRs initially.
 - **Token:** `TRACKER_TOKEN` (config `workflows.audit.tokenSecret`), project-scoped read access. Absent → skip with `exit 0` in advisory mode; strict mode requires the token and fails with an actionable message if missing.
@@ -450,18 +452,23 @@ optional remote-only policy. Config (`tracker.config.json`, absent = no-op):
 
 | Interface | Definition |
 |---|---|
-| CLI | `node scripts/github/guard-local-suite.mjs --suite <id> [--mode enforce|report] [--hidden] [--json] [--root DIR] [--config FILE]`; offline (reads config only, no GitHub API) |
+| CLI | `node scripts/adopt/cli/guard-local-suite.mjs --suite <id> [--mode enforce|report] [--hidden] [--json] [--root DIR] [--config FILE]`; offline (reads config only, no GitHub API) |
 | Remote signal | `GITHUB_ACTIONS === 'true'` **only**; a local `CI=true` is not remote |
 | `enforce` (default) | visible local run exits 1 with workflow/PR-label/hidden/override/docs instructions (`BLOCKED_LOCAL_VISIBLE`); remote, declared hidden local (`--hidden`), and override-env runs are allowed |
 | `report` | local runs print `DEFERRED_REMOTE suite=... workflow=... prLabel=... overrideEnv=... docs=...` and exit 0 for verify aggregators (`--json` for object form) |
 | Override | suite `overrideEnv` truthy ⇒ allowed with a loud warning; deliberate human debugging only — agents must never set it |
-| Playwright helper | `scripts/github/playwright-remote-guard.mjs` exports `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })` returning a `globalSetup` function; no `@playwright/test` import; throws before any window is created |
+| Playwright helper | `scripts/adopt/lib/playwright-remote-guard.mjs` exports `createPlaywrightRemoteGuard({ suite, hidden, config, configPath, env })` returning a `globalSetup` function; no `@playwright/test` import; throws before any window is created |
 | Config validation | `validate-config` + `verify:tooling` reject bad `localMode`/`overrideEnv`/unknown keys and duplicate suite ids |
 | Caller wiring | Remote run stays label/path-gated in the caller (`run-desktop-smoke`); local wrappers are `npm run guard:local-suite -- --suite desktop-smoke` (visible) and `... --hidden` (hidden local). See [profiles/desktop](../profiles/desktop/README.md) |
 
 Hidden local = fast, non-authoritative feedback; the remote visible run is the release evidence.
 
 ### 7.5 Release workflow contract
+
+**Availability:** `reusable-release.yml` is the shipped reusable contract (T10). Its only runnable
+in-repo caller is `.github/workflows/release.yml` (generic); the macOS/container/package callers are
+non-runnable copy examples under `profiles/release/reusable/` (copy into `.github/workflows/` and pin
+the adopted tag), with standalone copy-mode templates under `profiles/release/copy/`.
 
 | Interface | Definition |
 |---|---|
@@ -580,18 +587,22 @@ Composite action rules:
 ```text
 Template repo (presljf/github-project-tracker, pinned vX.Y.Z)
 ├── .github/workflows/reusable-*.yml        reusable contracts (§7)
+├── .github/workflows/<internal>.yml        internal runners; release.yml is the only runnable release caller
 ├── .github/actions/<name>/action.yml       composite contracts (§7.8)
+├── profiles/release/reusable/*.yml         NON-RUNNABLE reusable-mode caller examples (copy + pin)
+├── profiles/release/copy/*.yml             NON-RUNNABLE copy-mode caller templates
 └── config schema/example + docs            versioned interfaces
                     │
                     ▼  (reusable mode: cross-repo ref @exact pin)
 Adopting repo (thin caller + project config)
 ├── .github/workflows/ci.yml                caller: triggers/inputs/permissions
-├── .github/workflows/release.yml           caller: project profile/commands
+├── .github/workflows/release.yml           caller: copied from profiles/release/ + pinned ref
 ├── .github/actions/… (only if copied)      copy fallback, origin recorded
 └── tracker.config.json                     mode/ref/profile/tokenSecret/templateVersion
 
 If private cross-repo reuse is blocked → copy thin callers/composite actions
 (never edit reusable contracts locally), pin the template version, upgrade via UPGRADING.
+GitHub executes only .github/workflows/; files under profiles/ are copy sources and never run in place.
 ```
 
 ### 8.2 Mode decision and config mapping
@@ -615,7 +626,7 @@ The config keys come from `schemas/tracker.config.schema.json` and `tracker.conf
 ### 8.4 Copy fallback procedure
 
 1. Run the private-access validation (§8.5). If any required ref fails, choose `copy` — do not fork the template or edit reusable contracts locally.
-2. Copy only the thin caller(s) and the composite action directory from the pinned template tag (download the release archive, do not copy from `main`).
+2. Copy only the thin caller(s) and the composite action directory from the pinned template tag (download the release archive, do not copy from `main`). Release callers are copy sources under `profiles/release/reusable/` (reusable-mode caller: copy into `.github/workflows/`, then replace the pinned `uses: ...@v1.3.2` ref with the tag you adopted) and `profiles/release/copy/` (standalone copy-mode callers). `profiles/` is never executed by GitHub, so a copied caller must land in `.github/workflows/` to run.
 3. Record in the project docs/config: copied file list, origin template version/ref, local overrides, and `workflows.ci.mode: copy`.
 4. Preserve contract names and guards: same input/secret names, same dry-run/tag/environment guards, same permission model. Project-specific changes are minimal, commented, and listed as overrides.
 5. Run local parity (§6), then one advisory PR run before promoting/requiring anything.
@@ -743,7 +754,7 @@ Never write `run: echo "${{ github.event.pull_request.title }}"`. The same rule 
 |---|---|
 | `reusable-ci.yml` + `ci.yml` caller | implemented (T15) |
 | `reusable-security.yml` + `security.yml`, Dependabot | implemented (T15) |
-| `reusable-release.yml` + `release.yml`, macOS/container/package callers, checksum/sign actions | implemented (T10) |
+| `reusable-release.yml` + `release.yml` (the only runnable release caller), checksum/sign actions | implemented (T10); macOS/container/package reusable-mode callers are non-runnable copy examples under `profiles/release/reusable/` |
 | `tracker-audit.yml` advisory workflow | implemented (T04); reusable audit wrapper remains a contract |
 | `reusable-e2e.yml`, `reusable-docs.yml`, `reusable-audit.yml` | contract only — not yet implemented |
 | composite `setup-node-cache` | contract only; T15 inlines setup/cache in `reusable-ci.yml` |

@@ -26,4 +26,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           BASE_SHA: ${{ github.event.before }}
           HEAD_SHA: ${{ github.event.after }}
-        run: node scripts/github/check-main-history.mjs
+        run: node scripts/adopt/cli/check-main-history.mjs

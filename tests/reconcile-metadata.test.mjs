@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalTitle, expectedType, buildReconciliationPlan } from '../scripts/github/reconcile-metadata.mjs';
+import { canonicalTitle, expectedType, buildReconciliationPlan } from '../scripts/adopt/cli/reconcile-metadata.mjs';
 
 test('canonicalizes legacy release/sprint titles', () => {
   assert.equal(canonicalTitle('[v0.5.0] Release tracking — Quick wins'), '[Release] v0.5.0 — Quick wins');

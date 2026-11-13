@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/presljf/github-project-tracker/schemas/test-counts.baseline.schema.json",
   "title": "Verified test counts baseline",
-  "description": "Committed PASS/FAIL/SKIP baseline for the tracker counts contract ('aware and agree'). One entry per suite and mode; every non-zero skip is named and agreed, and every mode carries a review record. Generated/maintained by scripts/github/suite-counts.mjs record.",
+  "description": "Committed PASS/FAIL/SKIP baseline for the tracker counts contract ('aware and agree'). One entry per suite and mode; every non-zero skip is named and agreed, and every mode carries a review record. Generated/maintained by scripts/adopt/cli/suite-counts.mjs record.",
   "type": "object",
   "required": ["schemaVersion", "suites"],
   "additionalProperties": false,

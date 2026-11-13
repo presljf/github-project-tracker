@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateReleaseGate } from '../scripts/github/release-gate.mjs';
+import { evaluateReleaseGate } from '../scripts/adopt/cli/release-gate.mjs';
 test('passes clean contract and no bypasses', () =>
   assert.equal(evaluateReleaseGate({ contractResult: { ok: true, violations: [] } }).ok, true));
 test('fails stale contract', () =>

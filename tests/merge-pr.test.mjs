@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateRequiredChecks } from '../scripts/github/merge-pr.mjs';
+import { evaluateRequiredChecks } from '../scripts/adopt/cli/merge-pr.mjs';
 
 const checks = [
   { name: 'ci / ci-gate', conclusion: 'SUCCESS' },

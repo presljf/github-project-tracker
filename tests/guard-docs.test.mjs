@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateCoverage } from '../scripts/docs/guard-docs.mjs';
+import { evaluateCoverage } from '../scripts/adopt/docs/guard-docs.mjs';
 
 const rules = [
   { id: 'scripts', paths: ['scripts/'], docs: ['docs/REFERENCE.md'] },
@@ -9,13 +9,13 @@ const rules = [
 const ignore = ['tests/', 'docs/'];
 
 test('source change without mapped docs fails', () => {
-  const result = evaluateCoverage({ changedFiles: ['scripts/github/x.mjs'], rules, ignore });
+  const result = evaluateCoverage({ changedFiles: ['scripts/adopt/cli/x.mjs'], rules, ignore });
   assert.equal(result.ok, false);
   assert.ok(result.violations.some((v) => v.code === 'DOCS_MISSING'));
 });
 
 test('source change with mapped docs passes', () => {
-  const result = evaluateCoverage({ changedFiles: ['scripts/github/x.mjs', 'docs/REFERENCE.md'], rules, ignore });
+  const result = evaluateCoverage({ changedFiles: ['scripts/adopt/cli/x.mjs', 'docs/REFERENCE.md'], rules, ignore });
   assert.equal(result.ok, true);
 });
 
@@ -31,7 +31,7 @@ test('ignored tests/docs do not require coverage', () => {
 
 test('auditable docs:no-change exception suppresses docs violations', () => {
   const result = evaluateCoverage({
-    changedFiles: ['scripts/github/x.mjs'],
+    changedFiles: ['scripts/adopt/cli/x.mjs'],
     rules,
     ignore,
     labels: ['docs:no-change'],

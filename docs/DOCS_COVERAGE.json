@@ -12,7 +12,8 @@
     {
       "id": "github-automation",
       "paths": [
-        "scripts/github/"
+        "scripts/adopt/cli/",
+        "scripts/adopt/lib/"
       ],
       "docs": [
         "docs/REFERENCE.md",
@@ -23,7 +24,7 @@
     {
       "id": "docs-tooling",
       "paths": [
-        "scripts/docs/"
+        "scripts/adopt/docs/"
       ],
       "docs": [
         "docs/DOCS_VALIDATION.md",
@@ -121,8 +122,8 @@
     {
       "id": "counts-contract",
       "paths": [
-        "scripts/github/suite-counts.mjs",
-        "scripts/github/guard-docs-counts.mjs",
+        "scripts/adopt/cli/suite-counts.mjs",
+        "scripts/adopt/cli/guard-docs-counts.mjs",
         "profiles/counts/"
       ],
       "docs": [
@@ -178,7 +179,7 @@
       "id": "tooling-profile",
       "paths": [
         "profiles/node/",
-        "scripts/github/verify-tooling.mjs"
+        "scripts/adopt/cli/verify-tooling.mjs"
       ],
       "docs": [
         "docs/LINTING.md",
@@ -188,7 +189,7 @@
     {
       "id": "release-tooling",
       "paths": [
-        "scripts/release/"
+        "scripts/internal/"
       ],
       "docs": [
         "docs/REFERENCE.md",

@@ -38,10 +38,10 @@ Then: assign owner → Status **In Progress** → post check-in (owner, executor
 ## CLI shortcuts
 
 ```bash
-node scripts/github/task.mjs start --issue 123 --owner OWNER --executor agent:session
-node scripts/github/task.mjs checkpoint --issue 123 --message "Done: ... Next: ..."
-node scripts/github/task.mjs review --issue 123 --pr PR_URL --evidence "tests pass"
-node scripts/github/task.mjs done --issue 123 --evidence "npm test 11/11; checks green"
+node scripts/adopt/cli/task.mjs start --issue 123 --owner OWNER --executor agent:session
+node scripts/adopt/cli/task.mjs checkpoint --issue 123 --message "Done: ... Next: ..."
+node scripts/adopt/cli/task.mjs review --issue 123 --pr PR_URL --evidence "tests pass"
+node scripts/adopt/cli/task.mjs done --issue 123 --evidence "npm test 11/11; checks green"
 ```
 
 Manual fallback: `gh project item-edit` for Status, `gh issue comment` for check-in/out. Full commands: [TASK CLI](../TASK_CLI.md) and [REFERENCE §4–7](../REFERENCE.md#4-gh-commands-used-in-this-tracker).

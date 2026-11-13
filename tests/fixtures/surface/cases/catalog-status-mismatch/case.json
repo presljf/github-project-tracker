@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "set": {
+      "wf:reusable-demo": {
+        "status": "contract-only"
+      }
+    }
+  },
+  "expect": {
+    "errors": [
+      "SURFACE_CATALOG_STATUS_MISMATCH"
+    ]
+  }
+}

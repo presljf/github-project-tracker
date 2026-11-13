@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GitHubCli, parseIncludeOutput } from '../scripts/github/lib/github.mjs';
+import { GitHubCli, parseIncludeOutput } from '../scripts/adopt/lib/github.mjs';
 
 const headers = (remaining = 4000, reset = Math.floor(Date.now() / 1000) + 3600) => `HTTP/2.0 200 OK
 x-ratelimit-limit: 5000

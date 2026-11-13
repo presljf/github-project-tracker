@@ -22,7 +22,7 @@ existing board. No config change is required.
 
 - New audit warning `PROJECT_STATUS_STALE` (closed project items not `Done`); advisory only, never
   changes the exit code, including `--strict`. Repair the drift with
-  `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply` (see
+  `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply` (see
   [REFERENCE §5.8](./REFERENCE.md#58-reconcile-status-close-out-project-status)).
 - New audit violation `SPRINT_HIERARCHY_MISSING_RELEASE` (open product sprint without a `[Release]`
   ancestor). Advisory runs still exit 0, but `--strict` audits will now fail on pre-existing
@@ -30,6 +30,46 @@ existing board. No config change is required.
   on a strict audit gate. Closed/historical sprints are exempt; the tooling profile is unaffected.
 - New `reconcile-status` command (`npm run reconcile:status`) to list and fix Project Status drift
   left by `Closes #N` auto-closes.
+
+## v1.4.0 — breaking: class-first script families and non-runnable release examples
+
+v1.4.0 ships a **breaking change**: the scripts tree moved into class-first families and the old
+paths are gone (no shims). The break is an accepted exception (D10) on the v1.x line; tags at or
+before v1.3.2 keep the old layout, so a pinned old checkout's documented commands still work for
+that pin, and adopters upgrade deliberately.
+
+| Before v1.4.0 | v1.4.0 |
+|---|---|
+| `scripts/github` CLI files (bootstrap, audit, task/stream, guards, verify, reconcile, rate-limit…) | `scripts/adopt/cli/` |
+| `scripts/github` shared libraries (`lib/`) and `playwright-remote-guard.mjs` | `scripts/adopt/lib/` |
+| `scripts/docs` docs-QA CLIs (`check-docs`, `check-versions`, `guard-docs`) | `scripts/adopt/docs/` |
+| `scripts/docs` card builder and `scripts/release` bump tool | `scripts/internal/` (template-maintainer-only) |
+
+Adopter steps:
+
+1. Re-copy `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs) over the old copies and
+   delete the pre-v1.4.0 script files you replaced. `scripts/internal/**` is template-maintainer-only
+   — do not copy it.
+2. Update copied `package.json` alias targets: alias **names are unchanged** (`audit`, `task`,
+   `docs:check`, `guard:versions`, `docs:counts:check`, `docs:counts:update`, …) but each target now
+   points under `scripts/adopt/…`.
+3. Update copied runner workflows that invoke scripts directly: `post-merge-audit.yml`,
+   `pr-close-guard.yml`, `tracker-audit.yml`, `main-history-guard.yml` (and any copied caller whose
+   `run:` lines name a script path).
+4. If the counts contract is adopted, re-run `npm run docs:counts:update` after the moves: the
+   generated doc header records the update command path, so refresh `docs/TEST_COUNTS.md` + markers
+   in the upgrade PR.
+5. Release profiles: reusable-mode caller examples moved to `profiles/release/reusable/` — copy the
+   caller you use into `.github/workflows/` and pin your adopted tracker tag; copy-mode templates
+   stay in `profiles/release/copy/`. The template no longer ships runnable release examples in
+   `.github/workflows/`; `release.yml` is the only runnable release caller there.
+6. Reusable/hybrid mode needs no script-copy work: `reusable-guard.yml` now invokes the pinned
+   tracker checkout's npm aliases, so it stays layout-independent across v1.3.x and v1.4.0+ refs.
+7. Template-internal only: new `contract/repo-surface.json` manifest + `scripts/internal/verify-surface.mjs`
+   (`npm run verify:surface`) keep the shipped surface machine-checkable; adopters do not copy
+   either.
+
+No config change is required beyond bumping `automation.templateVersion` to the exact target tag.
 
 ## Before upgrading
 
@@ -61,7 +101,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
 1. **Read** target changelog + diff/overrides.
 2. **Dry-run** in a branch:
    ```bash
-   git checkout -b chore/upgrade-tracker-1.3.2
+   git checkout -b chore/upgrade-tracker-1.4.0
    ```
 3. Update:
    - `tracker.config.json` (`automation.templateVersion`, new optional fields);
@@ -69,7 +109,7 @@ evidence) and `stream.mjs close`'s default gate command works for Tracker OS Str
    - copied files (re-copy + re-apply overrides).
 4. **Validate config:**
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    # OK   tracker.config.json
    ```
 5. Run local/CI checks; keep audit advisory in the upgrade PR.
@@ -105,11 +145,11 @@ To adopt `tooling`:
    version record); mixed repos may keep both declarations.
 2. Validate and bootstrap:
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
-   node scripts/github/bootstrap.mjs --config tracker.config.json --apply
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply
    ```
-3. Open deliveries with `node scripts/github/stream.mjs open --name vX.Y.Z --delivery "..."` and
-   start tasks with `node scripts/github/task.mjs start --issue N --stream S`.
+3. Open deliveries with `node scripts/adopt/cli/stream.mjs open --name vX.Y.Z --delivery "..."` and
+   start tasks with `node scripts/adopt/cli/task.mjs start --issue N --stream S`.
 4. Historical product records keep working: audit rules follow `workProfile`, so Release/Sprint
    exit-evidence and hierarchy rules do not apply to a tooling profile.
 5. Rollback: set `workProfile` back to `product` (or remove it); no data migration is needed.
@@ -139,10 +179,10 @@ To adopt it:
      ]
    }
    ```
-2. Validate: `node scripts/github/validate-config.mjs tracker.config.json` and
+2. Validate: `node scripts/adopt/cli/validate-config.mjs tracker.config.json` and
    `npm run verify:tooling` (both reject malformed policy entries).
 3. Wire the offline guard before the suite spawns (`npm run guard:local-suite -- --suite <id>`)
-   and/or the Playwright `globalSetup` from `scripts/github/playwright-remote-guard.mjs`.
+   and/or the Playwright `globalSetup` from `scripts/adopt/lib/playwright-remote-guard.mjs`.
 4. Record the remote-run evidence at check-out; hidden local runs stay non-authoritative and the
    override env is for deliberate human debugging only (agents must not use it).
 5. Rollback: remove the `verification` block; absent config restores previous local behaviour.
@@ -159,13 +199,13 @@ To adopt it:
 
 1. Declare the block (see [profiles/counts](../profiles/counts/README.md)) and validate:
    ```bash
-   node scripts/github/validate-config.mjs tracker.config.json
+   node scripts/adopt/cli/validate-config.mjs tracker.config.json
    npm run verify:tooling
    ```
 2. Create the initial baseline from real output:
-   `node scripts/github/suite-counts.mjs record --suite <id> --mode <mode> --results <file>`, then
+   `node scripts/adopt/cli/suite-counts.mjs record --suite <id> --mode <mode> --results <file>`, then
    complete `knownSkips` agreement metadata (`reason`/`coveredBy`/`agreedOn`) and
-   `reviewed { on, by, evidence[] }`; `node scripts/github/suite-counts.mjs render` regenerates
+   `reviewed { on, by, evidence[] }`; `node scripts/adopt/cli/suite-counts.mjs render` regenerates
    `docs/TEST_COUNTS.md` + markers.
 3. Add CI gates: suite jobs run `suite-counts check`; docs jobs run `guard:docs:counts`
    (no test execution). Historical docs are exempt by construction — only `docs.counts.markers`

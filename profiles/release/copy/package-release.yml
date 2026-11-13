@@ -1,7 +1,7 @@
 # COPY-MODE EXAMPLE — package release profile (T10).
 #
 # Copy this file into .github/workflows/release-package.yml when cross-repo reusable workflows
-# are blocked. Prefer the reusable mode (`.github/workflows/release-package.yml` in this template)
+# are blocked. Prefer the reusable mode (`profiles/release/reusable/release-package.yml` in this template)
 # when the template ref is accessible.
 #
 # Publishes npm and/or PyPI distributions with provenance/OIDC trusted publishing (preferred).

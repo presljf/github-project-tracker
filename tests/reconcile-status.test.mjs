@@ -4,8 +4,8 @@ import {
   applyStatusReconciliation,
   buildStatusReconciliation,
   resolveStatusField,
-} from '../scripts/github/reconcile-status.mjs';
-import { collectAuditData } from '../scripts/github/audit.mjs';
+} from '../scripts/adopt/cli/reconcile-status.mjs';
+import { collectAuditData } from '../scripts/adopt/cli/audit.mjs';
 import { FakeTaskGitHub } from './helpers/fake-task-github.mjs';
 
 function config(overrides = {}) {

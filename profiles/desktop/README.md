@@ -73,7 +73,7 @@ is `GITHUB_ACTIONS === 'true'` only (a local `CI=true` is not remote). Suggested
 
 ```json
 "scripts": {
-  "guard:local-suite": "node scripts/github/guard-local-suite.mjs",
+  "guard:local-suite": "node scripts/adopt/cli/guard-local-suite.mjs",
   "smoke:desktop": "npm run guard:local-suite -- --suite desktop-smoke && cd desktop && npm run test:e2e",
   "smoke:desktop:hidden": "npm run guard:local-suite -- --suite desktop-smoke --hidden && cd desktop && npm run test:e2e -- --hidden"
 }
@@ -83,7 +83,7 @@ is `GITHUB_ACTIONS === 'true'` only (a local `CI=true` is not remote). Suggested
 - `npm run smoke:desktop:hidden`: allowed only when the suite declares `localMode: "hidden"`;
   non-authoritative (never cite it as release evidence).
 - `GITHUB_ACTIONS=true` (the caller workflow): allowed — this is the evidence run.
-- Verify aggregators: `node scripts/github/guard-local-suite.mjs --suite desktop-smoke --mode report --json`
+- Verify aggregators: `node scripts/adopt/cli/guard-local-suite.mjs --suite desktop-smoke --mode report --json`
   records `DEFERRED_REMOTE` and exits 0 instead of blocking.
 - Override env (`TRACKER_ALLOW_VISIBLE_GUI=1`): deliberate human debugging only, prints a loud
   warning; **agents must never set it**.
@@ -92,7 +92,7 @@ For Playwright suites, block at `globalSetup` so nothing launches before the che
 
 ```js
 // tests/global-setup.mjs
-import { createPlaywrightRemoteGuard } from '../scripts/github/playwright-remote-guard.mjs';
+import { createPlaywrightRemoteGuard } from '../scripts/adopt/lib/playwright-remote-guard.mjs';
 export default createPlaywrightRemoteGuard({
   suite: 'desktop-smoke',
   hidden: process.env.DESKTOP_HIDDEN === '1', // your documented hidden-mode flag
@@ -105,7 +105,7 @@ export default defineConfig({ globalSetup: './tests/global-setup.mjs' });
 ```
 
 The helper imports no `@playwright/test`; it throws the same actionable error when a visible local
-run is attempted. Validate the config with `node scripts/github/validate-config.mjs` and
+run is attempted. Validate the config with `node scripts/adopt/cli/validate-config.mjs` and
 `npm run verify:tooling`. Full reference:
 [REFERENCE §5.6](../../docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 

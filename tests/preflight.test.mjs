@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateCleanTree, evaluateDependencyChanges } from '../scripts/github/lib/preflight.mjs';
+import { evaluateCleanTree, evaluateDependencyChanges } from '../scripts/adopt/lib/preflight.mjs';
 
 test('clean tree passes', () => assert.equal(evaluateCleanTree({ statusText: '' }).ok, true));
 test('dirty tree blocks unless exception has reason', () => {

@@ -69,5 +69,6 @@ jobs:
           npm run verify:tooling
           npm run guard:gh
           npm run guard:deps
-          node scripts/docs/guard-docs.mjs --base "${DOCS_GUARD_BASE:-origin/main}"
-          node scripts/github/validate-config.mjs
+          node scripts/adopt/docs/guard-docs.mjs --base "${DOCS_GUARD_BASE:-origin/main}"
+          node scripts/adopt/cli/validate-config.mjs
+          node scripts/internal/verify-surface.mjs --root . --manifest contract/repo-surface.json --require-manifest

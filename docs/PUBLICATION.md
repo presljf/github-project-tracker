@@ -119,7 +119,7 @@ gh release list --repo presljf/github-project-tracker || true
 git tag --sort=-v:refname | head -5
 npm run docs:check
 npm test
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 ```
 
 Record the results here (dated) whenever publication/security settings change; T12 fresh-eyes review validates this page before the release tag.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { findStaleVersions } from '../scripts/docs/check-versions.mjs';
+import { findStaleVersions } from '../scripts/adopt/docs/check-versions.mjs';
 test('flags stale version and ignores allowlist', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'versions-'));
   const old = path.join(dir, 'old.md');

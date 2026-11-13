@@ -8,7 +8,7 @@ import {
   doneTask,
   statusTask,
   checkDoR,
-} from '../scripts/github/task.mjs';
+} from '../scripts/adopt/cli/task.mjs';
 import { FakeTaskGitHub } from './helpers/fake-task-github.mjs';
 
 const _silent = { log() {}, warn() {}, error() {} };

@@ -151,11 +151,11 @@ Org repos may also require SSO authorization in the browser.
 
 ### Closed issue still shows In Review/In Progress on the board
 **Cause:** the issue was closed by a `Closes #` merge keyword; issue closure does not update the Project Status field (per-item metadata).
-**Fix:** run `node scripts/github/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run with `--apply`; every closed item on the project ends up `Done`.
+**Fix:** run `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json` (report-only), then re-run with `--apply`; every closed item on the project ends up `Done`.
 
 ### `PROJECT_STATUS_STALE` warning
 **Cause:** a closed item on the configured project has a Project Status other than `Done` (auto-close drift).
-**Fix:** advisory only — it never changes audit `ok`/exit code, including under `--strict`. Repair with `node scripts/github/reconcile-status.mjs --config tracker.config.json --apply`; no config change is needed.
+**Fix:** advisory only — it never changes audit `ok`/exit code, including under `--strict`. Repair with `node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply`; no config change is needed.
 
 ### `SPRINT_HIERARCHY_MISSING_RELEASE`
 **Cause:** an open product sprint has no `[Release]` ancestor (board built outside `bootstrap.mjs`/`task.mjs`).
@@ -171,7 +171,7 @@ Org repos may also require SSO authorization in the browser.
 **Cause:** missing required key, extra key, duplicate options, secret-looking value, templateRepo without version.
 **Fix:**
 ```bash
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 # FAIL ... $path: message
 ```
 Fix the `$path`; re-run until `OK`.
@@ -183,6 +183,10 @@ Fix the `$path`; re-run until `OK`.
 ### Config/copied files drift
 **Cause:** manual edits not recorded; template upgrade overwrote.
 **Fix:** record local overrides in the project docs/config; re-apply after upgrade; open upstream issue if the generic contract is insufficient.
+
+### `Cannot find module` after upgrading the tracker
+**Cause:** v1.4.0 moved scripts into class-first families (no shims); copied aliases or runner workflows still point at pre-v1.4.0 locations.
+**Fix:** re-copy `scripts/adopt/**`, update copied `package.json` alias targets (names unchanged) and copied runner workflows (`post-merge-audit.yml`, `pr-close-guard.yml`, `tracker-audit.yml`, `main-history-guard.yml`); `scripts/internal/**` stays template-maintainer-only. Old tags keep the old layout, so a pinned old checkout is unaffected — see [UPGRADING](./UPGRADING.md).
 
 ## Network / limits / platform
 
@@ -224,7 +228,7 @@ gh auth status
 gh project list --owner @me --format json
 gh project field-list PROJECT_NUMBER --owner @me --format json
 gh project item-list PROJECT_NUMBER --owner @me --format json --limit 100
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 ```
 
 If none of this solves it: capture the exact command, exit code, sanitized stderr, and expected/actual in a downstream feedback issue. Never include tokens/secrets.

@@ -1,0 +1,21 @@
+{
+  "replace": [
+    {
+      "rel": "docs/ACTIONS_CATALOG.md",
+      "from": "reusable-demo",
+      "to": "demo-contract"
+    }
+  ],
+  "expect": {
+    "errors": [
+      "SURFACE_REUSABLE_UNDOCUMENTED"
+    ]
+  },
+  "manifest": {
+    "set": {
+      "wf:reusable-demo": {
+        "catalogSection": "7.9"
+      }
+    }
+  }
+}

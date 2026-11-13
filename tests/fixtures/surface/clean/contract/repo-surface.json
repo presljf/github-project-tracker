@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "generatedRoots": [],
+  "scope": {
+    "classify": [
+      ".github/workflows/",
+      ".github/actions/",
+      "profiles/",
+      "scripts/",
+      "docs/"
+    ],
+    "exclude": []
+  },
+  "entries": [
+    {
+      "id": "wf:reusable-demo",
+      "path": ".github/workflows/reusable-demo.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Reusable demo",
+      "summary": "Demo reusable workflow contract.",
+      "catalogSection": "7.1",
+      "docs": ["docs/ACTIONS_CATALOG.md#71-reusable-demo-contract"]
+    },
+    {
+      "id": "wf:demo",
+      "path": ".github/workflows/demo.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["template"],
+      "title": "Demo",
+      "summary": "Demo internal CI runner.",
+      "docs": ["docs/ACTIONS_CATALOG.md#2-workflow-catalog"]
+    },
+    {
+      "id": "wf:release",
+      "path": ".github/workflows/release.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["template", "adopter"],
+      "title": "Release (demo)",
+      "summary": "Demo runnable release caller.",
+      "docs": ["docs/ACTIONS_CATALOG.md#2-workflow-catalog"]
+    },
+    {
+      "id": "action:demo",
+      "path": ".github/actions/demo/action.yml",
+      "class": "reusable-action",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Demo action",
+      "summary": "Demo composite action.",
+      "catalogSection": "7.8",
+      "docs": ["docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"]
+    },
+    {
+      "id": "action:setup-node-cache",
+      "path": ".github/actions/setup-node-cache/action.yml",
+      "class": "reusable-action",
+      "status": "contract-only",
+      "audience": ["adopter"],
+      "title": "setup-node-cache",
+      "summary": "Documented but not implemented.",
+      "docs": ["docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"]
+    },
+    {
+      "id": "action-doc:demo",
+      "path": ".github/actions/demo/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Demo action docs",
+      "summary": "Demo composite action documentation.",
+      "docs": ["docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"]
+    },
+    {
+      "id": "profile:demo-template",
+      "path": "profiles/demo/template.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "mode": "copy",
+      "header": "required",
+      "title": "Demo profile example",
+      "summary": "Copy-mode demo profile example.",
+      "docs": ["docs/REFERENCE.md#1-repository-map"]
+    },
+    {
+      "id": "profile:demo-readme",
+      "path": "profiles/demo/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Demo profile",
+      "summary": "Demo profile documentation.",
+      "docs": ["docs/REFERENCE.md#1-repository-map"]
+    },
+    {
+      "id": "script:demo-cli",
+      "path": "scripts/adopt/cli/demo.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "aliases": ["demo"],
+      "title": "Demo cli",
+      "summary": "Demo adopter CLI.",
+      "docs": ["docs/REFERENCE.md#1-repository-map"]
+    },
+    {
+      "id": "script:demo-lib",
+      "path": "scripts/adopt/lib/demo.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Demo lib",
+      "summary": "Demo adopter library.",
+      "docs": ["docs/REFERENCE.md#1-repository-map"]
+    },
+    {
+      "id": "script:demo-internal",
+      "path": "scripts/internal/demo.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["template"],
+      "title": "Demo internal",
+      "summary": "Demo template-internal script.",
+      "docs": ["docs/REFERENCE.md#1-repository-map"]
+    },
+    {
+      "id": "doc:actions-catalog",
+      "path": "docs/ACTIONS_CATALOG.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Actions catalog",
+      "summary": "Fixture catalog.",
+      "docs": []
+    },
+    {
+      "id": "doc:reference",
+      "path": "docs/REFERENCE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": ["adopter"],
+      "title": "Reference",
+      "summary": "Fixture reference.",
+      "docs": []
+    }
+  ]
+}

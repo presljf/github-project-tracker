@@ -3,12 +3,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { markerValue, renderGeneratedDoc } from '../../scripts/github/suite-counts.mjs';
+import { markerValue, renderGeneratedDoc } from '../../scripts/adopt/cli/suite-counts.mjs';
 
 export const REPO_ROOT = process.cwd();
 export const FIXTURES = path.join(REPO_ROOT, 'tests', 'fixtures', 'counts');
-export const COUNTS_CLI = path.join(REPO_ROOT, 'scripts/github/suite-counts.mjs');
-export const GUARD_CLI = path.join(REPO_ROOT, 'scripts/github/guard-docs-counts.mjs');
+export const COUNTS_CLI = path.join(REPO_ROOT, 'scripts/adopt/cli/suite-counts.mjs');
+export const GUARD_CLI = path.join(REPO_ROOT, 'scripts/adopt/cli/guard-docs-counts.mjs');
 
 export function readFixture(name) {
   return fs.readFileSync(path.join(FIXTURES, name), 'utf8');

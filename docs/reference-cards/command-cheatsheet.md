@@ -19,12 +19,12 @@ Option IDs, not option names, are required when editing single-select fields.
 ## Task CLI
 
 ```bash
-node scripts/github/task.mjs start --issue 123 --owner OWNER [--executor agent:x]
-node scripts/github/task.mjs checkpoint --issue 123 --message "Done: ... Next: ..."
-node scripts/github/task.mjs review --issue 123 --pr PR_URL --evidence "tests pass"
-node scripts/github/task.mjs block --issue 123 --reason "waiting" --blocked-by ISSUE_URL
-node scripts/github/task.mjs done --issue 123 --evidence "npm test 11/11" [--force]
-node scripts/github/task.mjs status --issue 123
+node scripts/adopt/cli/task.mjs start --issue 123 --owner OWNER [--executor agent:x]
+node scripts/adopt/cli/task.mjs checkpoint --issue 123 --message "Done: ... Next: ..."
+node scripts/adopt/cli/task.mjs review --issue 123 --pr PR_URL --evidence "tests pass"
+node scripts/adopt/cli/task.mjs block --issue 123 --reason "waiting" --blocked-by ISSUE_URL
+node scripts/adopt/cli/task.mjs done --issue 123 --evidence "npm test 11/11" [--force]
+node scripts/adopt/cli/task.mjs status --issue 123
 ```
 
 All commands accept `--config tracker.config.json`, `--dry-run`, `--json`. Default mutates.
@@ -43,7 +43,7 @@ gh pr merge 45 --squash --delete-branch
 ## Tracker, audit, and local gates
 
 ```bash
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 npm test
 npm run audit -- --config tracker.config.json --advisory   # advisory exits 0
 npm run audit -- --config tracker.config.json --strict     # release gate

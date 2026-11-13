@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { evaluateDocsCounts } from '../scripts/github/guard-docs-counts.mjs';
-import { renderGeneratedDoc } from '../scripts/github/suite-counts.mjs';
+import { evaluateDocsCounts } from '../scripts/adopt/cli/guard-docs-counts.mjs';
+import { renderGeneratedDoc } from '../scripts/adopt/cli/suite-counts.mjs';
 import {
   countsConfig,
   readJson,

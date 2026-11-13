@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { validateConfig } from '../scripts/github/validate-config.mjs';
+import { validateConfig } from '../scripts/adopt/cli/validate-config.mjs';
 import {
   DEFAULT_REQUIRED_CHECKS,
   REQUIRED_CHECKS,
@@ -13,7 +13,7 @@ import {
   resolveRequiredChecks,
   runPostMergeAudit,
   validateRequiredChecksConfig,
-} from '../scripts/github/post-merge-audit.mjs';
+} from '../scripts/adopt/cli/post-merge-audit.mjs';
 
 const REPO_ROOT = process.cwd();
 const WORKFLOW = path.join(REPO_ROOT, '.github/workflows/post-merge-audit.yml');
@@ -413,7 +413,7 @@ test('post-merge audit workflow carries least-privilege permissions incl. checks
   }
   assert.match(yaml, /types: \[closed\]/);
   assert.match(yaml, /github\.event\.pull_request\.merged == true/);
-  assert.match(yaml, /node scripts\/github\/post-merge-audit\.mjs/);
+  assert.match(yaml, /node scripts\/adopt\/cli\/post-merge-audit\.mjs/);
   for (const match of yaml.matchAll(/uses:\s+(\S+)/g)) {
     assert.ok(!/@(v\d+|main|master)$/.test(match[1]), `action must be SHA-pinned: ${match[1]}`);
   }

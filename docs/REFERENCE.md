@@ -54,19 +54,26 @@
 | `docs/TEMPLATE_REPO.md` | template structure/versioning/tag policy | now |
 | `tracker.config.example.json` | generic config | now |
 | `schemas/tracker.config.schema.json` | config contract | now |
-| `scripts/github/validate-config.mjs` | config validation | now |
-| `scripts/github/bootstrap.mjs` | idempotent repo/project setup | now |
-| `scripts/github/audit.mjs` | tracker audit (advisory/strict/JSON), mode-aware | now |
-| `scripts/github/reconcile-status.mjs` | close-out Project-status reconciliation (report/apply) | now |
-| `scripts/github/task.mjs` | start/checkpoint/review/block/done/status | now |
-| `scripts/github/stream.mjs` | tooling-profile `[Stream]` open/close lifecycle | now |
-| `scripts/github/project-field-option.mjs` | safe single-select option append (preserves ids/item values) | now |
-| `scripts/github/guard-local-suite.mjs` | remote-only suite guard (enforce/report, offline) | now |
-| `scripts/github/playwright-remote-guard.mjs` | dependency-free Playwright `globalSetup` factory for the remote-only policy | now |
-| `scripts/github/lib/work-profile.mjs` | product/tooling enforcement adapters (shared engine) | now |
-| `scripts/github/lib/verification-policy.mjs` | remote-only policy resolution/evaluation (shared, offline) | now |
-| `scripts/github/suite-counts.mjs` | counted-runner parsers/compare + counts `check\|record\|render` CLI | now |
-| `scripts/github/guard-docs-counts.mjs` | counts baseline/agreement + generated-doc/marker guard | now |
+| `contract/adoption-contract.json` | downstream adoption contract (pinned refs, required workflows/profiles) consumed by `verify-contract`/`release-gate` | now |
+| `contract/repo-surface.json` | repo-surface manifest: class/status/docs source of truth for scripts/workflows/release examples | now |
+| `scripts/adopt/cli/` | adopter CLIs — lifecycle, reconciliation, guards, verification (individual CLIs below) | now |
+| `scripts/adopt/lib/` | shared libraries imported by the CLIs (GitHub transport, guards, work profiles, Playwright guard) | now |
+| `scripts/adopt/docs/` | docs-QA CLIs: `check-docs.mjs`, `check-versions.mjs`, `guard-docs.mjs` | now |
+| `scripts/internal/` | template-maintainer-only tools (never copied): `build-cards.mjs`, `bump-version.mjs`, `verify-surface.mjs` | now |
+| `scripts/internal/verify-surface.mjs` | repo-surface manifest ↔ shipped-surface verifier (`npm run verify:surface`) | now |
+| `scripts/adopt/cli/validate-config.mjs` | config validation | now |
+| `scripts/adopt/cli/bootstrap.mjs` | idempotent repo/project setup | now |
+| `scripts/adopt/cli/audit.mjs` | tracker audit (advisory/strict/JSON), mode-aware | now |
+| `scripts/adopt/cli/reconcile-status.mjs` | close-out Project-status reconciliation (report/apply) | now |
+| `scripts/adopt/cli/task.mjs` | start/checkpoint/review/block/done/status | now |
+| `scripts/adopt/cli/stream.mjs` | tooling-profile `[Stream]` open/close lifecycle | now |
+| `scripts/adopt/cli/project-field-option.mjs` | safe single-select option append (preserves ids/item values) | now |
+| `scripts/adopt/cli/guard-local-suite.mjs` | remote-only suite guard (enforce/report, offline) | now |
+| `scripts/adopt/lib/playwright-remote-guard.mjs` | dependency-free Playwright `globalSetup` factory for the remote-only policy | now |
+| `scripts/adopt/lib/work-profile.mjs` | product/tooling enforcement adapters (shared engine) | now |
+| `scripts/adopt/lib/verification-policy.mjs` | remote-only policy resolution/evaluation (shared, offline) | now |
+| `scripts/adopt/cli/suite-counts.mjs` | counted-runner parsers/compare + counts `check\|record\|render` CLI | now |
+| `scripts/adopt/cli/guard-docs-counts.mjs` | counts baseline/agreement + generated-doc/marker guard | now |
 | `schemas/test-counts.baseline.schema.json` | counts baseline JSON schema | now |
 | `profiles/node/` | generic lint/format profile | now |
 | `profiles/desktop/` | desktop smoke caller + remote-only local guard | now |
@@ -74,8 +81,8 @@
 | `profiles/counts/` | counts contract wiring + example baseline | now |
 | `.github/ISSUE_TEMPLATE/` | task/sprint/release/spike + downstream forms | now |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR checklist | now |
-| `.github/workflows/`, `.github/actions/` | reusable CI/release/security/audit workflows + composite actions | now |
-| `profiles/release/` | release profile examples/copy callers | now |
+| `.github/workflows/`, `.github/actions/` | internal runner callers + `reusable-*` workflow contracts + composite actions (`release.yml` is the only runnable release caller here) | now |
+| `profiles/release/` | release profile examples: reusable-mode callers in `reusable/` (copy into `.github/workflows/` + pin the adopted tag) and copy-mode templates in `copy/` | now |
 
 ## 2. Command conventions
 
@@ -202,9 +209,9 @@ All three CLIs are available now. They read `tracker.config.json`; `--help` desc
 ### 5.1 bootstrap
 
 ```bash
-node scripts/github/bootstrap.mjs --config tracker.config.json --dry-run
-node scripts/github/bootstrap.mjs --config tracker.config.json --apply
-node scripts/github/bootstrap.mjs --config tracker.config.json --json
+node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --dry-run
+node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --apply
+node scripts/adopt/cli/bootstrap.mjs --config tracker.config.json --json
 ```
 Default dry-run. Creates/updates project, fields/statuses/options, milestones, labels, roadmap/release/sprint/task skeletons, native types, project items/fields, sub-issues. Never deletes user data; resource matching is by **exact generated title**, so mismatched existing titles create new resources — reuse generated titles or update the config before re-running. Manual checklist for UI-only views/workflows at end.
 
@@ -213,9 +220,9 @@ In the **tooling work profile** (`workProfile: "tooling"`) bootstrap ensures pro
 ### 5.2 audit
 
 ```bash
-node scripts/github/audit.mjs --config tracker.config.json --advisory
-node scripts/github/audit.mjs --config tracker.config.json --strict
-node scripts/github/audit.mjs --config tracker.config.json --json
+node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
+node scripts/adopt/cli/audit.mjs --config tracker.config.json --strict
+node scripts/adopt/cli/audit.mjs --config tracker.config.json --json
 ```
 Advisory default: prints violations, exit 0. `--strict` exits 1 on violations for release gates. Workflow: `.github/workflows/tracker-audit.yml` (scheduled/dispatch), skips safely without `TRACKER_TOKEN`.
 
@@ -232,13 +239,13 @@ warning: [PROJECT_STATUS_STALE] #116 closed issue has Project status In Review (
 ### 5.3 task
 
 ```bash
-node scripts/github/task.mjs start --issue 123 [--owner LOGIN] [--executor TEXT] [--branch NAME] [--dry-run]
-node scripts/github/task.mjs start --issue 123 --stream STREAM_ISSUE   # tooling profile only
-node scripts/github/task.mjs checkpoint --issue 123 (--message TEXT | --message-file FILE)
-node scripts/github/task.mjs review --issue 123 [--pr URL] [--evidence TEXT]
-node scripts/github/task.mjs block --issue 123 --reason TEXT [--blocked-by URL]
-node scripts/github/task.mjs done --issue 123 (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]
-node scripts/github/task.mjs status --issue 123
+node scripts/adopt/cli/task.mjs start --issue 123 [--owner LOGIN] [--executor TEXT] [--branch NAME] [--dry-run]
+node scripts/adopt/cli/task.mjs start --issue 123 --stream STREAM_ISSUE   # tooling profile only
+node scripts/adopt/cli/task.mjs checkpoint --issue 123 (--message TEXT | --message-file FILE)
+node scripts/adopt/cli/task.mjs review --issue 123 [--pr URL] [--evidence TEXT]
+node scripts/adopt/cli/task.mjs block --issue 123 --reason TEXT [--blocked-by URL]
+node scripts/adopt/cli/task.mjs done --issue 123 (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]
+node scripts/adopt/cli/task.mjs status --issue 123
 ```
 Enforces DoR/WIP on start and evidence/acceptance on done; `--dry-run` makes no mutations. The
 enforcement matrix follows `config.workProfile`:
@@ -262,8 +269,8 @@ Project Status stays wherever it was. Reconcile it with `reconcile-status.mjs` a
 ### 5.4 stream (tooling profile)
 
 ```bash
-node scripts/github/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance" [--dry-run]
-node scripts/github/stream.mjs close --stream STREAM_ISSUE (--evidence TEXT | --evidence-file FILE) [--tag vX.Y.Z] [--dry-run]
+node scripts/adopt/cli/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance" [--dry-run]
+node scripts/adopt/cli/stream.mjs close --stream STREAM_ISSUE (--evidence TEXT | --evidence-file FILE) [--tag vX.Y.Z] [--dry-run]
 ```
 `open` creates `[Stream] <name> — <delivery>`, safely appends the per-delivery `Stream` option,
 adds the container to the project with Status/Stream/Area/Kind/Estimate, and posts
@@ -278,7 +285,7 @@ container. Tag creation stays with the release flow. Product configs are rejecte
 ### 5.5 project-field-option
 
 ```bash
-node scripts/github/project-field-option.mjs --config tracker.config.json --field Stream --option v1.3.2 \
+node scripts/adopt/cli/project-field-option.mjs --config tracker.config.json --field Stream --option v1.3.2 \
   [--color BLUE] [--description TEXT] [--dry-run] [--json]
 ```
 Reads the current options first, preserves every existing id/colour/description (so item values
@@ -288,8 +295,8 @@ Used by `stream.mjs open` and handy when creating per-delivery options by hand. 
 ### 5.6 guard-local-suite (remote-only verification policy)
 
 ```bash
-node scripts/github/guard-local-suite.mjs --suite desktop-smoke [--mode enforce|report] [--hidden] [--json]
-node scripts/github/guard-local-suite.mjs --root . --config tracker.config.json --suite <id> --mode enforce
+node scripts/adopt/cli/guard-local-suite.mjs --suite desktop-smoke [--mode enforce|report] [--hidden] [--json]
+node scripts/adopt/cli/guard-local-suite.mjs --root . --config tracker.config.json --suite <id> --mode enforce
 ```
 Enforces `verification.remoteOnly[]` from `tracker.config.json` before a disruptive suite spawns.
 Remote detection is **`GITHUB_ACTIONS === 'true'`** only (a local `CI=true` is not remote):
@@ -317,16 +324,16 @@ window is created. It imports no `@playwright/test` so adopters wire it from the
 
 ```bash
 # compare real runner output with the committed baseline (exit 1 on drift/flaky/malformed output)
-node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
+node scripts/adopt/cli/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
 
 # record new counts + skip identities into the baseline and regenerate docs/markers
-node scripts/github/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap
+node scripts/adopt/cli/suite-counts.mjs record --suite unit --mode full --results test-results/unit.tap
 
 # regenerate canonical doc + inline markers from the baseline (--check fails when stale)
-node scripts/github/suite-counts.mjs render [--check]
+node scripts/adopt/cli/suite-counts.mjs render [--check]
 
 # docs guard: baseline schema/agreement + generated doc + marker freshness (no test execution)
-node scripts/github/guard-docs-counts.mjs [--root DIR] [--config FILE] [--json]
+node scripts/adopt/cli/guard-docs-counts.mjs [--root DIR] [--config FILE] [--json]
 ```
 
 The contract is enabled by `docs.counts` in `tracker.config.json` (`baseline`, `generated`,
@@ -356,22 +363,22 @@ the field is not updated, and `task.mjs done` refuses closed issues. Reconcile a
 before closing a sprint, release, or stream.
 
 ```bash
-node scripts/github/reconcile-status.mjs --config tracker.config.json           # report-only (default)
-node scripts/github/reconcile-status.mjs --config tracker.config.json --apply   # set flagged items to Done
-node scripts/github/reconcile-status.mjs --config tracker.config.json --json    # machine-readable plan/result
+node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json           # report-only (default)
+node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply   # set flagged items to Done
+node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --json    # machine-readable plan/result
 npm run reconcile:status                                                       # report-only, default config
 ```
 
 A repository that pins the tracker as a submodule runs the pinned copy with its project token:
 
 ```bash
-GH_TOKEN=$(gh auth token) node .tracker-os/scripts/github/reconcile-status.mjs --config tracker.config.json
+GH_TOKEN=$(gh auth token) node .tracker-os/scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json
 ```
 
 Report-only on a clean board (exit 0, no mutations):
 
 ```text
-$ node scripts/github/reconcile-status.mjs --config tracker.config.json
+$ node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json
 Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
 No stale Project statuses; every closed item is Done.
 ```
@@ -379,13 +386,13 @@ No stale Project statuses; every closed item is Done.
 With drift, the report lists one line per item and `--apply` fixes each with one field mutation:
 
 ```text
-$ node scripts/github/reconcile-status.mjs --config tracker.config.json
+$ node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json
 Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
 Stale closed item(s) (1) — status should be Done:
 - #116 status=In Review — [1.3.0.1-T05] Release v1.3.0 metadata, docs and tag
 Run with --apply to set these items to Done.
 
-$ node scripts/github/reconcile-status.mjs --config tracker.config.json --apply
+$ node scripts/adopt/cli/reconcile-status.mjs --config tracker.config.json --apply
 Project-status reconciliation — OWNER/REPO (project #PROJECT_NUMBER)
 Stale closed item(s) (1) — status should be Done:
 - #116 status=In Review — [1.3.0.1-T05] Release v1.3.0 metadata, docs and tag
@@ -455,10 +462,10 @@ with `gh api repos/OWNER/REPO/issues/<parent>/sub_issues -X POST -F sub_issue_id
 
 ```bash
 # tracker repo (self): advisory, exit 0
-node scripts/github/audit.mjs --config tracker.config.json --advisory
+node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
 
 # downstream adopter: run the pinned copy (e.g. the .tracker-os submodule) with a project-scoped token
-GH_TOKEN=$(gh auth token) node .tracker-os/scripts/github/audit.mjs --config tracker.config.json --advisory
+GH_TOKEN=$(gh auth token) node .tracker-os/scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
 ```
 
 Findings are advisory: fix them before closing the sprint/release/stream or before a `--strict`
@@ -469,7 +476,7 @@ machine-readable evidence, `warnings[]`/`violations[]` carry the codes) with the
 
 Validate:
 ```bash
-node scripts/github/validate-config.mjs tracker.config.json
+node scripts/adopt/cli/validate-config.mjs tracker.config.json
 # OK   tracker.config.json
 ```
 
@@ -725,9 +732,35 @@ alignment. Downstream repositories keep the full check set; `release-gate` passe
 result through with the same note. This is what lets `release:bump` + `gate:release` (and
 `stream.mjs close`'s default gate command) run inside the tracker repo (T06 prerequisite).
 
+### Repo-surface verifier
+
+`npm run verify:surface` (`node scripts/internal/verify-surface.mjs --root . --manifest
+contract/repo-surface.json`) keeps the shipped surface mechanically consistent with
+`contract/repo-surface.json`, the class/status/docs/audience source of truth for scripts, workflows,
+actions, profiles, docs, and contract files. Entries carry a class (`adopter-cli`, `adopter-lib`,
+`reusable-workflow`, `reusable-action`, `copy-mode`, `internal`, `generated`) and a status
+(`shipped` or `contract-only`). It fails on:
+
+- a missing manifest when `--require-manifest` is set (CI runs it with that flag);
+- manifest ↔ filesystem drift: a `shipped` entry whose file is absent, a `contract-only` entry that
+  exists, or a path inside the classified scope that is unclassified or classified twice;
+- a `reusable-*` workflow that is not a `workflow_call` contract, or a non-`reusable-*` workflow that
+  uses `workflow_call`; `.github/workflows/` keeps only internal runners + `reusable-*`, with
+  `release.yml` as the only runnable release caller;
+- a copy-mode entry outside `profiles/` or a YAML example without its `COPY-MODE EXAMPLE` header;
+- catalog claims that disagree with the manifest (reusable-workflow/action documentation and
+  `docs/ACTIONS_CATALOG.md` shipped vs contract-only claims);
+- manifest-referenced docs anchors that do not resolve, or a generated entry outside
+  `generatedRoots`/without an existing `generatedBy` script.
+
+Warnings (unclassified docs, npm-alias drift, adopter code importing internal code, stale catalog
+section docs) fail only under `--strict`. CI runs it in the `docs-guard` job:
+`node scripts/internal/verify-surface.mjs --root . --manifest contract/repo-surface.json --require-manifest`.
+T02 generates `docs/SURFACE.md` from the manifest — treat that page as generated, not hand-edited.
+
 ### No-admin merge wrapper
 
-Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch` (or `node scripts/github/merge-pr.mjs`).
+Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch` (or `node scripts/adopt/cli/merge-pr.mjs`).
 It refuses `--admin`, refuses drafts/non-mergeable PRs, and requires `ci / ci-gate` + `docs-guard`
 to be SUCCESS. Repo branch protection also has `enforce_admins=true`; the wrapper is defense in depth,
 not a substitute for branch protection.
@@ -738,7 +771,7 @@ not a substitute for branch protection.
 
 ### Rate-limit behavior
 
-`scripts/github/lib/github.mjs` is the transport for tracker automation. It:
+`scripts/adopt/lib/github.mjs` is the transport for tracker automation. It:
 - reads `x-ratelimit-*` / `retry-after` where available and tracks remaining/reset;
 - preflights mutations against a budget floor;
 - serializes mutations with ≥1s spacing;
@@ -808,7 +841,7 @@ gh project item-list $PROJECT_NUMBER --owner @me --format json
 Canonical expected outputs:
 
 ```
-$ node scripts/github/validate-config.mjs tracker.config.json
+$ node scripts/adopt/cli/validate-config.mjs tracker.config.json
 OK   tracker.config.json
 
 $ gh auth status

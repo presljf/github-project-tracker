@@ -150,11 +150,12 @@ Expected UI: task appears under parent; parent progress shows `1/1`.
 
 ### 4.4 Install templates/config
 
-- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md`, plus `scripts/github/**`, `schemas/tracker.config.schema.json`, and `package.json` from the tracker template (copy mode requires the full set).
+- Copy `.github/ISSUE_TEMPLATE/*` and `PULL_REQUEST_TEMPLATE.md`, plus `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs), `schemas/tracker.config.schema.json`, and `package.json` from the tracker template (copy mode requires the full set). `scripts/internal/` is template-maintainer-only and is **not** copied.
+- Script families: `scripts/adopt/cli/` (lifecycle/audit/guards/verification), `scripts/adopt/lib/` (shared imports), `scripts/adopt/docs/` (docs-QA); the `package.json` aliases name these targets.
 - Copy `tracker.config.example.json` to `tracker.config.json`; edit values.
 - Validate:
   ```bash
-  node scripts/github/validate-config.mjs tracker.config.json
+  node scripts/adopt/cli/validate-config.mjs tracker.config.json
   # OK   tracker.config.json
   ```
 - Pin `automation.templateVersion` exactly and keep `feedback`/`governance` sections.
@@ -383,6 +384,11 @@ Acceptance: no Done sprint with open children unless deferral is recorded.
 - Release notes/docs updated; release tracker + milestone closed; final summary posted.
 - Do not close with open child sprints unless deferred.
 
+**Release profiles:** reusable-mode callers live in `profiles/release/reusable/` (copy the caller into
+`.github/workflows/` and pin the tracker tag you adopted); copy-mode templates live in
+`profiles/release/copy/`. The template's own `.github/workflows/release.yml` is the runnable generic
+caller; see [RELEASE_PROFILES](./RELEASE_PROFILES.md).
+
 ### Tooling profile: Stream → Task deliveries
 
 Repos with `"workProfile": "tooling"` replace the release/sprint hierarchy with unversioned
@@ -390,14 +396,14 @@ Repos with `"workProfile": "tooling"` replace the release/sprint hierarchy with 
 
 ```bash
 # open a delivery container (appends the per-delivery Stream option safely)
-node scripts/github/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance"
+node scripts/adopt/cli/stream.mjs open --name v1.3.1 --delivery "Documentation & maintenance"
 
 # start a task inside it (task must be a sub-issue with the same Stream option)
-node scripts/github/task.mjs start --issue 123 --stream 120 --owner presljf
+node scripts/adopt/cli/task.mjs start --issue 123 --stream 120 --owner presljf
 
 # check out with PR + evidence, then close the container after every child task is done
-node scripts/github/task.mjs done --issue 123 --pr https://github.com/OWNER/REPO/pull/45 --evidence "npm test 137/137"
-node scripts/github/stream.mjs close --stream 120 --evidence "release gate green" --tag v1.3.1
+node scripts/adopt/cli/task.mjs done --issue 123 --pr https://github.com/OWNER/REPO/pull/45 --evidence "npm test 137/137"
+node scripts/adopt/cli/stream.mjs close --stream 120 --evidence "release gate green" --tag v1.3.1
 ```
 
 `close` refuses while child tasks are open, requires the release gate green, records
@@ -406,7 +412,7 @@ node scripts/github/stream.mjs close --stream 120 --evidence "release gate green
 
 ## 13. Audit
 
-Run `node scripts/github/audit.mjs --config tracker.config.json --advisory` (or `--strict` for release gates).
+Run `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory` (or `--strict` for release gates).
 
 Checklist:
 - [ ] Open release issues have milestone + type.

@@ -2,10 +2,10 @@
 
 **Docs version:** v1.3.2-docs.1 · Status: available now
 
-`scripts/github/task.mjs` implements the task lifecycle with DoR/WIP/DoD checks. It reads `tracker.config.json`, updates the Project Status field, assigns the owner, and posts standard comments.
+`scripts/adopt/cli/task.mjs` implements the task lifecycle with DoR/WIP/DoD checks. It reads `tracker.config.json`, updates the Project Status field, assigns the owner, and posts standard comments.
 
 ```bash
-node scripts/github/task.mjs <command> --issue N [--config tracker.config.json] [--dry-run] [--json]
+node scripts/adopt/cli/task.mjs <command> --issue N [--config tracker.config.json] [--dry-run] [--json]
 ```
 
 Default: mutates. `--dry-run` validates and prints the planned result with no GitHub writes.
@@ -25,25 +25,25 @@ Default: mutates. `--dry-run` validates and prints the planned result with no Gi
 
 ```bash
 # start (fails if DoR/WIP checks fail)
-node scripts/github/task.mjs start --issue 123 --owner presljf --executor agent:session
+node scripts/adopt/cli/task.mjs start --issue 123 --owner presljf --executor agent:session
 
 # dry-run start: no mutations
-node scripts/github/task.mjs start --issue 123 --dry-run
+node scripts/adopt/cli/task.mjs start --issue 123 --dry-run
 
 # checkpoint
-node scripts/github/task.mjs checkpoint --issue 123 --message "Done: ...\nNext: ..."
+node scripts/adopt/cli/task.mjs checkpoint --issue 123 --message "Done: ...\nNext: ..."
 
 # review with PR/evidence
-node scripts/github/task.mjs review --issue 123 --pr https://github.com/OWNER/REPO/pull/45 --evidence "tests pass"
+node scripts/adopt/cli/task.mjs review --issue 123 --pr https://github.com/OWNER/REPO/pull/45 --evidence "tests pass"
 
 # blocked
-node scripts/github/task.mjs block --issue 123 --reason "waiting on #99" --blocked-by https://github.com/OWNER/REPO/issues/99
+node scripts/adopt/cli/task.mjs block --issue 123 --reason "waiting on #99" --blocked-by https://github.com/OWNER/REPO/issues/99
 
 # done
-node scripts/github/task.mjs done --issue 123 --evidence "npm test 18/18; link check clean"
+node scripts/adopt/cli/task.mjs done --issue 123 --evidence "npm test 18/18; link check clean"
 
 # status
-node scripts/github/task.mjs status --issue 123
+node scripts/adopt/cli/task.mjs status --issue 123
 ```
 
 ## Work profiles
@@ -60,15 +60,15 @@ The enforcement matrix comes from `tracker.config.json` `workProfile` (`product`
 
 ```bash
 # tooling-profile start: --stream names the open [Stream] container; the task must be its sub-issue
-node scripts/github/task.mjs start --issue 123 --owner presljf --executor agent:session \
+node scripts/adopt/cli/task.mjs start --issue 123 --owner presljf --executor agent:session \
   --stream 120 --branch task/123-tooling-docs
 
 # tooling-profile done: PR + evidence are both required
-node scripts/github/task.mjs done --issue 123 --pr https://github.com/OWNER/REPO/pull/45 \
+node scripts/adopt/cli/task.mjs done --issue 123 --pr https://github.com/OWNER/REPO/pull/45 \
   --evidence "npm test 137/137; lint/format/docs gates green"
 ```
 
-Stream lifecycle (tooling profile): `node scripts/github/stream.mjs open|close` — see
+Stream lifecycle (tooling profile): `node scripts/adopt/cli/stream.mjs open|close` — see
 [REFERENCE §5.4](./REFERENCE.md#54-stream-tooling-profile). `close` refuses while child tasks are
 open, requires the release gate green, records `### Stream close evidence`, and records an optional
 tag name. Product mode rejects the stream CLI; `[Stream]` containers are not closable by PR
@@ -105,11 +105,11 @@ tracker audit; run `audit.mjs`/release gates separately.
 ## Expected outputs
 
 ```text
-$ node scripts/github/task.mjs status --issue 17
+$ node scripts/adopt/cli/task.mjs status --issue 17
 status #17: In Progress; project status=In Progress; assignee=presljf
 fields: {"release":"v1.0.0",...}
 
-$ node scripts/github/task.mjs start --issue 123
+$ node scripts/adopt/cli/task.mjs start --issue 123
 start #123: applied
 ### Check-in ...
 ```
@@ -126,18 +126,18 @@ only remote signal:
 
 ```bash
 # local: blocked with workflow/label/override instructions (exit 1) unless hidden mode/override applies
-node scripts/github/guard-local-suite.mjs --suite desktop-smoke
+node scripts/adopt/cli/guard-local-suite.mjs --suite desktop-smoke
 
 # hidden local mode (non-authoritative; only when the suite declares localMode: hidden)
-node scripts/github/guard-local-suite.mjs --suite desktop-smoke --hidden
+node scripts/adopt/cli/guard-local-suite.mjs --suite desktop-smoke --hidden
 
 # verify aggregator: record the deferral instead of blocking (exit 0, DEFERRED_REMOTE line)
-node scripts/github/guard-local-suite.mjs --suite desktop-smoke --mode report --json
+node scripts/adopt/cli/guard-local-suite.mjs --suite desktop-smoke --mode report --json
 ```
 
 Adopters typically wire the guard into their suite scripts (visible wrapper without `--hidden`,
 hidden wrapper with it) and into the Playwright `globalSetup` via
-`scripts/github/playwright-remote-guard.mjs`. Agents must never set the suite override env — it is
+`scripts/adopt/lib/playwright-remote-guard.mjs`. Agents must never set the suite override env — it is
 for deliberate human debugging only. Details: [REFERENCE §5.6](./REFERENCE.md#56-guard-local-suite-remote-only-verification-policy).
 
 ## Counts evidence
@@ -146,8 +146,8 @@ When `docs.counts` is configured, test-count evidence at check-out must come fro
 inventory and the counts guard, not from remembered numbers:
 
 ```bash
-node scripts/github/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
-node scripts/github/guard-docs-counts.mjs
+node scripts/adopt/cli/suite-counts.mjs check --suite unit --mode full --results test-results/unit.tap
+node scripts/adopt/cli/guard-docs-counts.mjs
 ```
 
 `check` prints `COUNTS_OK ...` on zero drift and fails on count/skip drift, flaky > 0, or malformed
