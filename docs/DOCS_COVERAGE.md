@@ -21,6 +21,14 @@ DOCS_STYLE_GUIDE + GUARD_DISTRIBUTION + this page; `scripts/internal/` (template
 maps to REFERENCE + UPGRADING; `contract/` maps to REFERENCE + ADOPTION; the `scripts/` catch-all
 still requires REFERENCE + HOW_TO_USE.
 
+**Profile rules (v1.4.0):** the generic `profiles` rule maps every `profiles/` change to
+`docs/RELEASE_PROFILES.md` — pre-existing catch-all debt: non-release profiles must touch that
+page too, which is why `RELEASE_PROFILES.md` carries a cross-link to `profiles/contract/`. The
+targeted `contract-profile` rule maps `profiles/contract/` to `docs/ACTIONS_CATALOG.md` +
+`docs/ADOPTION.md`, so a contract/metadata caller change updates its interface contract and its
+adoption instructions. New profiles should add a targeted rule like `contract-profile` rather than
+relying on the catch-all alone; the catch-all stays until the coverage manifest is restructured.
+
 **Repo-surface contract (v1.4.0):** `contract/repo-surface.json` is the machine-checkable
 class/status/docs/audience source of truth for the shipped surface (classes: `adopter-cli`,
 `adopter-lib`, `reusable-workflow`, `reusable-action`, `copy-mode`, `internal`, `generated`;

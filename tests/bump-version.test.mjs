@@ -35,6 +35,8 @@ function repo() {
     path.join(root, 'profiles/release/reusable/release-macos.yml'),
     'uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.2.0\n',
   );
+  fs.mkdirSync(path.join(root, 'profiles/contract'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'profiles/contract/tracker-contract.yml'), 'with:\n  tracker-ref: v1.2.0\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"version":"1.2.0"}\n');
   fs.writeFileSync(path.join(root, 'tests.fixture.md'), 'v1.2.0\n');
   execFileSync('git', ['add', '.'], { cwd: root });
@@ -47,6 +49,7 @@ test('plans only allowlisted active files and preserves sprint keys', () => {
   assert.deepEqual(files, [
     '.github/ISSUE_TEMPLATE/form.yml',
     'docs/REFERENCE.md',
+    'profiles/contract/tracker-contract.yml',
     'profiles/release/reusable/release-macos.yml',
     'profiles/tooling/tracker.config.example.json',
     'tracker.config.json',
@@ -56,6 +59,8 @@ test('plans only allowlisted active files and preserves sprint keys', () => {
   assert.equal(changes.find((c) => c.file === '.github/ISSUE_TEMPLATE/form.yml').edits.length, 2);
   // Reusable-mode example callers keep pinned refs and must participate in the bump.
   assert.equal(changes.find((c) => c.file === 'profiles/release/reusable/release-macos.yml').edits.length, 1);
+  // `tracker-ref:` pins in reusable-mode callers must bump alongside the `uses:` ref.
+  assert.equal(changes.find((c) => c.file === 'profiles/contract/tracker-contract.yml').edits.length, 1);
   // Historical validation records are excluded from the bump.
   assert.ok(!files.includes('docs/DOCS_VALIDATION.md'));
 });

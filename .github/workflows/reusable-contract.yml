@@ -1,0 +1,311 @@
+# Reusable contract + metadata verification (T03).
+#
+# Contract: docs/ACTIONS_CATALOG.md §2.8 / §7.10; copy-mode caller example: profiles/contract/.
+#
+# Two independent jobs:
+#   contract — offline, no secrets: pinned-tracker tooling contract (verify-tooling) and the
+#              pinned adoption contract (verify-contract).
+#   metadata — live GitHub Project metadata read (verify-metadata). Requires TRACKER_TOKEN;
+#              callers must pass `metadata: false` on fork pull requests (secrets are absent there),
+#              which is exactly what the bundled self caller does.
+#
+# Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`.
+# This reusable workflow runs in the CALLER repository, so for the template repository itself
+# (dogfooded by .github/workflows/tracker-contract.yml) the contract and scripts come from the
+# caller checkout. For every other repository, the pinned template ref is checked out to `.tracker/`
+# and both the contract and the verification scripts come from that tag. The PR merge SHA is
+# deliberately not used for self detection: merge refs, forks, and renamed copies would
+# misclassify, while the canonical slug is stable.
+#
+# No artifacts, no network calls beyond the adopter's own `npm ci`-free tooling read, no
+# pull_request_target, and no write permissions.
+
+name: Reusable contract and metadata verification
+
+on:
+  workflow_call:
+    inputs:
+      tracker-ref:
+        description: Exact template tag/SHA to load the contract and verification tooling from.
+        required: false
+        type: string
+        default: v1.3.2
+      config-path:
+        description: Tracker config path (repository-root-relative; empty resolves under working-directory).
+        required: false
+        type: string
+        default: tracker.config.json
+      contract-path:
+        description: >-
+          Adoption contract path (repository-root-relative or absolute). Empty auto-detects
+          contract/adoption-contract.json in self mode and .tracker/contract/adoption-contract.json
+          downstream.
+        required: false
+        type: string
+        default: ''
+      runs-on:
+        description: Runner label for both jobs.
+        required: false
+        type: string
+        default: ubuntu-latest
+      version-guard-command:
+        description: Optional version consistency command run before the contract checks (no secrets).
+        required: false
+        type: string
+        default: ''
+      metadata:
+        description: >-
+          Run the live project-metadata job. Requires the TRACKER_TOKEN secret; pass false on fork
+          pull requests.
+        required: false
+        type: boolean
+        default: true
+      working-directory:
+        description: Project working directory used by the contract/metadata commands.
+        required: false
+        type: string
+        default: '.'
+      submodule-path:
+        description: Optional tracker submodule path whose pinned tags verify-tooling checks.
+        required: false
+        type: string
+        default: .tracker-os
+      node-version:
+        description: Node.js version used by the verification tooling.
+        required: false
+        type: string
+        default: '22'
+    outputs:
+      contract-ok:
+        description: "'true' when verify-tooling and verify-contract both passed."
+        value: ${{ jobs.contract.outputs.contract-ok }}
+      metadata-ok:
+        description: "'true' when verify-metadata passed (empty when the metadata job is skipped)."
+        value: ${{ jobs.metadata.outputs.metadata-ok }}
+    secrets:
+      TRACKER_TOKEN:
+        description: >-
+          Optional project-read token for the live metadata job (project-scoped PAT or GitHub App).
+          Required only when metadata is true.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: contract
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    outputs:
+      contract-ok: ${{ steps.verify-contract.outputs.ok }}
+    steps:
+      - name: Checkout adopter repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Checkout tracker contract and tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve contract paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          CONTRACT_PATH_INPUT: ${{ inputs.contract-path }}
+          WORKDIR_INPUT: ${{ inputs.working-directory }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          workdir_input="${WORKDIR_INPUT:-.}"
+          case "$workdir_input" in
+            /*) workdir="$workdir_input" ;;
+            *) workdir="$GITHUB_WORKSPACE/$workdir_input" ;;
+          esac
+          [ -d "$workdir" ] || {
+            echo "::error::working-directory '$workdir_input' does not exist in the checkout."
+            exit 1
+          }
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+            default_contract="$GITHUB_WORKSPACE/contract/adoption-contract.json"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+            default_contract="$GITHUB_WORKSPACE/.tracker/contract/adoption-contract.json"
+          fi
+
+          contract="${CONTRACT_PATH_INPUT:-}"
+          if [ -z "$contract" ]; then
+            contract="$default_contract"
+          else
+            case "$contract" in
+              /*) ;;
+              *) contract="$GITHUB_WORKSPACE/$contract" ;;
+            esac
+          fi
+          config="${CONFIG_PATH_INPUT:-tracker.config.json}"
+          case "$config" in
+            /*) ;;
+            *) config="$workdir/$config" ;;
+          esac
+
+          [ -f "$contract" ] || {
+            echo "::error::adoption contract not found at '$contract' (mode=${mode}; pass contract-path or tracker-ref)."
+            exit 1
+          }
+          [ -f "$tracker/scripts/adopt/cli/verify-contract.mjs" ] || {
+            echo "::error::verification tooling not found under '$tracker' (mode=${mode})."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "contract=${contract}" >> "$GITHUB_OUTPUT"
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+          echo "workdir=${workdir}" >> "$GITHUB_OUTPUT"
+      - name: Fetch pinned tracker submodule tags
+        env:
+          SUBMODULE_PATH: ${{ inputs.submodule-path }}
+        run: |
+          set -euo pipefail
+          if [ -d "$SUBMODULE_PATH" ] && git -C "$SUBMODULE_PATH" rev-parse --git-dir >/dev/null 2>&1; then
+            echo "Fetching tags for tracker submodule '$SUBMODULE_PATH' (verify-tooling checks the pinned tag)."
+            git -C "$SUBMODULE_PATH" fetch --tags --force
+          else
+            echo "::notice::No tracker submodule at '$SUBMODULE_PATH'; verify-tooling skips the pinned-submodule tag check."
+          fi
+      - name: Run optional version guard
+        if: ${{ inputs.version-guard-command != '' }}
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          COMMAND: ${{ inputs.version-guard-command }}
+        run: |
+          set -euo pipefail
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"
+      - name: Verify tooling contract
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+          WORKDIR: ${{ steps.paths.outputs.workdir }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/verify-tooling.mjs" --root "$WORKDIR" --contract "$CONTRACT" --tracker-config "$CONFIG"
+      - name: Verify adoption contract
+        id: verify-contract
+        env:
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          WORKDIR: ${{ steps.paths.outputs.workdir }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/verify-contract.mjs" --root "$WORKDIR" --contract "$CONTRACT"
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+  metadata:
+    name: metadata
+    if: ${{ inputs.metadata }}
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    outputs:
+      metadata-ok: ${{ steps.verify-metadata.outputs.ok }}
+    steps:
+      - name: Checkout adopter repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker contract and tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve contract paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          CONTRACT_PATH_INPUT: ${{ inputs.contract-path }}
+          WORKDIR_INPUT: ${{ inputs.working-directory }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          workdir_input="${WORKDIR_INPUT:-.}"
+          case "$workdir_input" in
+            /*) workdir="$workdir_input" ;;
+            *) workdir="$GITHUB_WORKSPACE/$workdir_input" ;;
+          esac
+          [ -d "$workdir" ] || {
+            echo "::error::working-directory '$workdir_input' does not exist in the checkout."
+            exit 1
+          }
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+            default_contract="$GITHUB_WORKSPACE/contract/adoption-contract.json"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+            default_contract="$GITHUB_WORKSPACE/.tracker/contract/adoption-contract.json"
+          fi
+
+          contract="${CONTRACT_PATH_INPUT:-}"
+          if [ -z "$contract" ]; then
+            contract="$default_contract"
+          else
+            case "$contract" in
+              /*) ;;
+              *) contract="$GITHUB_WORKSPACE/$contract" ;;
+            esac
+          fi
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "contract=${contract}" >> "$GITHUB_OUTPUT"
+          echo "workdir=${workdir}" >> "$GITHUB_OUTPUT"
+      - name: Require TRACKER_TOKEN for live metadata
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::metadata: true requires the TRACKER_TOKEN secret (Projects read); pass metadata: false on fork PRs."
+            exit 1
+          fi
+      - name: Verify live project metadata
+        id: verify-metadata
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONTRACT: ${{ steps.paths.outputs.contract }}
+          WORKDIR: ${{ steps.paths.outputs.workdir }}
+        run: |
+          set -euo pipefail
+          cd "$WORKDIR"
+          node "$TRACKER/scripts/adopt/cli/verify-metadata.mjs" --repo "${{ github.repository }}" --contract "$CONTRACT"
+          echo "ok=true" >> "$GITHUB_OUTPUT"

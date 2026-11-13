@@ -219,6 +219,16 @@
         "docs/TECH_DEBT.md",
         "docs/AGENT_GUIDE.md"
       ]
+    },
+    {
+      "id": "contract-profile",
+      "paths": [
+        "profiles/contract/"
+      ],
+      "docs": [
+        "docs/ACTIONS_CATALOG.md",
+        "docs/ADOPTION.md"
+      ]
     }
   ]
 }

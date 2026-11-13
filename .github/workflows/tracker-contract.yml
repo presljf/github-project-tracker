@@ -1,0 +1,34 @@
+# Thin self caller for reusable-contract.yml (dogfooding the same contract + metadata checks
+# adopters call). Check contexts: `tracker-contract / contract` and `tracker-contract / metadata`.
+#
+# `metadata` runs only on push to main and workflow_dispatch: fork pull requests never receive the
+# TRACKER_TOKEN secret, so the PR run keeps `metadata: false`. `tracker-ref: ''` is intentional —
+# self mode reads the contract and tooling from this checkout, not from a pinned template tag.
+name: Tracker contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracker-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tracker-contract:
+    name: tracker-contract
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-contract.yml
+    with:
+      tracker-ref: ''
+      config-path: tracker.config.json
+      contract-path: ''
+      metadata: ${{ github.event_name != 'pull_request' }}
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

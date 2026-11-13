@@ -376,6 +376,7 @@ Limits: this fallback has manual approval, not a platform-enforced protected env
 | [UPGRADING](./UPGRADING.md) | Copy vs reusable, pins, upgrade procedure |
 | [HOW TO USE](./HOW_TO_USE.md) | Lifecycle context for release work |
 | [profiles/release](../profiles/release/README.md) | Reusable-mode copy examples, copy-mode templates, and the shared profile matrix |
+| [profiles/contract](../profiles/contract/README.md) + [ACTIONS CATALOG](./ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract) §7.10 | **Non-release profile:** contract/metadata verification caller (`tracker-contract / contract`, `tracker-contract / metadata`); release profiles remain in this page |
 | [tracker config schema](../schemas/tracker.config.schema.json) | `workflows.release` keys |
 | [SECURITY.md](../SECURITY.md) | Private vulnerability reporting; never expose tokens |
 | [GitHub: reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) · [Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) · [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) · [OIDC](https://docs.github.com/en/actions/concepts/security/openid-connect) | Upstream behavior reference |

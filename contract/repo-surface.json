@@ -1657,6 +1657,67 @@
       "docs": [
         "docs/AGENT_GUIDE.md"
       ]
+    },
+    {
+      "id": "wf:reusable-contract",
+      "path": ".github/workflows/reusable-contract.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable contract verification",
+      "summary": "Contract + metadata verification for adopters (verify-tooling, verify-contract, verify-metadata).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract"
+      ],
+      "catalogSection": "7.10"
+    },
+    {
+      "id": "wf:tracker-contract",
+      "path": ".github/workflows/tracker-contract.yml",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Tracker contract + metadata (self caller)",
+      "summary": "Thin local caller of reusable-contract.yml (dogfooding).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#28-tracker-contract-metadata-verification",
+        "docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract"
+      ]
+    },
+    {
+      "id": "profile:contract-readme",
+      "path": "profiles/contract/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Contract + metadata profile",
+      "summary": "Reusable-mode contract/metadata caller guide, token setup, and check-name mapping.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract",
+        "docs/ADOPTION.md#adoption-contract-verify"
+      ]
+    },
+    {
+      "id": "profile:contract-caller",
+      "path": "profiles/contract/tracker-contract.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Contract + metadata caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode contract+metadata caller (T03).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract"
+      ],
+      "mode": "reusable",
+      "header": "required"
     }
   ]
 }

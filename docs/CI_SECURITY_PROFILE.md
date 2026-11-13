@@ -31,6 +31,8 @@ This profile centralizes CI and security logic once, in reusable workflows, and 
 | [ci.yml](../.github/workflows/ci.yml) | Thin caller for this repository (`push` to `main`, `pull_request`), supplying the template's own commands. |
 | [reusable-security.yml](../.github/workflows/reusable-security.yml) | Reusable dependency-review job for pull requests, with a platform-availability guard. |
 | [security.yml](../.github/workflows/security.yml) | Security caller: dependency review on PRs plus config-guarded, opt-in CodeQL. |
+| [reusable-contract.yml](../.github/workflows/reusable-contract.yml) | Reusable contract + metadata verification via `on: workflow_call`: offline `contract` job (verify-tooling/verify-contract, no secrets) and live `metadata` job (verify-metadata, optional `TRACKER_TOKEN` with Projects + Metadata read). |
+| [tracker-contract.yml](../.github/workflows/tracker-contract.yml) | Thin self caller for this repository; check contexts `tracker-contract / contract` and `tracker-contract / metadata`. |
 | [dependabot.yml](../.github/dependabot.yml) | Weekly grouped version updates for npm and GitHub Actions. |
 | `docs/CI_SECURITY_PROFILE.md` | This runbook: CI contract, required-check/branch-protection procedure, security defaults, tokens, runners/cost, pinning, local parity, dry-run rules. |
 
@@ -38,7 +40,7 @@ Design rules:
 
 - **Contract once, project values in callers.** Reusable workflows take inputs; adopting projects copy thin callers and pass their commands.
 - **Least privilege.** Every CI/security job uses `contents: read`; only the opt-in CodeQL job requests `security-events: write`, at job level.
-- **No secrets.** CI/security checks need only the automatic `GITHUB_TOKEN`. Release tokens and tracker-audit tokens belong to other profiles (see [REFERENCE](./REFERENCE.md) sections 13–16).
+- **No secrets.** CI/security checks need only the automatic `GITHUB_TOKEN`. Release tokens, tracker-audit tokens, and the optional contract-metadata token belong to other profiles (see [REFERENCE](./REFERENCE.md) sections 13–16).
 - **No product-specific hardcoding.** The only default commands are generic package-script conventions (`lint`, `format:check`, `test`, `build`).
 - **Expensive or opt-in checks are never required by default.** CodeQL is off unless enabled; expensive platform-specific work stays advisory per the [playbook](./GITHUB_PROJECT_TRACKER_PLAYBOOK.md).
 
@@ -186,6 +188,8 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
 - Advisory initially: `security / dependency-review` (until the platform feature is enabled and stable) and any expensive platform job.
 - Aggregate gate: `ci / ci-gate` fails when lint, format, test, or build did not succeed. T09's catalog recommends requiring this single aggregate check instead of the four individual jobs, which keeps protection stable when internal job names change. Choose one approach per repository; do not require both the aggregate and its constituents unless intentional.
 - **Never required:** `codeql` while it is opt-in, plus macOS/desktop smoke until the release-gate policy is proven.
+- Reusable contract caller: require `tracker-contract / contract` (offline, no secrets); treat
+  `tracker-contract / metadata` as project-defined (needs `TRACKER_TOKEN`; see §3.6).
 - Branch protection/rulesets and `tracker.config.json` `workflows.ci.requiredChecks` are the two records of required checks. The config currently stores short names (`lint`, `format`, `test`); platform protection stores full contexts (`ci / lint`, ...). Keep them in sync by convention; reconciling the short-name mapping is a T09/T12 follow-up (this profile does not edit the config).
 
 ### 3.2 Current platform state (verified 2026-11-11)
@@ -245,6 +249,37 @@ Notes:
 2. Let a PR run and capture the exact context strings (section 2.3).
 3. Update protection/ruleset contexts **before** the next PR needs to merge.
 4. Record the rename in the task issue and (if policy changed) with a dated `plan-change` comment.
+
+### 3.6 Contract + metadata caller contexts (reusable mode)
+
+Adopters consume the reusable-mode caller instead of copying bespoke contract workflows: copy
+[`profiles/contract/tracker-contract.yml`](../profiles/contract/tracker-contract.yml) into
+`.github/workflows/` and pin **both** refs (the `uses:` reusable-workflow ref and the `tracker-ref`
+input) to the exact adopted tag. v1.4.0 is the first release that ships
+`reusable-contract.yml`; older pinned copies keep their previous layout until the pin is upgraded.
+
+| Context | Reusable job | Required? | Permissions | Token | Artifacts |
+| --- | --- | --- | --- | --- | --- |
+| `tracker-contract / contract` | `contract` | **required** — deterministic, Linux, offline | `contents: read` | none | none |
+| `tracker-contract / metadata` | `metadata` | project-defined (see below) | `contents: read` | `TRACKER_TOKEN` (Projects + Metadata read; repository secret) | none |
+
+- `contract` verifies tooling (`verify-tooling`) and the pinned adoption contract
+  (`verify-contract`); it needs no secret and is safe for fork PRs.
+- `metadata` reads live project metadata (`verify-metadata`), fails fast when `TRACKER_TOKEN` is
+  absent, and needs `project.number` in `tracker.config.json`. GitHub withholds secrets from fork
+  PRs, so the bundled caller sets `metadata: ${{ github.event_name != 'pull_request' }}` — metadata
+  runs on `push` / `workflow_dispatch` only. Do **not** put `tracker-contract / metadata` in
+  required **PR** checks: a skipped job leaves the context pending and blocks merges. Keep it
+  project-defined/advisory unless the project deliberately runs metadata on every PR.
+- Token: `TRACKER_TOKEN` is a project-scoped PAT (Projects read + Metadata read, ≤90 days) or a
+  GitHub App installation token, stored as a repository secret, passed explicitly by name (never
+  `secrets: inherit`), and rotated on the tracker's token schedule.
+- `config-path` feeds `verify-tooling` only (default `tracker.config.json`, resolved under
+  `working-directory`); `verify-contract` and the `metadata` job read `tracker.config.json` from the
+  repository root / working directory. `submodule-path` defaults to `.tracker-os` and only feeds
+  the pinned-submodule tag check (missing submodule = notice + skip, not failure).
+- Both jobs use `contents: read`, request no other permissions, and upload no artifacts; the
+  runner defaults to `ubuntu-latest` and Node.js 22 and both are overridable.
 
 ## 4. Security defaults
 
@@ -312,6 +347,7 @@ Secret scanning and push protection are GitHub repository settings, not workflow
 | CodeQL (opt-in) | `GITHUB_TOKEN` | job-level `security-events: write` + reads | automatic | Enabled by variable/dispatch; never required; fork PRs skipped. |
 | Dependabot private registries | Dependabot secret | registry read | Dependabot secrets | Never inline in `dependabot.yml`. |
 | Tracker audit (other profile) | `TRACKER_TOKEN`/App | project read (advisory) | repository secret | Separate profile; never in config/logs/artifacts. |
+| Contract metadata (other profile) | `TRACKER_TOKEN`/App | project **read** (Projects + Metadata read) | repository secret | Optional: required only when the reusable-contract `metadata` job runs (`metadata: true`, default). PAT ≤90 days or a GitHub App installation token; pass explicitly by name (never `secrets: inherit`). Fork PRs receive no secret, so callers pass `metadata: false` there; rotate on the tracker token schedule; never in config/logs/artifacts. |
 | Release publish (other profile) | `GITHUB_TOKEN`/environment/OIDC | `contents: write` | protected environment | Separate profile; dry-run first, publish explicit. |
 
 Rules:

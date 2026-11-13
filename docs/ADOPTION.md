@@ -184,10 +184,13 @@ option. The tag records the version; stream close requires every child task done
 - Configure the tracker audit token as a secret (project-scoped).
 - Add CI/audit caller workflows (CI/security/audit runner callers are shipped; release caller
   `release.yml` plus reusable-mode examples under `profiles/release/reusable/`); keep audit
-  **advisory** first.
+  **advisory** first. Also add the reusable contract/metadata caller
+  (`profiles/contract/tracker-contract.yml`): `contract` is a required check, `metadata` is
+  project-defined (see [Adoption contract verify](#adoption-contract-verify)).
 - Configure branch protection/rulesets:
-  - required: deterministic Linux CI checks.
-  - advisory first: desktop smoke/audit.
+  - required: deterministic Linux CI checks, plus `tracker-contract / contract`.
+  - advisory first: desktop smoke/audit; `tracker-contract / metadata` is project-defined (it is
+    skipped on pull requests by the bundled caller).
   - protect release tags/environments.
 - Run `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
@@ -250,7 +253,42 @@ Use `npm run merge-pr -- --pr N --repo owner/repo --delete-branch`; it refuses `
 
 ## Adoption contract verify
 
-Run `npm run verify:contract` against `contract/adoption-contract.json`. Required workflows must be pinned to the exact tracker tag; a bespoke workflow or missing capability requires an OI-linked `tracker.overrides.json` entry with reason and expiry.
+Contract + metadata verification is reusable-mode (no copied verifier workflows): copy
+[`profiles/contract/tracker-contract.yml`](../profiles/contract/tracker-contract.yml) into
+`.github/workflows/`, then pin **both** refs — the reusable-workflow `uses:` ref and the
+`tracker-ref` input — to the exact tracker tag you adopted. v1.4.0 is the first release that ships
+`reusable-contract.yml`; replace the example's `@v1.3.2` placeholders. The caller job
+`tracker-contract` exposes two check contexts:
+
+- `tracker-contract / contract` — offline `verify-tooling` + `verify-contract`; make this a
+  **required** check.
+- `tracker-contract / metadata` — live project metadata (`verify-metadata`); **project-defined**.
+  It needs the `TRACKER_TOKEN` secret (Projects read + Metadata read). The bundled caller disables
+  it on pull requests (`metadata: ${{ github.event_name != 'pull_request' }}`) because fork PRs
+  never receive secrets, so it runs on push/`workflow_dispatch` only — do not require this context
+  on PRs unless the project deliberately runs metadata on every PR.
+
+Set `TRACKER_TOKEN` as a repository secret (project-scoped PAT with Projects + Metadata read,
+≤90 days, or a GitHub App installation token), pass it explicitly by name (never `secrets:
+inherit`), and rotate it on the tracker's token schedule; never put it in config, comments, or
+artifacts. The `metadata` job requires `project.number` in `tracker.config.json`. `config-path`
+feeds `verify-tooling` only; `verify-contract` and the metadata job read `tracker.config.json`
+from the repository root / `working-directory`. Full input/contract table:
+[ACTIONS CATALOG §7.10](./ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract)
+and [profiles/contract](../profiles/contract/README.md).
+
+Migrate in the **same PR** as the pin upgrade: update branch protection/rulesets to the new
+contexts, keep the old copied `tracker-contract` / `tracker-metadata` workflow checks running until
+the upgrade merges, then delete the old copied workflows. Old→new mapping, fork-PR behavior, and
+`submodule-path`/`project.number` caveats: [UPGRADING](./UPGRADING.md).
+
+Local parity (no GitHub writes): `npm run verify:tooling -- --root . --contract
+contract/adoption-contract.json --tracker-config tracker.config.json`,
+`npm run verify:contract -- --root . --contract contract/adoption-contract.json`, and, where a
+project token is available,
+`GH_TOKEN=$(gh auth token) npm run verify:metadata -- --repo OWNER/REPO --contract contract/adoption-contract.json`.
+Required workflows must be pinned to the exact tracker tag; a bespoke workflow or missing
+capability requires an OI-linked `tracker.overrides.json` entry with reason and expiry.
 
 ## Closing-keyword guard
 
@@ -263,8 +301,11 @@ Merged PRs with failed/missing required checks or invalid closure open a `tracke
 Set your **real check names** (not the tracker's own) so the audit does not open false bypass OIs:
 
 ```json
-"guard": { "requiredChecks": ["ci / ci-gate", "tracker-guard / guard", "pr-close-guard"] }
+"guard": { "requiredChecks": ["ci / ci-gate", "tracker-guard / guard", "tracker-contract / contract", "pr-close-guard"] }
 ```
+
+Add `tracker-contract / metadata` only if the project also requires live metadata checks (the
+bundled caller skips it on pull requests).
 
 Absent config keeps the default (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). The copied caller
 workflow must grant `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`,
