@@ -1,11 +1,7 @@
 {
   "schemaVersion": 1,
   "policy": {
-    "blockingClasses": [
-      "shim",
-      "monkey-patch",
-      "temp-fix"
-    ],
+    "blockingClasses": ["shim", "monkey-patch", "temp-fix"],
     "reviewCadence": "monthly",
     "coverage": {
       "command": "node --test --experimental-test-coverage --test-coverage-include='scripts/**' tests/*.test.mjs",
@@ -268,6 +264,21 @@
       "decision": "register",
       "detectedBy": "manual",
       "evidence": "Baseline command recorded in docs/TECH_DEBT.md \u00a7Coverage baseline and policy.coverage."
+    },
+    {
+      "id": "debt-019",
+      "class": "temp-fix",
+      "pointer": "scripts/adopt/cli/verify-metadata.mjs:1",
+      "owner": "@presljf",
+      "expiry": "2026-12-31",
+      "reason": "verify-metadata enforces the product-mode type/hierarchy mapping and has no workProfile awareness; the template's own tooling-profile self caller disables the metadata job until T06/tooling-aware follow-up lands.",
+      "status": "accepted",
+      "risk": "low",
+      "effort": "M",
+      "decision": "register",
+      "issue": "#138",
+      "evidence": "T03 verifier B2: metadata parity run on tooling repo reports task type=Task expected Feature; task parent is not a Sprint.",
+      "detectedBy": "manual"
     }
   ]
 }

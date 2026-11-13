@@ -1,9 +1,14 @@
 # Thin self caller for reusable-contract.yml (dogfooding the same contract + metadata checks
 # adopters call). Check contexts: `tracker-contract / contract` and `tracker-contract / metadata`.
 #
-# `metadata` runs only on push to main and workflow_dispatch: fork pull requests never receive the
-# TRACKER_TOKEN secret, so the PR run keeps `metadata: false`. `tracker-ref: ''` is intentional —
-# self mode reads the contract and tooling from this checkout, not from a pinned template tag.
+# `metadata: false` is intentional: this repository runs the TOOLING work profile (Stream → Task),
+# while the adoption contract's metadata mapping is product-mode (Task→Feature, Release→Sprint→Task)
+# and verify-metadata is not workProfile-aware yet. Enabling it would fail this repository's own
+# push-to-main run; the gap is recorded as accepted debt (contract/debt-register.json) and will be
+# revisited when verify-metadata gains workProfile awareness. Fork PRs never receive the
+# TRACKER_TOKEN secret, so metadata stays off there too.
+# `tracker-ref: ''` is intentional — self mode reads the contract and tooling from this checkout,
+# not from a pinned template tag.
 name: Tracker contract
 
 on:
@@ -29,6 +34,7 @@ jobs:
       tracker-ref: ''
       config-path: tracker.config.json
       contract-path: ''
-      metadata: ${{ github.event_name != 'pull_request' }}
+      # Tracker runs the tooling work profile; verify-metadata is not workProfile-aware yet (debt).
+      metadata: false
     secrets:
       TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

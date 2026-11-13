@@ -2,12 +2,17 @@
 #
 # Contract: docs/ACTIONS_CATALOG.md §2.8 / §7.10; copy-mode caller example: profiles/contract/.
 #
-# Two independent jobs:
-#   contract — offline, no secrets: pinned-tracker tooling contract (verify-tooling) and the
-#              pinned adoption contract (verify-contract).
-#   metadata — live GitHub Project metadata read (verify-metadata). Requires TRACKER_TOKEN;
-#              callers must pass `metadata: false` on fork pull requests (secrets are absent there),
-#              which is exactly what the bundled self caller does.
+# Three independent jobs:
+#   contract      — offline, no secrets: pinned-tracker tooling contract (verify-tooling) and the
+#                   pinned adoption contract (verify-contract).
+#   metadata      — live GitHub Project metadata read (verify-metadata). Requires TRACKER_TOKEN;
+#                   callers must pass `metadata: false` on fork pull requests (secrets are absent
+#                   there).
+#   version-guard — optional caller-supplied trusted offline command. It runs in its OWN job that
+#                   never checks out the pinned `tracker-ref`, so arbitrary command execution never
+#                   shares a job with the untrusted template checkout (defense-in-depth against
+#                   cache-poisoning / TOCTOU patterns; the template repo's self caller does not set
+#                   it).
 #
 # Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`.
 # This reusable workflow runs in the CALLER repository, so for the template repository itself
@@ -31,13 +36,13 @@ on:
         type: string
         default: v1.3.2
       config-path:
-        description: Tracker config path (repository-root-relative; empty resolves under working-directory).
+        description: Tracker config path (working-directory-relative; default `.` resolves to the repository root).
         required: false
         type: string
         default: tracker.config.json
       contract-path:
         description: >-
-          Adoption contract path (repository-root-relative or absolute). Empty auto-detects
+          Adoption contract path (working-directory-relative or absolute). Empty auto-detects
           contract/adoption-contract.json in self mode and .tracker/contract/adoption-contract.json
           downstream.
         required: false
@@ -49,7 +54,9 @@ on:
         type: string
         default: ubuntu-latest
       version-guard-command:
-        description: Optional version consistency command run before the contract checks (no secrets).
+        description: >-
+          Optional trusted, offline version-consistency command. Runs in a separate `version-guard`
+          job that does not check out the pinned template ref (no secrets).
         required: false
         type: string
         default: ''
@@ -189,15 +196,6 @@ jobs:
           else
             echo "::notice::No tracker submodule at '$SUBMODULE_PATH'; verify-tooling skips the pinned-submodule tag check."
           fi
-      - name: Run optional version guard
-        if: ${{ inputs.version-guard-command != '' }}
-        working-directory: ${{ inputs.working-directory }}
-        env:
-          COMMAND: ${{ inputs.version-guard-command }}
-        run: |
-          set -euo pipefail
-          echo "+ ${COMMAND}"
-          bash -euo pipefail -c "${COMMAND}"
       - name: Verify tooling contract
         env:
           TRACKER: ${{ steps.paths.outputs.tracker }}
@@ -309,3 +307,32 @@ jobs:
           cd "$WORKDIR"
           node "$TRACKER/scripts/adopt/cli/verify-metadata.mjs" --repo "${{ github.repository }}" --contract "$CONTRACT"
           echo "ok=true" >> "$GITHUB_OUTPUT"
+
+  # The optional version guard executes a caller-supplied command. It deliberately runs in its own
+  # job WITHOUT checking out the pinned template ref: keeping arbitrary command execution and the
+  # untrusted `tracker-ref` checkout in separate jobs avoids the cache-poisoning / TOCTOU pattern
+  # that static analysis flags when both live in one job.
+  version-guard:
+    name: version-guard
+    if: ${{ inputs.version-guard-command != '' }}
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout adopter repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Run optional version guard
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          COMMAND: ${{ inputs.version-guard-command }}
+        run: |
+          set -euo pipefail
+          echo "+ ${COMMAND}"
+          bash -euo pipefail -c "${COMMAND}"

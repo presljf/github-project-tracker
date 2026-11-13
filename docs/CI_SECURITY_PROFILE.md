@@ -278,6 +278,14 @@ input) to the exact adopted tag. v1.4.0 is the first release that ships
   `working-directory`); `verify-contract` and the `metadata` job read `tracker.config.json` from the
   repository root / working directory. `submodule-path` defaults to `.tracker-os` and only feeds
   the pinned-submodule tag check (missing submodule = notice + skip, not failure).
+- The optional `version-guard` job (only when `version-guard-command` is set) runs the
+  adopter-supplied trusted offline command in its **own** job with `contents: read` and no pinned
+  template checkout, so arbitrary command execution never shares a job with the untrusted
+  `tracker-ref` checkout; it uploads no artifacts and uses no secrets.
+- The template's own self caller keeps `metadata: false` while the repository runs the tooling work
+  profile (the contract's product-mode metadata mapping does not apply and `verify-metadata` is not
+  `workProfile`-aware yet; accepted debt) — adopters on the product profile enable metadata via the
+  documented expression.
 - Both jobs use `contents: read`, request no other permissions, and upload no artifacts; the
   runner defaults to `ubuntu-latest` and Node.js 22 and both are overridable.
 

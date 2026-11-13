@@ -260,9 +260,9 @@ test('all external uses are pinned to the exact contract SHAs', () => {
 // Reusable workflow: jobs and steps
 // ---------------------------------------------------------------------------
 
-test('jobs are contract + metadata, with metadata gated on the input and independent', () => {
+test('jobs are contract + metadata + version-guard, with metadata gated on the input and independent', () => {
   const jobs = jobSections(read(WORKFLOW));
-  assert.deepEqual([...jobs.keys()], ['contract', 'metadata']);
+  assert.deepEqual([...jobs.keys()], ['contract', 'metadata', 'version-guard']);
   assert.match(jobs.get('metadata'), /^ {4}if: \$\{\{ inputs\.metadata \}\}$/m);
   assert.doesNotMatch(jobs.get('metadata'), /^ {4}needs:/m);
   assert.match(jobs.get('contract'), /^ {4}runs-on: \$\{\{ inputs\.runs-on \}\}$/m);
@@ -279,7 +279,6 @@ test('contract job runs the checks in the documented order', () => {
       'Set up Node.js',
       'Resolve contract paths',
       'Fetch pinned tracker submodule tags',
-      'Run optional version guard',
       'Verify tooling contract',
       'Verify adoption contract',
     ],
@@ -322,12 +321,22 @@ test('submodule fetch is conditional on an input path and skips with a notice', 
   assert.match(fetchStep, /::notice::No tracker submodule at/);
 });
 
-test('optional version guard is input-gated, run in the working directory, and secret-free', () => {
-  const guard = stepText(jobSections(read(WORKFLOW)).get('contract'), 'Run optional version guard');
-  assert.match(guard, /if: \$\{\{ inputs\.version-guard-command != '' \}\}/);
+test('optional version guard runs in its own job without the untrusted template checkout', () => {
+  const job = jobSections(read(WORKFLOW)).get('version-guard');
+  assert.ok(job, 'version-guard job exists');
+  assert.match(job, /^ {4}if: \$\{\{ inputs\.version-guard-command != '' \}\}$/m);
+  assert.match(job, /^ {4}runs-on: \$\{\{ inputs\.runs-on \}\}$/m);
+  // Arbitrary caller-command execution must never share a job with the untrusted pinned checkout.
+  assert.doesNotMatch(job, /ref: \$\{\{ inputs\.tracker-ref \}\}/);
+  assert.doesNotMatch(job, /path: \.tracker/);
+  assert.doesNotMatch(job, /repository: presljf\/github-project-tracker/);
+  assert.doesNotMatch(job, /secrets\./);
+  const checkout = stepText(job, 'Checkout adopter repository');
+  assert.match(checkout, /persist-credentials: false/);
+  assert.doesNotMatch(checkout, /submodules:/);
+  const guard = stepText(job, 'Run optional version guard');
   assert.match(guard, /working-directory: \$\{\{ inputs\.working-directory \}\}/);
   assert.match(guard, /bash -euo pipefail -c "\$\{COMMAND\}"/);
-  assert.doesNotMatch(guard, /secrets\./);
 });
 
 test('verify steps call the reorganized tooling with the resolved paths', () => {
@@ -386,7 +395,8 @@ test('tracker-contract.yml is the thin self caller with the documented contexts'
   assert.match(job, /tracker-ref: ''/);
   assert.match(job, /config-path: tracker\.config\.json/);
   assert.match(job, /contract-path: ''/);
-  assert.match(job, /metadata: \$\{\{ github\.event_name != 'pull_request' \}\}/);
+  assert.match(job, /metadata: false/);
+  assert.match(read(CALLER), /tooling work profile/);
   assert.match(job, /secrets:\n {6}TRACKER_TOKEN: \$\{\{ secrets\.TRACKER_TOKEN \}\}/);
 
   const topLevelPermissions = /^permissions:\n((?: {2}[^\n]*\n?)+)/m.exec(stripComments(caller));

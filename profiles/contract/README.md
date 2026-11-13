@@ -23,7 +23,8 @@ Two independent jobs:
 
 | Job | Checks | When |
 |---|---|---|
-| `contract` | Optional version guard, pinned-tracker fetch, `verify-tooling` (tooling versions/config + pinned `.tracker-os` tag), `verify-contract` (adoption contract) | Every call, offline, no secrets |
+| `contract` | Pinned-tracker fetch, `verify-tooling` (tooling versions/config + pinned `.tracker-os` tag), `verify-contract` (adoption contract) | Every call, offline, no secrets |
+| `version-guard` | Optional adopter-supplied trusted command, isolated job without the template checkout | Only when `version-guard-command` is set; offline, no secrets |
 | `metadata` | `verify-metadata`: live Project fields/options/issue types/hierarchy against the adoption contract | Only when `metadata: true`; requires `TRACKER_TOKEN` |
 
 Check contexts produced by a caller job named `tracker-contract`:
@@ -34,10 +35,10 @@ Check contexts produced by a caller job named `tracker-contract`:
 | Input | Type | Default | Meaning |
 |---|---|---|---|
 | `tracker-ref` | string | `v1.3.2` | Exact template tag/SHA to load the adoption contract and verification tooling from. Downstream: the tag you adopted. Self mode (`tracker-ref: ''`): the caller checkout. |
-| `config-path` | string | `tracker.config.json` | Tracker config path (repository-root-relative; resolved under `working-directory`). Affects `verify-tooling` only. |
-| `contract-path` | string | `''` | Adoption contract path (repository-root-relative or absolute). Empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream. |
+| `config-path` | string | `tracker.config.json` | Tracker config path (working-directory-relative; default `.` = repository root). Affects `verify-tooling` only. |
+| `contract-path` | string | `''` | Adoption contract path (working-directory-relative or absolute). Empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream. |
 | `runs-on` | string | `ubuntu-latest` | Runner label for both jobs. |
-| `version-guard-command` | string | `''` | Optional trusted, offline version-consistency command run before the contract checks (for example `node scripts/version-guard.mjs`). Never fetched at runtime. |
+| `version-guard-command` | string | `''` | Optional trusted, offline version-consistency command (for example `node scripts/version-guard.mjs`). Runs in a separate `version-guard` job that does **not** check out the pinned template ref, so command execution never shares a job with the untrusted template checkout. Never fetched at runtime. |
 | `metadata` | boolean | `true` | Run the live metadata job. Requires `TRACKER_TOKEN`; pass `false` on fork PRs. |
 | `working-directory` | string | `'.'` | Project working directory used by the verification commands. |
 | `submodule-path` | string | `.tracker-os` | Tracker submodule whose pinned tag `verify-tooling` checks; a missing/non-git path logs a notice and skips that check. |
@@ -118,6 +119,11 @@ GH_TOKEN=... npm run verify:metadata -- --repo owner/repo --contract contract/ad
   config at the root unless you document an override.
 
 ## Caveats
+
+- The template repository itself runs the **tooling** work profile, so its self caller keeps
+  `metadata: false` (product-mode metadata mapping does not apply; `verify-metadata` is not
+  `workProfile`-aware yet — tracked as accepted debt). Adopters on the product profile enable
+  metadata as documented above.
 
 - Never pin `@main` or a floating major tag; use an exact template tag or full commit SHA
   (prefer SHA if tags are not protected).

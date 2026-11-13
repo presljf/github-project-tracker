@@ -7,13 +7,13 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 18 |
-| By class | coverage: 1, dead-export: 2, duplication: 3, hardcoded-env: 3, hotspot: 8, shim: 1 |
-| By status | accepted: 2, fixed: 3, p4: 13 |
-| By risk | low: 11, medium: 7 |
-| Active entries | 15 |
+| Entries | 19 |
+| By class | coverage: 1, dead-export: 2, duplication: 3, hardcoded-env: 3, hotspot: 8, shim: 1, temp-fix: 1 |
+| By status | accepted: 3, fixed: 3, p4: 13 |
+| By risk | low: 12, medium: 7 |
+| Active entries | 16 |
 | Expired | 0 |
-| Upcoming | 15 |
+| Upcoming | 16 |
 | Earliest expiry | 2026-12-31 |
 | Blocking classes | shim, monkey-patch, temp-fix |
 | Review cadence | monthly |
@@ -40,6 +40,7 @@
 | debt-016 | dead-export | p4 | low | M | p4-backlog | `scripts/adopt/cli/merge-pr.mjs:6` | @presljf | 2026-12-31 | Remaining adopter-CLI exports never imported: guard-local-suite jsonView; merge-pr canonicalState/canonicalName; post-merge-audit writeStepSummary; project-field-option FIELD_COLORS/findSingleSelectField; reconcile-metadata applyPlan; stream runReleaseGate/streamNameFromTitle/streamIssueBody; suite-counts METRICS/MODE_ORDER/sortBaseline; validate-config validateConfigFile. |
 | debt-017 | dead-export | p4 | low | S | p4-backlog | `scripts/internal/verify-surface.mjs:28` | @presljf | 2026-12-31 | Internal-only exports never imported outside their module: verify-surface SURFACE_SCHEMA_VERSION/CLASSES/AUDIENCES/allowedClasses/collectAnchors; bump-version versionPattern. |
 | debt-018 | coverage | accepted | low | M | register | `docs/TECH_DEBT.md:1` | @presljf | 2026-12-31 | Coverage is an evidence-only baseline (policy.coverage); no threshold gate yet. Promote to an advisory threshold after the P4 module splits land. |
+| debt-019 | temp-fix | accepted | low | M | register | `scripts/adopt/cli/verify-metadata.mjs:1` | @presljf | 2026-12-31 | verify-metadata enforces the product-mode type/hierarchy mapping and has no workProfile awareness; the template's own tooling-profile self caller disables the metadata job until T06/tooling-aware follow-up lands. |
 
 ## P4 backlog
 
