@@ -844,6 +844,7 @@ function main(argv = process.argv.slice(2)) {
     }
     const rendered = renderTechDebt({ register: result.register, root: result.root });
     const docPath = parsed.doc ?? path.join(result.root, DEFAULT_DOC);
+    fs.mkdirSync(path.dirname(docPath), { recursive: true });
     fs.writeFileSync(docPath, rendered);
     console.log(`Rendered ${normalize(path.relative(result.root, docPath))} from ${result.registerRel}.`);
     return;
