@@ -144,6 +144,38 @@ test('release gate works self-repo (real CLI, no bypass check) and default gate 
   const gate = runNodeScript('scripts/adopt/cli/release-gate.mjs', ['--root', REPO_ROOT]);
   assert.equal(gate.status, 0, gate.stderr);
   assert.match(gate.stdout, /Release gate OK — self-repo: downstream contract checks skipped/);
+  assert.match(gate.stdout, /open-OI check skipped \(no --repo/);
+});
+
+test('release-gate CLI honours a custom --config path', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'release-gate-config-'));
+  try {
+    fs.mkdirSync(path.join(root, 'config'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'contract.json'),
+      JSON.stringify({
+        trackerVersion: '1.3.0',
+        repository: TRACKER_REPO,
+        requiredConfig: ['repository', 'automation.templateVersion'],
+      }),
+    );
+    fs.writeFileSync(
+      path.join(root, 'config', 'custom.json'),
+      JSON.stringify({ repository: TRACKER_REPO, automation: { templateVersion: '1.3.0' } }),
+    );
+    const gate = runNodeScript('scripts/adopt/cli/release-gate.mjs', [
+      '--root',
+      root,
+      '--contract',
+      path.join(root, 'contract.json'),
+      '--config',
+      path.join(root, 'config/custom.json'),
+    ]);
+    assert.equal(gate.status, 0, gate.stderr);
+    assert.match(gate.stdout, /Release gate OK/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('stream close passes its release gate (self-repo tooling) and records close evidence', async () => {

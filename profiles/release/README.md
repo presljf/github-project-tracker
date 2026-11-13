@@ -8,12 +8,12 @@ There are two adoption modes (hybrid D model, see ACTIONS CATALOG §8):
 
 | Mode | What lives in your repo | When |
 |---|---|---|
-| **reusable** (default) | A thin caller job that calls `reusable-release.yml` by exact tag/SHA; no copied release logic | Template refs are accessible from your repo (same org or public template) |
+| **reusable** (default) | A thin caller job that calls `reusable-release.yml` by exact release tag (`@v<version>`; the contract requires the tag form for required workflows); no copied release logic | Template refs are accessible from your repo (same org or public template) |
 | **copy** | Standalone caller workflows from `copy/` plus the composite actions in `.github/actions/` | Cross-repo reuse is blocked by visibility/policy, or you need project-specific steps |
 
 The template repository's only runnable release caller is `.github/workflows/release.yml` (generic
-profile, local `uses:`). GitHub executes only workflows under `.github/workflows/`, so nothing in
-this directory runs in place:
+profile, local `uses:`; it exposes the opt-in `contract-gate` dispatch input). GitHub executes only
+workflows under `.github/workflows/`, so nothing in this directory runs in place:
 
 - `reusable/` — **non-runnable examples** of reusable-mode callers for the macOS/container/package
   profiles, pinned to `reusable-release.yml@v1.3.2`. Copy into `.github/workflows/`, replace the pin
@@ -78,6 +78,12 @@ Both modes start by copying a file out of `profiles/` into `.github/workflows/`;
    the caller permission union (see `docs/RELEASE_PROFILES.md` §5.1) are configured.
 5. Keep `workflows.release.profile` / `dryRun` / `ref` in `tracker.config.json` consistent with
    the caller you adopt.
+6. Optional (recommended for adopters on v1.4.0+): set `contract-gate: true` and pin `tracker-ref`
+   to the adopted release tag (v1.4.0+; earlier tags lack `scripts/adopt/**`). The reusable runs `verify-tooling` + `verify-contract` + the offline
+   `release-gate` before build, needs no new permission or secret, and fails the release on a
+   missing/stale required caller or contract violation. The open-OI half of the release gate stays
+   an explicit release-procedure step (`npm run gate:release -- --repo owner/repo`) because it needs
+   `issues: read`; see `docs/ACTIONS_CATALOG.md` §7.5 and `docs/CI_SECURITY_PROFILE.md` §3.8.
 
 **Copy mode:**
 

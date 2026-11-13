@@ -209,24 +209,32 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
   the project adopts the `docs.counts` contract (otherwise the caller is a documented no-op); the
   `e2e-fixture / e2e` context exists only in the template plumbing fixture and must not be
   required.
+- Adoption contract (`requiredWorkflows`): the six v1.4.0 callers (contract, post-merge audit, PR
+  close guard, tracker audit, E2E, counts) must be present and pinned to the exact adopted tag;
+  `verify-contract` enforces both (the exact `@v<version>` ref plus a matching `tracker-ref`; SHA and
+  no-`v` pins fail). Required caller **presence** is not the same as a required check:
+  only the contexts above are merge-required. The opt-in release gate (§3.8) can fail a release on
+  a missing/stale caller or contract violation; open `tracker-contract-exception` OIs are checked
+  by the release procedure (`gate:release --repo`).
 - Branch protection/rulesets and `tracker.config.json` `workflows.ci.requiredChecks` are the two records of required checks. The config currently stores short names (`lint`, `format`, `test`); platform protection stores full contexts (`ci / lint`, ...). Keep them in sync by convention; reconciling the short-name mapping is a T09/T12 follow-up (this profile does not edit the config).
 
 ### 3.2 Current platform state (verified 2026-11-11)
 
-The repository is now **public**. Classic branch protection is enabled on `main` with required checks:
+The repository is now **public**. Classic branch protection is enabled on `main` with required checks
+(the list below was re-verified 2026-11-13 after the `pr-close-guard / guard` migration):
 
 - `ci / ci-gate`
 - `docs-guard` (docs links/fences, transport guard, docs coverage)
+- `pr-close-guard / guard` (v1.4.0 reusable caller)
 
-Force pushes/deletions are disabled; `strict` requires branches to be current. `Release (generic)` remains disabled until T02. Audit-in-CI still needs an owner-provided project-scoped `TRACKER_TOKEN` secret; no token is committed; the optional tracker audit skips with a notice when it is absent.
+Force pushes/deletions are disabled; `strict` requires branches to be current. Audit-in-CI still needs an owner-provided project-scoped `TRACKER_TOKEN` secret; no token is committed; the optional tracker audit skips with a notice when it is absent.
 
-The v1.4.0 audit-family migration replaces the inline copied workflows with thin callers and renames
+The v1.4.0 audit-family migration replaced the inline copied workflows with thin callers and renamed
 their check contexts (`pr-close-guard` → `pr-close-guard / guard`, and the two `audit` contexts to
-`post-merge-audit / audit` and `tracker-audit / audit`). Update protection in the **same PR** that
-migrates the callers — the old `pr-close-guard` context disappears with the old workflow. The
-recommended required list becomes `ci / ci-gate`, `docs-guard`, and `pr-close-guard / guard` (the
-tracker self-config `guard.requiredChecks` carries exactly that list); `post-merge-audit / audit` is
-not a merge check and `tracker-audit / audit` stays advisory.
+`post-merge-audit / audit` and `tracker-audit / audit`). The tracker self-config
+`guard.requiredChecks` and branch protection both carry `ci / ci-gate`, `docs-guard`,
+`pr-close-guard / guard`; `post-merge-audit / audit` is not a merge check and
+`tracker-audit / audit` stays advisory.
 
 The T05 self callers do not change this repository's required set: `counts-docs.yml` is a
 documented no-op here because `tracker.config.json` declares no `docs.counts` (real-baseline
@@ -328,7 +336,7 @@ input) to the exact adopted tag. v1.4.0 is the first release that ships
 
 v1.4.0 moves the audit family onto reusable workflows with thin callers. Copy the caller you need
 from [profiles/audit](../profiles/audit/README.md) (the template dogfoods the same three callers with
-`tracker-ref: ''` self mode); pinned references use the adopted exact tag/SHA. Caller job names
+`tracker-ref: ''` self mode); pinned references use the exact adopted release tag (`@v<version>`; the contract requires the tag form). Caller job names
 produce these contexts:
 
 | Old check context | New check context | Reusable job | Self caller |
@@ -376,6 +384,40 @@ decision.
 
 Artifacts: none. All three reusables emit logs/job summaries only; tracker-audit JSON is printed to
 the log and step summary, never uploaded as an artifact.
+
+### 3.8 Release contract gate (opt-in, reusable-release)
+
+`reusable-release.yml` accepts `contract-gate` (boolean, default **false**), `tracker-ref`,
+`contract-path`, and `config-path`. When enabled, a `contract-gate` job runs
+**before build** and the build job waits for it (a disabled gate is reported as `skipped` and does
+not fail the build). The job checks out the adopter (submodules recursive), checks out `tracker-ref`
+into `.tracker` for downstream repositories, fetches the optional tracker submodule tags, and runs
+`verify-tooling`, `verify-contract`, and the offline half of `release-gate`.
+
+| Property | Contract gate |
+| --- | --- |
+| Permissions | called job declares `contents: read` only; the caller's existing `contents`/`packages`/`id-token` write grant already covers it |
+| Secrets | none |
+| Artifacts | none |
+| Failure mode | fails the release before build on missing/stale required callers, tooling drift, or a contract violation |
+| Runner | `ubuntu-latest`, 10-minute timeout |
+| Default | `false`; an existing caller that re-pins keeps its old behaviour and permission graph |
+
+Why the open-OI check is not in the reusable: the `tracker-contract-exception` OI lookup needs
+`issues: read`. GitHub validates the called workflow's permission graph even for jobs that will be
+skipped, so declaring it here would invalidate every existing release caller that grants only
+contents/packages/id-token — violating the opt-in default. The open-OI half stays an explicit
+release-procedure step: `npm run gate:release -- --repo owner/repo` (fails on open OIs). The
+reusable gate still covers the contract/required-caller/tooling half.
+
+Adopter caller shape (permissions unchanged; pin both refs to the adopted tag):
+
+```yaml
+    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.4.0
+    with:
+      contract-gate: true
+      tracker-ref: v1.4.0
+```
 
 ## 4. Security defaults
 
@@ -444,6 +486,7 @@ Secret scanning and push protection are GitHub repository settings, not workflow
 | Dependabot private registries | Dependabot secret | registry read | Dependabot secrets | Never inline in `dependabot.yml`. |
 | Tracker audit (`reusable-audit.yml`) | `TRACKER_TOKEN`/App | project **read** + repo/issues read (`project`+`repo` PAT scopes; App Projects+Metadata+Issues read) | repository secret | Optional: advisory mode without the token logs a notice and skips (exit 0); strict mode without it fails with an actionable message. JSON goes to the job log/summary — no artifacts. Never in config/logs/artifacts. |
 | Contract metadata (other profile) | `TRACKER_TOKEN`/App | project **read** (Projects + Metadata read) | repository secret | Optional: required only when the reusable-contract `metadata` job runs (`metadata: true`, default). PAT ≤90 days or a GitHub App installation token; pass explicitly by name (never `secrets: inherit`). Fork PRs receive no secret, so callers pass `metadata: false` there; rotate on the tracker token schedule; never in config/logs/artifacts. |
+| Release contract gate (opt-in) | `GITHUB_TOKEN` (automatic) | `contents: read` only | automatic | No secret and no `issues: read`; the open-OI half stays in `gate:release --repo` during the release procedure. |
 | Release publish (other profile) | `GITHUB_TOKEN`/environment/OIDC | `contents: write` | protected environment | Separate profile; dry-run first, publish explicit. |
 
 Rules:
@@ -526,6 +569,14 @@ npm test                          # ci / test
 npm run validate:config           # ci / build (template repo verification slot)
 ```
 
+Release contract-gate parity (offline, self-repo safe; add `--repo owner/repo` for the open-OI half):
+
+```bash
+npm run verify:tooling -- --root . --contract contract/adoption-contract.json --tracker-config tracker.config.json
+npm run verify:contract -- --root . --contract contract/adoption-contract.json
+npm run gate:release -- --root . --contract contract/adoption-contract.json --repo owner/repo
+```
+
 Audit-family parity (same scripts the reusables run; GitHub API read + token needed):
 
 ```bash
@@ -601,7 +652,7 @@ Rollout order for an adopting project:
 2. Push a branch, run once, capture check contexts.
 3. Enable branch protection/ruleset required checks when the platform supports it.
 4. Migrate the audit family: copy the 1–3 callers you need from [profiles/audit](../profiles/audit/README.md),
-   pin the adopted template tag/SHA, grant the documented caller permissions, and update
+   pin the adopted release tag (`@v<version>`; the contract verifier rejects SHA pins), grant the documented caller permissions, and update
    `guard.requiredChecks` + branch protection/ruleset contexts in the **same PR** — the old
    `pr-close-guard` context disappears with the inline copy.
 5. Add `dependabot.yml`; confirm version-update PRs arrive.

@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 130 |
-| Paths | 168 |
-| Shipped | 129 |
+| Entries | 131 |
+| Paths | 169 |
+| Shipped | 130 |
 | Contract-only | 1 |
 
 ## Class map
@@ -25,7 +25,7 @@
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 28 | 28 | 0 |
 | `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 8 | 8 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 60 | 60 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 61 | 61 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
@@ -138,7 +138,7 @@
 
 ### internal
 
-74 path(s) · 74 shipped · 0 contract-only.
+75 path(s) · 75 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -215,6 +215,7 @@
 | `scripts/internal/render-surface.mjs` | shipped | template | Render surface doc | — | `docs/SURFACE.md` |
 | `scripts/internal/scan-debt.mjs` | shipped | template | Scan tech debt | — | `docs/TECH_DEBT.md` |
 | `scripts/internal/surface-shared.mjs` | shipped | template | Surface shared helpers | — | `docs/SURFACE.md` |
+| `scripts/internal/verify-hygiene.mjs` | shipped | template | Tracked-file hygiene guard | — | `docs/REFERENCE.md` |
 | `scripts/internal/verify-surface.mjs` | shipped | template | Verify surface | — | `docs/DOCS_COVERAGE.md` |
 
 ### generated

@@ -82,6 +82,7 @@ export const LOCAL_STEPS = Object.freeze(
       required: true,
       optionalAlias: true,
     },
+    { id: 'hygiene', title: 'tracked-file hygiene', command: ['npm', 'run', 'guard:hygiene'], required: true },
     {
       id: 'debt',
       title: 'debt guard',

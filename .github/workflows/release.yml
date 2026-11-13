@@ -40,6 +40,13 @@ on:
         required: false
         type: boolean
         default: false
+      contract-gate:
+        description: >-
+          Opt in to the adoption-contract gate (verify-tooling + verify-contract + offline
+          release-gate) before build. Default false; the open-OI check stays a release-procedure step.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +72,12 @@ jobs:
       version: ${{ inputs.version }}
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
       publish: ${{ github.event_name == 'push' || inputs.publish }}
+      # Opt-in contract gate (v1.4.0). `tracker-ref` is ignored in this repository's self mode; an
+      # adopter copying this caller must set the exact adopted release tag (v1.4.0+; empty would
+      # make actions/checkout use the tracker default branch) and keep the caller grant at
+      # contents/packages/id-token write.
+      contract-gate: ${{ github.event_name == 'workflow_dispatch' && inputs.contract-gate || false }}
+      tracker-ref: v1.3.2
       # Template release artifact: deterministic source archive + manifest. Replace with the
       # adopting project's real build command.
       build-command: |

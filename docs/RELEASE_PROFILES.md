@@ -76,8 +76,14 @@ File: `.github/workflows/reusable-release.yml` · trigger: `workflow_call` only.
 | `release-name` | string | `''` | Empty → validated tag |
 | `draft` | boolean | `true` | Create the GitHub Release as a draft |
 | `prerelease` | boolean | `false` | Mark prerelease |
+| `contract-gate` | boolean | `false` | Opt-in adoption-contract gate before build (`verify-tooling` + `verify-contract` + offline `release-gate`) |
+| `tracker-ref` | string | `v1.3.2` | Exact template release tag for the contract gate (v1.4.0+; the contract verifier rejects SHA pins); ignored in the template repository itself |
+| `contract-path` | string | `''` | Contract path for the gate; empty auto-detects `contract/adoption-contract.json` / `.tracker/contract/adoption-contract.json` |
+| `config-path` | string | `tracker.config.json` | Tracker config path honoured by all gate steps (repository-root-relative); passed to `verify-tooling`, `verify-contract`, and `release-gate` |
 
-The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`version`, `build-command`, `node-version`, `macos-*`, `artifact-name`, `retention-days`, `release-name`, `draft`, `prerelease`) which are additive/minor under the catalog's stability policy (§7.9). The catalog page itself is owned by T14/T15 refinement; this page is authoritative for the delivered behavior.
+The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`version`, `build-command`, `node-version`, `macos-*`, `artifact-name`, `retention-days`, `release-name`, `draft`, `prerelease`) which are additive/minor under the catalog's stability policy (§7.9). T06 adds the opt-in contract-gate inputs (all optional, default off). The catalog page itself is owned by T14/T15 refinement; this page is authoritative for the delivered behavior.
+
+**Contract gate (T06):** `contract-gate: true` runs a `contract-gate` job before `build`; build waits for it but treats a disabled gate (`skipped`) as success, so default `false` is unchanged. The job requests `contents: read` only and uses no secret; it checks out the adopter (submodules recursive), checks out `tracker-ref` into `.tracker` downstream, fetches the optional submodule tags, and runs `verify-tooling`, `verify-contract`, and the offline half of `release-gate`. The open `tracker-contract-exception` OI half stays the release-procedure step `npm run gate:release -- --repo owner/repo` because it needs `issues: read`; declaring that in the reusable would invalidate existing callers' permission grants (GitHub validates the graph even for skipped jobs). Enabling the gate therefore needs no caller permission change — pin `tracker-ref` to the adopted tag and keep the existing union.
 
 ### 3.2 Outputs
 
@@ -105,7 +111,7 @@ The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`ver
 
 ### 3.4 Permissions, environment, runners
 
-- Workflow-level `permissions: {}`. Callers must grant the union needed by the called jobs: `contents: write` for generic/macos; `contents: read` + `packages: write` for container; `contents: read` + `id-token: write` for package. Called jobs can only reduce the caller grant.
+- Workflow-level `permissions: {}`. Callers must grant the union needed by the called jobs: `contents: write` for generic/macos; `contents: read` + `packages: write` for container; `contents: read` + `id-token: write` for package. Called jobs can only reduce the caller grant. The opt-in `contract-gate` job declares `contents: read` only, so it adds nothing to the caller union (enabling it does not require re-granting permissions; the open-OI half stays in the release procedure).
 - Called publish/signing jobs run with `environment: release`. Callers cannot set the environment on a reusable-workflow job (GitHub restriction) — it is declared inside the reusable workflow, which is why the environment name is part of the contract.
 - Runners: `ubuntu-latest` except the macos profile (`macos-15` by default; override with `macos-runner`).
 - No concurrency is set on the reusable workflow; callers set `concurrency: release-${{ github.ref }}` with `cancel-in-progress: false` (never cancel a publish halfway).
@@ -115,6 +121,7 @@ The §7.5 catalog contract lists the stable core; T10 adds optional inputs (`ver
 | Job | Profile | What it does |
 |---|---|---|
 | `prepare` | all | Validate inputs, resolve version/tag, enforce guards, compute runner/artifact names |
+| `contract-gate` | all (opt-in) | When `contract-gate: true`: checkout + `tracker-ref`, submodule tags, `verify-tooling`, `verify-contract`, offline `release-gate`; `build` waits for it and tolerates `skipped` |
 | `build` | all | Checkout (tag commit checked when publishing), profile build command/default, fail if no artifacts match, upload artifacts |
 | `sign-macos` | macos (publish only) | Import cert into an ephemeral keychain, codesign, notarize + staple, re-upload signed artifacts; ad-hoc fallback with warning when credentials are absent |
 | `checksum` | generic, macos, package | Download artifacts (signed when signing ran), generate sorted checksums, self-verify, upload `release-bundle` |
@@ -288,7 +295,7 @@ Outputs: `signed-path` (empty when skipped), `notarized` (`'true'`/`'false'`). G
 Run before enabling any publish path (T12 captures evidence for the template release; adopters repeat for their project):
 
 - [ ] YAML parses (`python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))' <file>`) for every workflow/action.
-- [ ] Release caller copied into `.github/workflows/` from `profiles/release/reusable/` (reusable mode, pinned exact tag/SHA) or `profiles/release/copy/` (copy mode); no file under `profiles/` is expected to execute in place.
+- [ ] Release caller copied into `.github/workflows/` from `profiles/release/reusable/` (reusable mode, pinned exact release tag — the adoption contract requires the tag form) or `profiles/release/copy/` (copy mode); no file under `profiles/` is expected to execute in place.
 - [ ] `actionlint .github/workflows/*.yml` passes in an environment that has it (not available in the authoring environment for T10; T15/T12 must run it on real workflows).
 - [ ] `npm test` passes, including `tests/release-profiles.test.mjs` (structural guards: dry-run defaults, publish guards, tag pattern, environment, pinned SHAs, no secrets).
 - [ ] `npm run validate:config` passes (release config keys remain schema-valid).

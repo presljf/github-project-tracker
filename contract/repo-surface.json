@@ -1611,6 +1611,23 @@
       ]
     },
     {
+      "id": "script:verify-hygiene",
+      "path": "scripts/internal/verify-hygiene.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Tracked-file hygiene guard",
+      "summary": "Fails on tracked symlinks or tracked paths matched by .gitignore (catches the T05 node_modules-symlink class).",
+      "docs": [
+        "docs/REFERENCE.md"
+      ],
+      "aliases": [
+        "guard:hygiene"
+      ]
+    },
+    {
       "id": "contract:debt-register",
       "path": "contract/debt-register.json",
       "class": "internal",

@@ -43,8 +43,11 @@ Once branch protection is available, require this check (`Tracker guard / guard`
 
 The audit family follows the same no-copy model as the transport guard: only thin callers live in
 the adopting repository, and the implementation runs from the pinned tracker checkout. v1.4.0 ships
-them as reusable workflows; copy the caller examples from [profiles/audit](../profiles/audit/README.md)
-and pin both the `uses:` ref and the `tracker-ref` input to the adopted tag.
+them as reusable workflows and makes all three **required callers** in the adoption contract
+(`requiredWorkflows`); copy the caller examples from
+[profiles/audit](../profiles/audit/README.md) and pin both the `uses:` ref and the `tracker-ref`
+input to the adopted tag. `verify-contract` fails a missing or non-pinned caller; check contexts
+stay caller-defined.
 
 | Workflow | Caller | Check context | Caller job permissions |
 |---|---|---|---|
@@ -60,6 +63,19 @@ contexts must not be required side by side). Workflow contracts: [ACTIONS CATALO
 §2](./ACTIONS_CATALOG.md#2-workflow-catalog) and §7.6 (tracker audit), §7.11 (post-merge
 audit), §7.12 (PR close guard); permission and check-context details:
 [CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md).
+
+## Adopting project: release contract gate (opt-in)
+
+`reusable-release.yml` carries the same no-copy contract for releases: set `contract-gate: true`
+and `tracker-ref: <adopted tag>` on the release caller and the reusable runs `verify-tooling` +
+`verify-contract` + the offline `release-gate` before build. It needs no new permission
+(`contents: read` only) and no secret; the default `false` keeps old caller permission graphs valid.
+The open `tracker-contract-exception` OI check needs `issues: read` and stays an explicit
+release-procedure step (`npm run gate:release -- --repo owner/repo`) — see
+[ACTIONS CATALOG §7.5](./ACTIONS_CATALOG.md#75-release-workflow-contract) and
+[CI/SECURITY PROFILE §3.8](./CI_SECURITY_PROFILE.md#38-release-contract-gate-opt-in-reusable-release).
+The release caller's own `guard.requiredChecks[]` and branch-protection contexts still need the
+v1.4.0 names (`pr-close-guard / guard`, etc.).
 
 ## Local projects
 

@@ -3,7 +3,7 @@
 # Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
 # lives under profiles/. Copy it into your repository's .github/workflows/counts-docs.yml, replace
 # both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input) with the
-# exact tag/SHA you adopted (v1.4.0+ — the first release that ships reusable-counts.yml), and update
+# exact release tag (`@v<version>`) you adopted (v1.4.0+ — the first release that ships reusable-counts.yml), and update
 # the required checks if you promote it (context `counts-docs / counts`).
 #
 # Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-counts.yml

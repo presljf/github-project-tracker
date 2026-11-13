@@ -5,7 +5,9 @@ output instead of remembered prose: every suite/mode records `collected / passed
 skipped / flaky`, every non-zero skip is named and agreed, and CI fails when reality, the baseline,
 the generated doc, or inline markers drift.
 
-Absent `docs.counts` config is a no-op; existing projects keep current behaviour.
+Absent `docs.counts` config is a no-op; existing projects keep current behaviour. The
+`counts-docs.yml` caller is a `requiredWorkflows` entry in the v1.4.0 adoption contract (presence +
+pin enforced); without `docs.counts` it stays a documented no-op and must not be a required check.
 
 ## 1. Config
 
@@ -68,12 +70,13 @@ gives a machine-readable result. Flaky > 0 always fails. Unknown/malformed runne
 The docs-side half of the contract ships as a pinned reusable workflow
 (`.github/workflows/reusable-counts.yml`); the counted-runner suite job stays adopter-side. Copy
 [`counts-docs.yml`](./counts-docs.yml) into `.github/workflows/` and replace both pinned `@v1.3.2`
-refs (the `uses:` reusable-workflow ref and the `tracker-ref` input) with the exact tag/SHA you
+refs (the `uses:` reusable-workflow ref and the `tracker-ref` input) with the exact release tag
+(`@v<version>`; the contract requires the tag form and a matching `tracker-ref`) you
 adopted (v1.4.0+ — the first release that ships it).
 
 | Input | Type | Default | Meaning |
 |---|---|---|---|
-| `tracker-ref` | string | `v1.3.2` | Exact tag/SHA to load `guard-docs-counts.mjs` from (ignored in the template repo itself). |
+| `tracker-ref` | string | `v1.3.2` | Exact release tag to load `guard-docs-counts.mjs` from (ignored in the template repo itself). |
 | `config-path` | string | `tracker.config.json` | Tracker config path (repository-root-relative); `docs.counts` configures the contract. |
 | `runs-on` | string | `ubuntu-latest` | Runner label. |
 | `node-version` | string | `'22'` | Node.js version used by the guard. |

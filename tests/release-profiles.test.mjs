@@ -372,6 +372,105 @@ test('release-profiles doc covers every required profile topic', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Opt-in adoption-contract gate (v1.4.0 T06 / issue #141)
+// ---------------------------------------------------------------------------
+function jobBlock(text, id) {
+  const marker = `\n  ${id}:\n`;
+  const start = text.indexOf(marker);
+  assert.ok(start >= 0, `job ${id} exists`);
+  const rest = text.slice(start + marker.length);
+  const next = rest.search(/\n  [a-z_][a-z0-9_]*:\n/);
+  return next >= 0 ? rest.slice(0, next) : rest;
+}
+
+test('reusable release contract gate is opt-in and stays within contents: read', () => {
+  const text = read(REUSABLE);
+  const call = text.slice(text.indexOf('workflow_call:'), text.indexOf('permissions: {}'));
+  for (const input of ['contract-gate:', 'tracker-ref:', 'contract-path:', 'config-path:']) {
+    assert.ok(call.includes(input), `reusable release declares ${input}`);
+  }
+  assert.match(call, /contract-gate:[\s\S]*?default: false/, 'contract-gate defaults false');
+  assert.match(call, /tracker-ref:[\s\S]*?default: v\d+\.\d+\.\d+/, 'tracker-ref default is a release pin');
+
+  const gate = jobBlock(text, 'contract_gate');
+  assert.match(gate, /^ {4}name: contract-gate$/m);
+  assert.match(gate, /^ {4}if: \$\{\{ inputs\.contract-gate \}\}$/m);
+  const permissions = /permissions:\n((?: {6}[^\n]*\n?)+)/.exec(gate);
+  assert.ok(permissions, 'gate job declares permissions');
+  assert.equal(permissions[1].trim(), 'contents: read');
+  // No issues: read / token / raw gh: the caller permission graph must stay valid for existing
+  // callers, and the open-OI half of release-gate is a release-procedure step.
+  assert.doesNotMatch(gate, /^\s+issues:/m);
+  assert.doesNotMatch(gate, /secrets\./);
+  assert.doesNotMatch(gate, /GH_TOKEN/);
+  assert.doesNotMatch(gate, /release-gate\.mjs[^\n]*--repo/);
+  // config-path is honoured end-to-end (verify-contract/release-gate now accept --config).
+  assert.match(gate, /verify-contract\.mjs" --root "\$GITHUB_WORKSPACE" --contract "\$CONTRACT" --config "\$CONFIG"/);
+  assert.match(gate, /release-gate\.mjs" --root "\$GITHUB_WORKSPACE" --contract "\$CONTRACT" --config "\$CONFIG"/);
+  assert.doesNotMatch(gate, /inputs\.submodule-path/);
+  for (const phrase of [
+    'verify-tooling.mjs',
+    'verify-contract.mjs',
+    'release-gate.mjs',
+    'inputs.tracker-ref',
+    'CANONICAL_REPOSITORY',
+    'submodule_path=".tracker-os"',
+  ]) {
+    assert.ok(gate.includes(phrase), `gate implements: ${phrase}`);
+  }
+  for (const step of [
+    'Checkout caller repository',
+    'Checkout tracker contract and tooling',
+    'Set up Node.js',
+    'Resolve contract gate paths',
+    'Fetch pinned tracker submodule tags',
+    'Verify tooling contract',
+    'Verify adoption contract',
+    'Run release gate (offline contract half)',
+  ]) {
+    assert.ok(gate.includes(`- name: ${step}`), `gate step ${step}`);
+  }
+});
+
+test('build waits for the contract gate but tolerates it being disabled', () => {
+  const build = jobBlock(read(REUSABLE), 'build');
+  assert.match(build, /^ {4}needs: \[prepare, contract_gate\]$/m);
+  assert.match(build, /needs\.prepare\.result == 'success'/);
+  assert.match(build, /needs\.contract_gate\.result == 'success'/);
+  assert.match(build, /needs\.contract_gate\.result == 'skipped'/);
+  assert.match(build, /!cancelled\(\)/);
+});
+
+test('generic caller exposes the gate off by default and pins tracker-ref to the template version', () => {
+  const text = read(CALLERS[0]);
+  const trigger = workflowTriggerSection(text);
+  assert.match(trigger, /contract-gate:[\s\S]*?default: false/, 'caller gate input defaults false');
+  assert.match(
+    text,
+    /contract-gate: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.contract-gate \|\| false \}\}/,
+  );
+  const config = JSON.parse(read('tracker.config.json'));
+  assert.ok(
+    text.includes(`tracker-ref: v${config.automation.templateVersion}`),
+    'caller pins the checked-in template version',
+  );
+});
+
+test('release profile examples expose the gate off by default and pin tracker-ref', () => {
+  for (const [file] of [
+    ['profiles/release/reusable/release-macos.yml', 'macos'],
+    ['profiles/release/reusable/release-container.yml', 'container'],
+    ['profiles/release/reusable/release-package.yml', 'package'],
+  ]) {
+    const text = read(file);
+    const trigger = workflowTriggerSection(text);
+    assert.match(trigger, /contract-gate:[\s\S]*?default: false/, `${file} gate input defaults false`);
+    assert.match(text, /contract-gate: \$\{\{ inputs\.contract-gate \}\}/, `${file} passes the gate input`);
+    assert.match(text, /tracker-ref: v\d+\.\d+\.\d+/, `${file} pins tracker-ref`);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Secret hygiene and docs links
 // ---------------------------------------------------------------------------
 test('no literal credentials or private keys in the new release files', () => {

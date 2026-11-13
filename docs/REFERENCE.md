@@ -653,7 +653,7 @@ caller examples live under `profiles/` and are never executed in place.
 | PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | PR opened/edited/synchronize/reopened/labeled/unlabeled | required for task PRs | Linux | contents:read, issues:read, pull-requests:read | none | context `pr-close-guard / guard`; rejects wrong closing targets |
 | E2E plumbing fixture — `e2e-fixture.yml` → `reusable-e2e.yml` | `workflow_dispatch` only | template-only (never required) | Linux | contents:read | none | context `e2e-fixture / e2e`; browsers `none` + trivial command |
 | Contract verification (`reusable-contract.yml`) | `workflow_call` (consumed by `tracker-contract` callers) | contract required; metadata project-defined | Linux | contents:read | optional `TRACKER_TOKEN` (metadata; Projects + Metadata read) | contract fails merge; metadata advisory |
-| Release | tag `v*`/dispatch | release gate | OS-specific | contents:write | environment/OIDC | block publish |
+| Release | tag `v*`/dispatch | release gate; opt-in `contract-gate` before build | OS-specific | contents:write; contract gate contents:read only | environment/OIDC; no secret for the contract gate | block publish; enabled gate fails on required-caller/tooling/contract violations |
 | Security | PR/schedule | Dependabot/dependency review default; CodeQL opt-in | Linux | security-events:write for CodeQL | none | advisory/required per project |
 
 **Tag-only contract releases (this template repository):** the generic tag-triggered Release
@@ -694,6 +694,10 @@ see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 - Audit family: `post-merge-audit / audit` is advisory (it opens an OI instead of a red check);
   `tracker-audit / audit` is advisory on PRs/schedule and may be promoted to release-gate strict
   mode only after the board is stable.
+- Required callers (v1.4.0): the adoption contract's `requiredWorkflows` names six reusables
+  (contract, post-merge audit, PR close guard, tracker audit, E2E, counts) that must be present and
+  pinned; `verify-contract` enforces presence + exact pin. Presence is not a required check — use
+  the contexts above for merge gating. See [ACTIONS CATALOG §7.14](./ACTIONS_CATALOG.md#714-required-adoption-contract-v140).
 - Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
 
 ## 14. Token and secret matrix
@@ -725,11 +729,15 @@ line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards
 
 ### Release gate
 
-`npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract and
-refuses release when any open `tracker-contract-exception` OI exists. Downstream release workflows
-must run this gate before a dispatch/tag publish. In the contract's own repository the gate prints
+`npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract
+(including the six required callers) and refuses release when any open
+`tracker-contract-exception` OI exists. Downstream release workflows must run this gate before a
+dispatch/tag publish, or opt into the reusable offline half with `contract-gate: true` +
+`tracker-ref: <adopted tag>` on `reusable-release.yml` (no new permission/secret; build waits for
+the gate). The open-OI half still needs the `--repo` procedure step because it requires
+`issues: read`. In the contract's own repository the gate prints
 `self-repo: downstream contract checks skipped` (see the adoption contract verifier above) and is
-used for the v1.3.0 release evidence.
+used for the v1.3.0/v1.4.0 release evidence.
 
 ### Post-merge bypass audit
 
@@ -791,6 +799,10 @@ board's linked PRs consistent. Local parity:
 `npm run verify:contract -- --root <downstream> --contract contract/adoption-contract.json`
 checks the pinned template version, required config paths/profiles/docs, exact reusable workflow
 refs, and OI-linked overrides (`tracker.overrides.json`). Missing/expired overrides or stale refs fail.
+v1.4.0 adds six `requiredWorkflows` entries (contract, post-merge audit, PR close guard, tracker
+audit, E2E, counts); each must be present and pinned to `@v<trackerVersion>` (the contract version,
+which `release:bump` updates with `automation.templateVersion`). The checks are presence + pin only;
+caller job names/triggers stay adopter-owned.
 
 When the repo under inspection **is the contract's own repository**
 (`config.repository === contract.repository`), the verifier prints an explicit
@@ -798,7 +810,7 @@ When the repo under inspection **is the contract's own repository**
 (required profile/docs/workflow pins) and still enforces `templateVersion`/`requiredConfig`
 alignment. Downstream repositories keep the full check set; `release-gate` passes the self-repo
 result through with the same note. This is what lets `release:bump` + `gate:release` (and
-`stream.mjs close`'s default gate command) run inside the tracker repo (T06 prerequisite).
+`stream.mjs close`'s default gate command) run inside the tracker repo for the v1.4.0 release.
 
 ### Repo-surface verifier
 
@@ -971,9 +983,10 @@ going), captures per-step output tails, and prints `GATE_LOCAL_OK n/n` on succes
 | 11 | dependency guard | `npm run guard:deps` | skipped with notice when `origin/main` is unavailable |
 | 12 | repo-surface guard | `npm run verify:surface -- --root . --require-manifest` | |
 | 13 | repo surface check | `npm run surface:check` | skipped with notice when the alias is not defined |
-| 14 | debt guard | `npm run guard:debt` | skipped with notice when the alias is not defined |
-| 15 | docs coverage | `node scripts/adopt/docs/guard-docs.mjs --base ${GATE_LOCAL_BASE:-origin/main}` | skipped with notice when the base ref is unresolved |
-| 16 | counts guard | `npm run guard:docs:counts` | no-op expected when `docs.counts` is absent |
+| 14 | tracked-file hygiene | `npm run guard:hygiene` | fails on tracked symlinks or tracked paths matched by `.gitignore` (the T05 `node_modules`-symlink class) |
+| 15 | debt guard | `npm run guard:debt` | skipped with notice when the alias is not defined |
+| 16 | docs coverage | `node scripts/adopt/docs/guard-docs.mjs --base ${GATE_LOCAL_BASE:-origin/main}` | skipped with notice when the base ref is unresolved |
+| 17 | counts guard | `npm run guard:docs:counts` | no-op expected when `docs.counts` is absent |
 
 Options/env:
 

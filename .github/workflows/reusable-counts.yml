@@ -22,7 +22,7 @@ on:
   workflow_call:
     inputs:
       tracker-ref:
-        description: Exact template tag/SHA to load the counts guard from (ignored in the template repo itself).
+        description: Exact template release tag (`@v<version>`) to load the counts guard from (ignored in the template repo itself).
         required: false
         type: string
         default: v1.3.2

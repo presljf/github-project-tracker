@@ -11,11 +11,12 @@ checks) — while keeping the same two verification outcomes.
 - Reusable workflow: [`.github/workflows/reusable-contract.yml`](../../.github/workflows/reusable-contract.yml).
 - Template's own caller (dogfooding): [`.github/workflows/tracker-contract.yml`](../../.github/workflows/tracker-contract.yml).
 
-Adopting this caller is the v1.4.0 contract-verification path (required adoption step; see
-[ADOPTION](../../docs/ADOPTION.md)). v1.4.0 is the first release that ships
+Adopting this caller is the v1.4.0 contract-verification path (a `requiredWorkflows` entry;
+presence + exact pin enforced by `verify-contract`; see [ADOPTION](../../docs/ADOPTION.md)). v1.4.0
+is the first release that ships
 `reusable-contract.yml`; older pins keep their old copied workflows. `profiles/` is never executed
-by GitHub: copy the caller into `.github/workflows/` and pin the adopted template tag/SHA before it
-can run.
+by GitHub: copy the caller into `.github/workflows/` and pin the adopted release tag (`@v<version>`;
+the requiredWorkflows check rejects SHA pins) before it can run.
 
 ## What it verifies
 
@@ -34,7 +35,7 @@ Check contexts produced by a caller job named `tracker-contract`:
 
 | Input | Type | Default | Meaning |
 |---|---|---|---|
-| `tracker-ref` | string | `v1.3.2` | Exact template tag/SHA to load the adoption contract and verification tooling from. Downstream: the tag you adopted. Self mode (`tracker-ref: ''`): the caller checkout. |
+| `tracker-ref` | string | `v1.3.2` | Exact template release tag to load the adoption contract and verification tooling from (must match the `uses:` tag). Downstream: the tag you adopted. Self mode (`tracker-ref: ''`): the caller checkout. |
 | `config-path` | string | `tracker.config.json` | Tracker config path (working-directory-relative; default `.` = repository root). Affects `verify-tooling` only. |
 | `contract-path` | string | `''` | Adoption contract path (working-directory-relative or absolute). Empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream. |
 | `runs-on` | string | `ubuntu-latest` | Runner label for both jobs. |
@@ -82,7 +83,7 @@ otherwise.
 
 1. Copy [tracker-contract.yml](./tracker-contract.yml) to `.github/workflows/tracker-contract.yml`;
    replace **both** pinned `@v1.3.2` refs (the `uses:` reusable-workflow ref and `tracker-ref`)
-   with the exact tag/SHA you adopted — `v1.4.0` is the first release that ships
+   with the exact release tag (`@v<version>`) you adopted — `v1.4.0` is the first release that ships
    `reusable-contract.yml`, so the tag must contain it.
 2. Keep the `metadata:` expression (`false` on pull requests, `true` on `push` to `main` and
    `workflow_dispatch`); optionally add `version-guard-command` if you already trust a local
@@ -129,7 +130,7 @@ GH_TOKEN=... npm run verify:metadata -- --repo owner/repo --contract contract/ad
   (prefer SHA if tags are not protected).
 - The reusable workflow's self mode is keyed on the canonical repository slug
   (`presljf/github-project-tracker`), which is why the template's own caller passes
-  `tracker-ref: ''`. Downstream adopters always pass the adopted tag/SHA.
+  `tracker-ref: ''`. Downstream adopters always pass the adopted release tag.
 - Metadata is a live GitHub read: a missing token, missing `project.number`, unreadable project, or
   contract mismatch fails the job; there is no silent skip when `metadata: true`.
 - Contract checks run with `submodules: recursive` on the adopter checkout. Downstream runs check
