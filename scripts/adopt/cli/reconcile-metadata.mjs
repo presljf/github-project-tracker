@@ -2,12 +2,24 @@
 /** Reconcile project metadata to the Tracker OS canonical contract. */
 import fs from 'node:fs';
 import { GitHubCli } from '../lib/github.mjs';
+import { UsageError } from '../lib/cli.mjs';
 
 const RELEASE_LEGACY = /^\[([^\]]+)\]\s+Release\b(.*)$/i;
 const SPRINT_LEGACY = /^\[([^\]]+)\]\s+Sprint\b(.*)$/i;
 const RELEASE_CANONICAL = /^\[Release\]\s+([^\s—-]+)/i;
 const SPRINT_CANONICAL = /^\[Sprint\]\s+([^\s—-]+)/i;
 const TASK = /^\[([^\]]*?-T\d+)\]/i;
+
+/**
+ * Resolve the reconciled repo from `--repo` or `GITHUB_REPOSITORY`. Generic CLIs carry no hardcoded
+ * repository default; a missing value is an actionable usage error, not a silent personal repo.
+ */
+export function resolveRepoArgument({ repo = null, env = process.env } = {}) {
+  const value = String(repo ?? '').trim() || String(env?.GITHUB_REPOSITORY ?? '').trim();
+  if (!/^[^/\s]+\/[^/\s]+$/.test(value))
+    throw new UsageError('repo is required: pass --repo owner/repo or set GITHUB_REPOSITORY (no hardcoded default)');
+  return value;
+}
 
 export function canonicalTitle(title = '') {
   let m = title.match(RELEASE_LEGACY);
@@ -94,7 +106,17 @@ function main() {
     const i = args.indexOf(`--${n}`);
     return i >= 0 ? args[i + 1] : d;
   };
-  const repo = get('repo', 'presljf/castdeck');
+  let repo;
+  try {
+    repo = resolveRepoArgument({ repo: get('repo', null) });
+  } catch (error) {
+    if (error instanceof UsageError) {
+      console.error(`error: ${error.message}`);
+      process.exitCode = 2;
+      return;
+    }
+    throw error;
+  }
   const [owner, name] = repo.split('/');
   const includeClosed = args.includes('--include-closed');
   const repair = get('repair', 'none');

@@ -1,0 +1,22 @@
+{
+  "register": {
+    "schemaVersion": 1,
+    "policy": { "blockingClasses": ["shim", "monkey-patch", "temp-fix"], "reviewCadence": "monthly" },
+    "entries": [
+      {
+        "id": "case-002",
+        "class": "shim",
+        "pointer": "scripts/ok.mjs:1",
+        "owner": "",
+        "expiry": "2099-01-01",
+        "reason": "unlabeled blocking-class debt",
+        "status": "accepted",
+        "risk": "low",
+        "effort": "S",
+        "decision": "register",
+        "detectedBy": "manual"
+      }
+    ]
+  },
+  "expect": { "errors": ["DEBT_OWNER_MISSING", "DEBT_SHIM_UNLABELED"] }
+}

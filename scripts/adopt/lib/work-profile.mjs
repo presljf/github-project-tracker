@@ -12,7 +12,7 @@
 export const WORK_PROFILES = ['product', 'tooling'];
 export const DEFAULT_WORK_PROFILE = 'product';
 /** Fields every project item must carry, independent of profile. */
-export const CORE_FIELDS = ['Area', 'Kind', 'Estimate'];
+const CORE_FIELDS = ['Area', 'Kind', 'Estimate'];
 
 export function resolveWorkProfile(config = {}) {
   const name = config.workProfile === undefined ? DEFAULT_WORK_PROFILE : config.workProfile;
@@ -25,7 +25,7 @@ export function resolveWorkProfile(config = {}) {
 }
 
 /** Project field name used for the delivery container; config-declared (`fields.Stream.name`). */
-export function streamFieldName(config = {}) {
+function streamFieldName(config = {}) {
   return config.fields?.Stream?.name || 'Stream';
 }
 

@@ -84,11 +84,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
         with:
           node-version: ${{ inputs.node-version }}
-          package-manager-cache: false
+          working-directory: ${{ inputs.working-directory }}
+          cache: 'false'
+          install-dependencies: 'false'
       - name: Detect lockfile
         id: lockfile
         env:
@@ -234,23 +243,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
         with:
           node-version: ${{ inputs.node-version }}
-          package-manager-cache: false
-          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          working-directory: ${{ inputs.working-directory }}
+          package-manager: npm
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' }}
           cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
-      - name: Install dependencies
-        env:
-          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
-        run: |
-          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
-            echo "::notice::Skipping dependency install (no install command resolved)."
-            exit 0
-          fi
-          echo "+ ${INSTALL_COMMAND}"
-          bash -euo pipefail -c "${INSTALL_COMMAND}"
+          install-dependencies: 'true'
+          install-command: ${{ needs.prepare.outputs.installCommand }}
       - name: Run lint
         env:
           COMMAND: ${{ needs.prepare.outputs.lintCommand }}
@@ -276,23 +285,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
         with:
           node-version: ${{ inputs.node-version }}
-          package-manager-cache: false
-          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          working-directory: ${{ inputs.working-directory }}
+          package-manager: npm
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' }}
           cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
-      - name: Install dependencies
-        env:
-          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
-        run: |
-          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
-            echo "::notice::Skipping dependency install (no install command resolved)."
-            exit 0
-          fi
-          echo "+ ${INSTALL_COMMAND}"
-          bash -euo pipefail -c "${INSTALL_COMMAND}"
+          install-dependencies: 'true'
+          install-command: ${{ needs.prepare.outputs.installCommand }}
       - name: Run format check
         env:
           COMMAND: ${{ needs.prepare.outputs.formatCommand }}
@@ -318,23 +327,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
         with:
           node-version: ${{ inputs.node-version }}
-          package-manager-cache: false
-          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          working-directory: ${{ inputs.working-directory }}
+          package-manager: npm
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' }}
           cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
-      - name: Install dependencies
-        env:
-          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
-        run: |
-          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
-            echo "::notice::Skipping dependency install (no install command resolved)."
-            exit 0
-          fi
-          echo "+ ${INSTALL_COMMAND}"
-          bash -euo pipefail -c "${INSTALL_COMMAND}"
+          install-dependencies: 'true'
+          install-command: ${{ needs.prepare.outputs.installCommand }}
       - name: Run tests
         env:
           COMMAND: ${{ needs.prepare.outputs.testCommand }}
@@ -360,23 +369,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Checkout tracker action source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .tracker-actions
+          persist-credentials: false
+      - name: Set up Node and dependencies
+        uses: ./.tracker-actions/.github/actions/setup-node-cache
         with:
           node-version: ${{ inputs.node-version }}
-          package-manager-cache: false
-          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' && 'npm' || '' }}
+          working-directory: ${{ inputs.working-directory }}
+          package-manager: npm
+          cache: ${{ needs.prepare.outputs.lockfileKind == 'npm' }}
           cache-dependency-path: ${{ needs.prepare.outputs.lockfilePath }}
-      - name: Install dependencies
-        env:
-          INSTALL_COMMAND: ${{ needs.prepare.outputs.installCommand }}
-        run: |
-          if [ -z "${INSTALL_COMMAND:-}" ] || [ "${INSTALL_COMMAND}" = "none" ]; then
-            echo "::notice::Skipping dependency install (no install command resolved)."
-            exit 0
-          fi
-          echo "+ ${INSTALL_COMMAND}"
-          bash -euo pipefail -c "${INSTALL_COMMAND}"
+          install-dependencies: 'true'
+          install-command: ${{ needs.prepare.outputs.installCommand }}
       - name: Run build or verification
         env:
           COMMAND: ${{ needs.prepare.outputs.buildCommand }}

@@ -1,0 +1,33 @@
+{
+  "register": {
+    "schemaVersion": 1,
+    "policy": {
+      "blockingClasses": [
+        "shim",
+        "monkey-patch",
+        "temp-fix"
+      ],
+      "reviewCadence": "monthly"
+    },
+    "entries": [
+      {
+        "id": "case-001",
+        "class": "hardcoded-env",
+        "pointer": "scripts/ok.mjs:1",
+        "owner": "@case",
+        "expiry": "2020-01-01",
+        "reason": "expired accepted debt",
+        "status": "accepted",
+        "risk": "low",
+        "effort": "S",
+        "decision": "register",
+        "detectedBy": "manual"
+      }
+    ]
+  },
+  "expect": {
+    "errors": [
+      "DEBT_EXPIRED"
+    ]
+  }
+}

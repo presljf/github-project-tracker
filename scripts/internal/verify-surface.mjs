@@ -10,7 +10,8 @@
  *     runnable release caller
  *   - copy-mode class only under profiles/ and (for YAML) carries a `COPY-MODE EXAMPLE` header
  *   - catalog reusable claims match the manifest; reusable workflows/actions are documented;
- *     catalog §66 shipped/contract-only claims agree with manifest status
+ *     the generated `surface-status` block matches renderCatalogStatusBlock(entries) exactly
+ *     (tolerant prose parser kept as the pre-migration fallback)
  *   - manifest docs anchors resolve (same heading-slug algorithm as check-docs.mjs)
  *   - generated entries live under generatedRoots and declare an existing generatedBy script
  * Advisory (warnings; fail only with --strict):
@@ -24,19 +25,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs, UsageError, jsonOut } from '../adopt/lib/cli.mjs';
+import {
+  AUDIENCES,
+  CATALOG_STATUS_END_MARKER,
+  CATALOG_STATUS_START_MARKER,
+  CLASSES,
+  STATUSES,
+  renderCatalogStatusBlock,
+} from './surface-shared.mjs';
+
+export { AUDIENCES, CLASSES, STATUSES };
 
 export const SURFACE_SCHEMA_VERSION = 1;
-export const CLASSES = [
-  'reusable-workflow',
-  'reusable-action',
-  'copy-mode',
-  'adopter-cli',
-  'adopter-lib',
-  'internal',
-  'generated',
-];
-export const STATUSES = ['shipped', 'contract-only'];
-export const AUDIENCES = ['template', 'adopter'];
 
 const DEFAULT_SCOPE_CLASSIFY = [
   '.github/workflows/',
@@ -353,6 +353,26 @@ function isWorkflowToken(token) {
   return /^[a-z0-9][a-z0-9-]*\.ya?ml$/i.test(token) || /^[a-z0-9][a-z0-9-]*$/i.test(token);
 }
 
+/** Extract the generated availability block (including markers); null when absent or malformed. */
+export function extractCatalogStatusBlock(text) {
+  const source = String(text ?? '');
+  const start = source.indexOf(CATALOG_STATUS_START_MARKER);
+  if (start < 0) return null;
+  const end = source.indexOf(CATALOG_STATUS_END_MARKER, start + CATALOG_STATUS_START_MARKER.length);
+  if (end < 0) return null;
+  return source.slice(start, end + CATALOG_STATUS_END_MARKER.length);
+}
+
+/** Normalize a generated block for exact comparison (CRLF + trailing-whitespace insensitive). */
+export function normalizeCatalogStatusBlock(block) {
+  return String(block ?? '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .trim();
+}
+
 function catalogChecks({ root, entries, errors, warnings, notes }) {
   const rel = 'docs/ACTIONS_CATALOG.md';
   const text = readText(root, rel);
@@ -409,7 +429,28 @@ function catalogChecks({ root, entries, errors, warnings, notes }) {
       });
     }
   }
-  // 3. Catalog §66 shipped-vs-contract-only claims must agree with manifest status.
+  // 3. Generated availability block: exact comparison with the shared renderer.
+  //    The tolerant prose parser below is kept only as a pre-migration fallback (catalogs that
+  //    do not yet carry the generated block) so T01 fixtures/catalogs stay green.
+  const generatedBlock = extractCatalogStatusBlock(text);
+  if (generatedBlock !== null) {
+    const expectedBlock = renderCatalogStatusBlock(entries);
+    if (normalizeCatalogStatusBlock(generatedBlock) !== normalizeCatalogStatusBlock(expectedBlock)) {
+      errors.push({
+        code: 'SURFACE_CATALOG_STATUS_BLOCK_DRIFT',
+        severity: 'error',
+        path: rel,
+        message:
+          'catalog surface-status block drifted from contract/repo-surface.json; run `npm run surface:render` and refresh the block from renderCatalogStatusBlock(entries)',
+      });
+    }
+    return;
+  }
+  notes.push(
+    'catalog generated surface-status block not found; using tolerant shipped-vs-contract-only parser (fallback)',
+  );
+  // 3b. Tolerant fallback: hand-written shipped-vs-contract-only prose claims must agree with
+  //     the manifest. Kept for catalogs that predate the generated block.
   const markerLine = text.split(/\r?\n/).find((line) => /shipped vs contract-only/i.test(line));
   if (!markerLine) {
     notes.push('catalog status paragraph not found; SURFACE_CATALOG_STATUS_MISMATCH skipped (tolerant)');

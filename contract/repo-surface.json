@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "generatedRoots": [
-    "docs/reference-cards/"
+    "docs/reference-cards/",
+    "docs/SURFACE.md",
+    "docs/TECH_DEBT.md"
   ],
   "scope": {
     "classify": [
@@ -62,12 +64,12 @@
       "id": "action:setup-node-cache",
       "path": ".github/actions/setup-node-cache/action.yml",
       "class": "reusable-action",
-      "status": "contract-only",
+      "status": "shipped",
       "audience": [
         "adopter"
       ],
       "title": "setup-node-cache",
-      "summary": "Documented composite-action contract (catalog §7.8); implemented in T02, not present yet.",
+      "summary": "Composite action: Node setup + dependency cache + install wrapper (extracted from reusable-ci in T02); consumed by reusable workflows via a workflow_sha self-checkout.",
       "docs": [
         "docs/ACTIONS_CATALOG.md#setup-node-cache"
       ],
@@ -1275,6 +1277,9 @@
       "summary": "Repo-surface guard: enforce contract/repo-surface.json classification rules.",
       "docs": [
         "docs/DOCS_COVERAGE.md"
+      ],
+      "aliases": [
+        "verify:surface"
       ]
     },
     {
@@ -1525,6 +1530,132 @@
       "summary": "GitHub Actions workflow tracker-audit.yml.",
       "docs": [
         "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
+      ]
+    },
+    {
+      "id": "action-doc:setup-node-cache",
+      "path": ".github/actions/setup-node-cache/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "setup-node-cache README",
+      "summary": "Usage + interface reference for the setup-node-cache composite action.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#78-composite-action-interfaces"
+      ]
+    },
+    {
+      "id": "script:surface-shared",
+      "path": "scripts/internal/surface-shared.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Surface shared helpers",
+      "summary": "Shared repo-surface constants and renderers used by verify-surface and render-surface.",
+      "docs": [
+        "docs/SURFACE.md"
+      ]
+    },
+    {
+      "id": "script:render-surface",
+      "path": "scripts/internal/render-surface.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Render surface doc",
+      "summary": "Deterministically renders docs/SURFACE.md from contract/repo-surface.json; --check verifies freshness.",
+      "docs": [
+        "docs/SURFACE.md"
+      ],
+      "aliases": [
+        "surface:check",
+        "surface:render"
+      ]
+    },
+    {
+      "id": "script:gate-local",
+      "path": "scripts/internal/gate-local.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Local gate",
+      "summary": "One-command local-first checkpoint: ordered offline gates with skip logic and GATE_LOCAL_OK summary.",
+      "docs": [
+        "docs/REFERENCE.md"
+      ],
+      "aliases": [
+        "gate:local"
+      ]
+    },
+    {
+      "id": "script:scan-debt",
+      "path": "scripts/internal/scan-debt.mjs",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Scan tech debt",
+      "summary": "Tech-debt scanner/renderer/guard over contract/debt-register.json (advisory scan, blocking --check).",
+      "docs": [
+        "docs/TECH_DEBT.md"
+      ],
+      "aliases": [
+        "scan:debt",
+        "guard:debt"
+      ]
+    },
+    {
+      "id": "contract:debt-register",
+      "path": "contract/debt-register.json",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Tech-debt register",
+      "summary": "Accepted debt/shim register with owner, expiry, risk and decision; enforced by scan-debt --check.",
+      "docs": [
+        "docs/TECH_DEBT.md"
+      ]
+    },
+    {
+      "id": "generated:surface",
+      "path": "docs/SURFACE.md",
+      "class": "generated",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "Repository surface map",
+      "summary": "Generated classification map (class/status/audience/anchors) from the repo-surface manifest.",
+      "generatedBy": "node scripts/internal/render-surface.mjs",
+      "docs": [
+        "docs/DOCS_COVERAGE.md"
+      ]
+    },
+    {
+      "id": "generated:tech-debt",
+      "path": "docs/TECH_DEBT.md",
+      "class": "generated",
+      "status": "shipped",
+      "audience": [
+        "template"
+      ],
+      "title": "Tech-debt report",
+      "summary": "Generated tech-debt register render + P4 backlog + coverage baseline.",
+      "generatedBy": "node scripts/internal/scan-debt.mjs --render",
+      "docs": [
+        "docs/AGENT_GUIDE.md"
       ]
     }
   ]

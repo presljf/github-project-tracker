@@ -52,7 +52,3 @@ export function fail(message, code = 1) {
 export function jsonOut(value) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
-
-export function logPlan(actions) {
-  for (const action of actions) console.log(action);
-}

@@ -10,3 +10,8 @@ generated/
 tmp/
 temp/
 *.tmp
+
+# tracker checkouts used by reusable workflows / local adopter runs
+.tracker-actions/
+.tracker-guard/
+.tracker/

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyTitle, evaluateMetadata } from '../scripts/adopt/cli/verify-metadata.mjs';
+import { classifyTitle, evaluateMetadata, resolveRepoArgument } from '../scripts/adopt/cli/verify-metadata.mjs';
 
 const contract = {
   metadata: {
@@ -77,4 +77,12 @@ test('explicit issue exceptions are excluded from metadata checks', () => {
   ];
   const exceptions = [{ issues: [2], repo: 'o/r' }];
   assert.equal(evaluateMetadata({ contract, issueTypes, fields, issues, exceptions }).ok, true);
+});
+
+test('repo argument resolves from --repo or GITHUB_REPOSITORY and never defaults silently', () => {
+  assert.equal(resolveRepoArgument({ repo: 'owner/repo', env: {} }), 'owner/repo');
+  assert.equal(resolveRepoArgument({ repo: '', env: { GITHUB_REPOSITORY: 'env/repo' } }), 'env/repo');
+  assert.equal(resolveRepoArgument({ repo: 'flag/repo', env: { GITHUB_REPOSITORY: 'env/repo' } }), 'flag/repo');
+  assert.throws(() => resolveRepoArgument({ repo: null, env: {} }), /repo is required: pass --repo owner\/repo/);
+  assert.throws(() => resolveRepoArgument({ repo: 'not-a-repo', env: {} }), /repo is required/);
 });

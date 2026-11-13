@@ -16,6 +16,7 @@ Read in this order depending on your goal:
 | Operate as an agent | [AGENT GUIDE](./AGENT_GUIDE.md) |
 | Use the task CLI | [TASK CLI](./TASK_CLI.md) |
 | Work on CI/security/actions | [ACTIONS CATALOG](./ACTIONS_CATALOG.md) · [CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md) |
+| Inspect the repo surface (classes, status, audiences, anchors) | [SURFACE](./SURFACE.md) — generated from `contract/repo-surface.json` |
 | Release a project | [RELEASE PROFILES](./RELEASE_PROFILES.md) |
 | Print quick-reference cards | [Reference cards](./reference-cards/README.md) |
 | Use the repository as a template | [TEMPLATE REPO](./TEMPLATE_REPO.md) |

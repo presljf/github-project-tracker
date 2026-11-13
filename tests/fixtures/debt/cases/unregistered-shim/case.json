@@ -1,0 +1,11 @@
+{
+  "register": {
+    "schemaVersion": 1,
+    "policy": { "blockingClasses": ["shim", "monkey-patch", "temp-fix"], "reviewCadence": "monthly" },
+    "entries": []
+  },
+  "files": {
+    "scripts/bad.mjs": "// @deprecated temporary compatibility shim\nexport const legacyThing = 1;\n"
+  },
+  "expect": { "errors": ["DEBT_UNREGISTERED_SHIM"] }
+}

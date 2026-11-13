@@ -1,0 +1,14 @@
+{
+  "replace": [
+    {
+      "rel": "docs/ACTIONS_CATALOG.md",
+      "from": "- contract-only: `setup-node-cache`",
+      "to": "- contract-only: `setup-node-cache`, `ghost-action`"
+    }
+  ],
+  "expect": {
+    "errors": [
+      "SURFACE_CATALOG_STATUS_BLOCK_DRIFT"
+    ]
+  }
+}

@@ -1,0 +1,216 @@
+# Composite Node setup + dependency cache/install action (T02).
+#
+# Contract: docs/ACTIONS_CATALOG.md §7.8 `setup-node-cache`; README.md for adoption patterns.
+# - One place for the Node version, package-manager cache decision, and install semantics that
+#   the reusable workflows previously inlined.
+# - The cache is restored only when the selected package manager's lockfile is present, so a repo
+#   without a lockfile never fails and cache misses stay cheap.
+# - No secrets, no credentials: dependencies install exactly as the caller asks, nothing is
+#   authenticated implicitly.
+# - Reusable workflows cannot see local actions from the caller workspace, so consumers first check
+#   the tracker repository out to `.tracker-actions` (see README.md) and reference the action there.
+name: Setup Node with dependency cache
+description: >-
+  Set up Node.js, optionally restore the package-manager dependency cache, and install dependencies
+  with skip-on-none semantics (empty install-command auto-installs npm ci when an npm lockfile
+  exists; the literal `none` always skips).
+
+inputs:
+  node-version:
+    description: 'Node.js version (for example 22 or 22.x).'
+    required: false
+    default: '22'
+  package-manager:
+    description: 'Package manager used for the cache and the default install: npm, pnpm, or yarn.'
+    required: false
+    default: npm
+  working-directory:
+    description: 'Directory containing package.json/lockfiles, relative to the repository root.'
+    required: false
+    default: '.'
+  cache:
+    description: "Whether to restore the package-manager cache when a lockfile exists ('true'/'false')."
+    required: false
+    default: 'true'
+  install-dependencies:
+    description: "Whether to install dependencies ('true'/'false')."
+    required: false
+    default: 'true'
+  registry-url:
+    description: 'Optional npm registry URL passed to actions/setup-node (empty = default registry).'
+    required: false
+    default: ''
+  cache-dependency-path:
+    description: >-
+      Lockfile path used for the cache key. Empty auto-detects the selected package manager's
+      lockfile under working-directory.
+    required: false
+    default: ''
+  install-command:
+    description: >-
+      Dependency install command. Empty installs with `npm ci` when an npm lockfile exists and
+      otherwise skips with a notice; the literal `none` always skips.
+    required: false
+    default: ''
+
+outputs:
+  node-version:
+    description: 'The normalized Node.js version passed to actions/setup-node.'
+    value: ${{ steps.resolve.outputs.node-version }}
+  cache-hit:
+    description: "actions/setup-node cache-hit output ('true'/'false'; empty when caching is off)."
+    value: ${{ steps.setup.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate and resolve setup inputs
+      id: resolve
+      shell: bash
+      env:
+        NODE_VERSION_INPUT: ${{ inputs.node-version }}
+        PACKAGE_MANAGER_INPUT: ${{ inputs.package-manager }}
+        WORKDIR_INPUT: ${{ inputs.working-directory }}
+        CACHE_INPUT: ${{ inputs.cache }}
+        INSTALL_DEPENDENCIES_INPUT: ${{ inputs.install-dependencies }}
+        CACHE_DEPENDENCY_PATH_INPUT: ${{ inputs.cache-dependency-path }}
+        INSTALL_COMMAND_INPUT: ${{ inputs.install-command }}
+      run: |
+        set -euo pipefail
+
+        fail() {
+          echo "::error::$*"
+          exit 1
+        }
+
+        # Composite inputs are always strings; accept the usual truthy/falsy spellings and fail
+        # loudly on anything else so a typo cannot silently disable caching or installs.
+        normalize_bool() {
+          case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+            true | 1 | yes) printf 'true' ;;
+            false | 0 | no) printf 'false' ;;
+            *) return 1 ;;
+          esac
+        }
+
+        node_version="$(printf '%s' "${NODE_VERSION_INPUT:-22}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+        [ -n "$node_version" ] || fail 'node-version must not be empty.'
+        printf '%s' "$node_version" | grep -Eq '^[A-Za-z0-9._/*-]+$' ||
+          fail "node-version must be a version/range label such as 22, 22.x, or lts/* (got '${node_version}')."
+
+        package_manager="$(printf '%s' "${PACKAGE_MANAGER_INPUT:-npm}" | tr '[:upper:]' '[:lower:]')"
+        case "$package_manager" in
+          npm | pnpm | yarn) ;;
+          *) fail "package-manager must be npm, pnpm, or yarn (got '${PACKAGE_MANAGER_INPUT:-}')." ;;
+        esac
+
+        cache="$(normalize_bool "${CACHE_INPUT:-true}")" ||
+          fail "cache must be true or false (got '${CACHE_INPUT:-<empty>}')."
+        install_dependencies="$(normalize_bool "${INSTALL_DEPENDENCIES_INPUT:-true}")" ||
+          fail "install-dependencies must be true or false (got '${INSTALL_DEPENDENCIES_INPUT:-<empty>}')."
+
+        workdir="${WORKDIR_INPUT:-.}"
+        [ -d "$workdir" ] || fail "working-directory '${workdir}' does not exist."
+
+        # Auto-detect the lockfile for the selected package manager (first match wins, npm files
+        # are checked in the order npm itself prefers).
+        lockfile=""
+        join_workdir() {
+          if [ "$workdir" = "." ]; then
+            printf '%s' "$1"
+          else
+            printf '%s/%s' "${workdir%/}" "$1"
+          fi
+        }
+        case "$package_manager" in
+          npm)
+            if [ -f "$workdir/package-lock.json" ]; then
+              lockfile="$(join_workdir package-lock.json)"
+            elif [ -f "$workdir/npm-shrinkwrap.json" ]; then
+              lockfile="$(join_workdir npm-shrinkwrap.json)"
+            fi
+            ;;
+          pnpm)
+            if [ -f "$workdir/pnpm-lock.yaml" ]; then
+              lockfile="$(join_workdir pnpm-lock.yaml)"
+            fi
+            ;;
+          yarn)
+            if [ -f "$workdir/yarn.lock" ]; then
+              lockfile="$(join_workdir yarn.lock)"
+            fi
+            ;;
+        esac
+
+        # Cache only when enabled AND a lockfile exists; an empty cache value disables caching.
+        resolved_cache=""
+        if [ "$cache" = "true" ]; then
+          if [ -n "$lockfile" ]; then
+            resolved_cache="$package_manager"
+          else
+            echo "::notice::No ${package_manager} lockfile found under '${workdir}'; dependency caching disabled."
+          fi
+        fi
+        cache_dependency_path="${CACHE_DEPENDENCY_PATH_INPUT:-}"
+        if [ -z "$cache_dependency_path" ]; then
+          cache_dependency_path="$lockfile"
+        fi
+
+        # Install resolution mirrors reusable-ci: explicit command wins; empty auto-installs npm ci
+        # only when an npm lockfile exists; `none` and installed-dependencies=false skip cleanly.
+        install_skip="false"
+        install_command=""
+        if [ "$install_dependencies" != "true" ]; then
+          install_skip="true"
+          echo "::notice::Skipping dependency install (install-dependencies=false)."
+        else
+          requested="$(printf '%s' "${INSTALL_COMMAND_INPUT:-}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+          if [ "$requested" = "none" ]; then
+            install_skip="true"
+            echo "::notice::Skipping dependency install (install-command=none)."
+          elif [ -n "$requested" ]; then
+            install_command="$requested"
+          elif [ "$package_manager" = "npm" ] && [ -n "$lockfile" ]; then
+            install_command="npm ci"
+          else
+            install_skip="true"
+            echo "::notice::Skipping dependency install (no install-command and no npm lockfile; pass install-dependencies=false to silence)."
+          fi
+        fi
+
+        {
+          echo "node-version=${node_version}"
+          echo "cache=${resolved_cache}"
+          echo "cache-dependency-path=${cache_dependency_path}"
+          echo "install-command=${install_command}"
+          echo "install-skip=${install_skip}"
+        } >>"$GITHUB_OUTPUT"
+
+        echo "setup-node-cache: node=${node_version} package-manager=${package_manager} cache=${resolved_cache:-<off>} install=${install_command:-<skip>}"
+
+    - name: Set up Node.js
+      id: setup
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ steps.resolve.outputs.node-version }}
+        package-manager-cache: false
+        cache: ${{ steps.resolve.outputs.cache }}
+        cache-dependency-path: ${{ steps.resolve.outputs.cache-dependency-path }}
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install dependencies
+      if: ${{ steps.resolve.outputs.install-skip != 'true' }}
+      shell: bash
+      env:
+        INSTALL_COMMAND: ${{ steps.resolve.outputs.install-command }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        workdir="${WORKDIR:-.}"
+        [ -d "$workdir" ] || {
+          echo "::error::working-directory '${workdir}' does not exist."
+          exit 1
+        }
+        cd "$workdir"
+        echo "+ ${INSTALL_COMMAND}"
+        bash -euo pipefail -c "${INSTALL_COMMAND}"

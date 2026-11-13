@@ -26,7 +26,7 @@ function walk(dir, out = []) {
   return out;
 }
 
-export function normalizeScopes(scopes) {
+function normalizeScopes(scopes) {
   return (scopes || []).map((s) => String(s).replace(/^\.\//, '').replace(/\/+$/, '')).filter(Boolean);
 }
 

@@ -9,12 +9,12 @@
  * shared by `guard-local-suite.mjs`, `playwright-remote-guard.mjs`, `validate-config.mjs`,
  * and `verify-tooling.mjs`.
  */
-export const LOCAL_MODES = ['hidden', 'forbidden'];
-export const DEFAULT_LOCAL_MODE = 'forbidden';
+const LOCAL_MODES = ['hidden', 'forbidden'];
+const DEFAULT_LOCAL_MODE = 'forbidden';
 export const DEFAULT_OVERRIDE_ENV = 'TRACKER_ALLOW_LOCAL_SUITE';
-export const REMOTE_RUNNER_ENV = 'GITHUB_ACTIONS';
+const REMOTE_RUNNER_ENV = 'GITHUB_ACTIONS';
 export const SUITE_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-export const OVERRIDE_ENV_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+const OVERRIDE_ENV_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 const ENTRY_KEYS = new Set(['id', 'workflow', 'prLabel', 'localMode', 'overrideEnv', 'docs']);
 
 export const GUARD_STATUS = {
@@ -34,7 +34,7 @@ export function isRemoteRunner(env = process.env) {
 }
 
 /** Truthy env flag values for deliberate overrides. */
-export function isEnvEnabled(value) {
+function isEnvEnabled(value) {
   if (value === undefined || value === null) return false;
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 }
@@ -126,7 +126,7 @@ export function resolveRemoteOnlyPolicy(config = {}) {
 }
 
 /** Stable identifier lookup; returns the normalized suite or null. */
-export function findPolicySuite(suites = [], suiteId = '') {
+function findPolicySuite(suites = [], suiteId = '') {
   return (suites || []).find((suite) => suite.id === suiteId) || null;
 }
 

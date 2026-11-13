@@ -7,7 +7,7 @@ import os from 'node:os';
 const TRANSIENT =
   /connection refused|timed out|TLS|502|503|ECONNRESET|EOF|Something went wrong|GraphQL.*(timeout|unavailable)/i;
 
-export class GhError extends Error {
+class GhError extends Error {
   constructor(args, err) {
     const stderr = (err?.stderr || '').toString().trim();
     const stdout = (err?.stdout || '').toString().trim();

@@ -1,4 +1,7 @@
 {
+  "write": {
+    "docs/ACTIONS_CATALOG.md": "# ACTIONS CATALOG\n\n## 2. Workflow catalog\n\n| Workflow | Notes |\n|---|---|\n| `demo.yml` | internal runner |\n| `release.yml` | runnable release caller |\n| `reusable-demo.yml` | reusable contract |\n\n## 7. Reusable workflow and composite action contracts\n\n| Item | Convention |\n|---|---|\n| Composite action | `.github/actions/<name>/action.yml` |\n\n### 7.1 reusable-demo contract\n\nDemo `reusable-demo.yml` contract.\n\n### 7.8 Composite action interfaces\n\nDashboards for `action.yml` composite actions.\n\n## 8. Hybrid D adoption model\n\n**Shipped vs contract-only:** shipped: `demo.yml`/`reusable-demo.yml`, `release.yml` (the only runnable caller), composite actions. Contract-only: `setup-node-cache` (cache setup is inlined in `reusable-demo.yml`).\n"
+  },
   "manifest": {
     "set": {
       "wf:reusable-demo": {
