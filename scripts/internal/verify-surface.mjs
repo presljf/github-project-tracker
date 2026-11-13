@@ -381,7 +381,10 @@ function catalogChecks({ root, entries, errors, warnings, notes }) {
     const sectionNumber = typeof entry.catalogSection === 'string' ? entry.catalogSection : null;
     const sectionHeading =
       sectionNumber !== null
-        ? new RegExp(`^#{3,4}\\s+${sectionNumber.replace(/\./g, '\\.')}(?:\\s|$)`, 'm').test(section7)
+        ? section7.split('\n').some((line) => {
+            const heading = /^#{3,4}\s+(\S+)/.exec(line);
+            return Boolean(heading) && heading[1] === sectionNumber;
+          })
         : false;
     const inSection = section7 !== '' && (section7.includes(base) || sectionHeading);
     const inAnchoredDocs = asArray(entry.docs).some((ref) => {
