@@ -96,7 +96,8 @@
         "profiles/"
       ],
       "docs": [
-        "docs/RELEASE_PROFILES.md"
+        "docs/RELEASE_PROFILES.md",
+        "docs/ACTIONS_CATALOG.md"
       ]
     },
     {

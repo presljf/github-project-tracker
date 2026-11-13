@@ -1,41 +1,42 @@
+# Thin self caller for reusable-post-merge-audit.yml (dogfooding the adopter contract).
+# Check context: `post-merge-audit / audit`.
+#
+# Least privilege is granted here (the reusable workflow declares the same set; callers must grant
+# at least that union): issues: write opens the tracker-contract-exception OI/label, checks/
+# statuses/actions read are required for statusCheckRollup. `tracker-ref: ''` is self mode — the
+# audit script comes from this checkout, not a pinned template tag.
 name: Post-merge bypass audit
 
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Merged PR number to audit (required for manual dispatch).'
+        required: true
+        type: string
 
-# Least privilege for the audit:
-# - contents: read  -> checkout the repo under audit
-# - issues: write   -> open the tracker-contract-exception OI/label
-# - pull-requests: read -> read the merged PR metadata
-# - checks/statuses: read -> read statusCheckRollup.check_runs + statuses.
-# - actions: read -> statusCheckRollup also resolves checkSuite.workflowRun, which needs Actions read;
-#   `checks`+`statuses` alone still return "Resource not accessible by integration" for the rollup on
-#   private repos (observed on CastDeck run 43276236147). The copied caller workflow must carry the
-#   same permissions block; the fix ships in v1.3.2 (historical: the v1.3.0 tag predates it; it landed post-tag
-#   in the tooling stream, [Stream] v1.3.1-maintenance).
 permissions:
   contents: read
-  issues: write
-  pull-requests: read
-  checks: read
-  statuses: read
-  actions: read
+
+concurrency:
+  group: post-merge-audit-${{ github.event.pull_request.number || inputs['pr-number'] }}
+  cancel-in-progress: false
 
 jobs:
-  audit:
-    if: ${{ github.event.pull_request.merged == true }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-      - name: Audit merged PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node scripts/adopt/cli/post-merge-audit.mjs
+  post-merge-audit:
+    name: post-merge-audit
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      checks: read
+      statuses: read
+      actions: read
+    uses: ./.github/workflows/reusable-post-merge-audit.yml
+    with:
+      tracker-ref: ''
+      config-path: tracker.config.json
+      pr-number: ${{ github.event_name == 'workflow_dispatch' && inputs['pr-number'] || '' }}

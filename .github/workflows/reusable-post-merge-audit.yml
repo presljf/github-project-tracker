@@ -1,0 +1,167 @@
+# Reusable post-merge audit (T04 / issue #139).
+#
+# Contract: docs/ACTIONS_CATALOG.md §7.6 / §7.11 (catalog owner updates the rows).
+# Runs `post-merge-audit.mjs` against a merged PR: required checks from `guard.requiredChecks[]`
+# (`--config`), closing-keyword/partial-PR rules, and an OI on a real bypass.
+#
+# Caller expectations (least privilege): the caller job must grant at least
+#   contents: read, issues: write, pull-requests: read, checks: read, statuses: read, actions: read
+# (`issues: write` opens the tracker-contract-exception OI/label; checks/statuses/actions read are
+# needed for statusCheckRollup because the GraphQL query resolves checkSuite.workflowRun).
+#
+# Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`:
+# for the template repository itself (dogfooded by .github/workflows/post-merge-audit.yml) the
+# script comes from the caller checkout; for every other repository the pinned `tracker-ref` is
+# checked out to `.tracker/` and the script comes from that tag. The PR merge SHA is deliberately
+# not used for self detection (merge refs/forks would misclassify).
+#
+# No artifacts, no pull_request_target, secrets limited to the caller's automatic GITHUB_TOKEN.
+
+name: Reusable post-merge audit
+
+on:
+  workflow_call:
+    inputs:
+      tracker-ref:
+        description: Exact template tag/SHA to load the audit tooling from (ignored in the template repo itself).
+        required: false
+        type: string
+        default: v1.3.2
+      config-path:
+        description: Tracker config path used by the audit (working-directory-relative).
+        required: false
+        type: string
+        default: tracker.config.json
+      working-directory:
+        description: Project working directory.
+        required: false
+        type: string
+        default: '.'
+      pr-number:
+        description: >-
+          Merged PR number. Empty resolves `github.event.pull_request.number` (callers triggered on
+          pull_request); manual dispatches must pass the number.
+        required: false
+        type: string
+        default: ''
+      runs-on:
+        description: Runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: '22'
+    outputs:
+      ok:
+        description: "'true' when the merged PR passed the audit (degraded rollups still pass with a warning)."
+        value: ${{ jobs.audit.outputs.ok }}
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: audit
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      checks: read
+      statuses: read
+      actions: read
+    outputs:
+      ok: ${{ steps.audit.outputs.ok }}
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve audit paths
+        id: paths
+        env:
+          CONFIG_PATH_INPUT: ${{ inputs.config-path }}
+          WORKDIR_INPUT: ${{ inputs.working-directory }}
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          workdir_input="${WORKDIR_INPUT:-.}"
+          case "$workdir_input" in
+            /*) workdir="$workdir_input" ;;
+            *) workdir="$GITHUB_WORKSPACE/$workdir_input" ;;
+          esac
+          [ -d "$workdir" ] || {
+            echo "::error::working-directory '$workdir_input' does not exist in the checkout."
+            exit 1
+          }
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+          fi
+
+          config="${CONFIG_PATH_INPUT:-tracker.config.json}"
+          case "$config" in
+            /*) ;;
+            *) config="$workdir/$config" ;;
+          esac
+          [ -f "$config" ] || {
+            echo "::error::tracker config not found at '$config' (mode=${mode})."
+            exit 1
+          }
+
+          [ -f "$tracker/scripts/adopt/cli/post-merge-audit.mjs" ] || {
+            echo "::error::post-merge audit tooling not found under '$tracker' (mode=${mode})."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+          echo "workdir=${workdir}" >> "$GITHUB_OUTPUT"
+      - name: Resolve target PR
+        id: pr
+        env:
+          PR_INPUT: ${{ inputs.pr-number }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          pr="${PR_INPUT:-${EVENT_PR:-}}"
+          if ! [[ "$pr" =~ ^[0-9]+$ ]] || [ "$pr" -le 0 ]; then
+            echo "::error::pr-number is required: trigger on pull_request or pass pr-number for manual dispatch."
+            exit 1
+          fi
+          echo "number=${pr}" >> "$GITHUB_OUTPUT"
+      - name: Run post-merge audit
+        id: audit
+        working-directory: ${{ steps.paths.outputs.workdir }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+          CONFIG: ${{ steps.paths.outputs.config }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/post-merge-audit.mjs" --config "$CONFIG"
+          echo "ok=true" >> "$GITHUB_OUTPUT"

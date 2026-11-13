@@ -187,10 +187,19 @@ option. The tag records the version; stream close requires every child task done
   **advisory** first. Also add the reusable contract/metadata caller
   (`profiles/contract/tracker-contract.yml`): `contract` is a required check, `metadata` is
   project-defined (see [Adoption contract verify](#adoption-contract-verify)).
+- Install the audit-family callers you need from [`profiles/audit/`](../profiles/audit/README.md)
+  (copy-mode, 1–3 callers: `pr-close-guard.yml`, `post-merge-audit.yml`, `tracker-audit.yml`), pin
+  the adopted template tag/SHA, grant the documented caller permissions, and update required checks
+  (see [Closing-keyword guard](#closing-keyword-guard) and
+  [Post-merge bypass audit](#post-merge-bypass-audit)).
 - Configure branch protection/rulesets:
-  - required: deterministic Linux CI checks, plus `tracker-contract / contract`.
-  - advisory first: desktop smoke/audit; `tracker-contract / metadata` is project-defined (it is
-    skipped on pull requests by the bundled caller).
+  - required: deterministic Linux CI checks, `tracker-contract / contract`, and
+    `pr-close-guard / guard` (audit-family migration; the old inline `pr-close-guard` context is
+    retired).
+  - advisory first: desktop smoke and tracker audit (`tracker-audit / audit`); the post-merge audit
+    runs after merge and reports through an OI/job summary, so it is not a merge check;
+    `tracker-contract / metadata` is project-defined (it is skipped on pull requests by the bundled
+    caller).
   - protect release tags/environments.
 - Run `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory` (use `--strict` at release gates).
 - Record accepted exceptions.
@@ -294,23 +303,54 @@ capability requires an OI-linked `tracker.overrides.json` entry with reason and 
 
 Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` with the `partial` label and must not close. The tracker PR close guard rejects incorrect closing targets (including sprint/release trackers) and keeps the project linked-PR field consistent.
 
+Install the reusable-mode caller (`profiles/audit/pr-close-guard.yml` → `.github/workflows/`,
+pinned to the adopted tag): its check context is **`pr-close-guard / guard`**, and the caller grants
+only `contents: read`, `issues: read`, `pull-requests: read` (the guard script is read-only). Add
+`pr-close-guard / guard` to branch protection/rulesets in the same PR as the caller migration — the
+old inline `pr-close-guard` context disappears with the old workflow.
+
 ## Post-merge bypass audit
 
 Merged PRs with failed/missing required checks or invalid closure open a `tracker-contract-exception` OI. The next release must block until resolved.
 
+Install the reusable-mode caller (`profiles/audit/post-merge-audit.yml` → `.github/workflows/`,
+pinned to the adopted tag): its check context is **`post-merge-audit / audit`**. It triggers on
+`pull_request` closed (merged only) and on manual dispatch with a `pr-number` (the reusable workflow
+revalidates that the PR is merged). The caller must grant `contents: read`, `issues: write`,
+`pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`: `issues: write` opens the
+OI/label and the three read scopes are needed for `statusCheckRollup` (its GraphQL query resolves
+`checkSuite.workflowRun`). Without `checks: read`/`statuses: read`/`actions: read` on a private repo
+the audit degrades to a loud warning + closure-only audit (no false check OI) instead of failing red.
+
 Set your **real check names** (not the tracker's own) so the audit does not open false bypass OIs:
 
 ```json
-"guard": { "requiredChecks": ["ci / ci-gate", "tracker-guard / guard", "tracker-contract / contract", "pr-close-guard"] }
+"guard": { "requiredChecks": ["ci / ci-gate", "tracker-guard / guard", "tracker-contract / contract", "pr-close-guard / guard"] }
 ```
 
-Add `tracker-contract / metadata` only if the project also requires live metadata checks (the
-bundled caller skips it on pull requests).
+The template's audited config sets `["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]`; the
+retired inline `pr-close-guard` context must be replaced by `pr-close-guard / guard` when you
+migrate. If `guard.requiredChecks` is absent, the audit falls back to the legacy default list
+(`ci / ci-gate`, `docs-guard`, `pr-close-guard`) — which no longer matches the reusable context, so
+every merge would be flagged as a bypass; set the list explicitly.
+`tracker-contract / metadata` is only added if the project requires live metadata checks (the
+bundled caller skips it on pull requests); `post-merge-audit / audit` is not a merge check and is
+not listed.
 
-Absent config keeps the default (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). The copied caller
-workflow must grant `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`,
-`statuses: read`; without `checks: read`/`statuses: read` on a private repo the audit degrades to a
-warning + closure-only audit (no false check OI) instead of failing red.
+Tracker audit runs are advisory by design: the `tracker-audit.yml` caller dispatches
+schedule/`workflow_dispatch`/PR runs in `mode: advisory`; without a `TRACKER_TOKEN` secret (project
+read: Projects read + Metadata read; PAT ≤90 days or GitHub App) the advisory run logs a notice and
+skips with exit 0, while `mode: strict` (release-gate opt-in) fails actionably without the token. No
+artifacts are uploaded — the JSON result goes to the job log/summary.
+
+**Contract status / rollback:** the three audit reusables are shipped and documented in
+[ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md), but they are **not** in the adoption
+contract yet (T06 owns `requiredWorkflows`), so `verify:contract` does not pin them today. Roll back
+by restoring the v1.3.2 inline copies (`post-merge-audit.yml`, `pr-close-guard.yml`,
+`tracker-audit.yml`) and the old protection contexts — the v1.3.2 tag keeps the inline workflows.
+Fork-merged PRs may lack `issues: write`, so OI creation can return 403 (documented pre-existing
+limitation: the bypass is reported in the job log and the run fails loudly instead of recording the
+OI — open the follow-up manually).
 
 ## Release gate
 

@@ -103,6 +103,13 @@ function fullConfig(guard) {
 
 test('clean merged PR has no bypass', () => assert.equal(evaluateBypass({ pull: BASE_PULL }).ok, true));
 
+test('runPostMergeAudit rejects a PR that is not merged (transport-owned merged check)', async () => {
+  await assert.rejects(
+    () => run({ github: fakeGithub({ pull: { ...BASE_PULL, state: 'OPEN' } }) }),
+    /not merged \(state: OPEN\); the post-merge audit only runs on merged pull requests/,
+  );
+});
+
 test('failed required check is a bypass', () => {
   const pull = {
     ...BASE_PULL,
@@ -388,7 +395,7 @@ test('non-permission errors still fail the audit', async () => {
 // Workflow permission contract + config schema
 // ---------------------------------------------------------------------------
 
-test('post-merge audit workflow carries least-privilege permissions incl. checks/statuses read', () => {
+test('post-merge audit caller is thin and grants the least-privilege permissions incl. checks/statuses read', () => {
   const yaml = fs.readFileSync(WORKFLOW, 'utf8');
   for (const permission of [
     'contents: read',
@@ -406,14 +413,25 @@ test('post-merge audit workflow carries least-privilege permissions incl. checks
     'checks: write',
     'statuses: write',
     'actions: write',
+    'pull-requests: write',
   ]) {
     assert.ok(!yaml.includes(forbidden), `workflow must not contain ${forbidden}`);
   }
   assert.match(yaml, /types: \[closed\]/);
   assert.match(yaml, /github\.event\.pull_request\.merged == true/);
-  assert.match(yaml, /node scripts\/adopt\/cli\/post-merge-audit\.mjs/);
-  for (const match of yaml.matchAll(/uses:\s+(\S+)/g)) {
-    assert.ok(!/@(v\d+|main|master)$/.test(match[1]), `action must be SHA-pinned: ${match[1]}`);
+  // Thin caller: dispatch to the reusable workflow, no inline script/run steps.
+  assert.match(yaml, /uses: \.\/\.github\/workflows\/reusable-post-merge-audit\.yml/);
+  assert.match(yaml, /tracker-ref: ''/);
+  assert.match(yaml, /config-path: tracker\.config\.json/);
+  assert.match(yaml, /concurrency:\n {2}group: post-merge-audit-/);
+  assert.doesNotMatch(yaml, /^\s+run:/m);
+  assert.doesNotMatch(yaml, /node scripts\/adopt\/cli\/post-merge-audit\.mjs/);
+  // Every action reference is a SHA-pinned external action (none here) or the local reusable.
+  for (const match of yaml.matchAll(/^\s*(?:- )?uses:\s+(\S+)/gm)) {
+    assert.ok(
+      match[1].startsWith('./.github/workflows/') || /@[0-9a-f]{40}$/.test(match[1]),
+      `uses must be local or SHA-pinned: ${match[1]}`,
+    );
   }
 });
 

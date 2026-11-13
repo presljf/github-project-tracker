@@ -9,6 +9,7 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 1. Create a new repository from the template (GitHub **Use this template**), or copy the full set into an existing repo: `docs/`, `scripts/adopt/**` (adopter CLIs, shared libs, docs-QA CLIs), `schemas/`, `profiles/`, `tests/`, `.github/` (issue/PR forms and caller workflows; `reusable-*` contracts only if you cannot call the template by pinned ref), `package.json`, `tracker.config.example.json`, `README.md`, `LICENSE`, `SECURITY.md`.
    - `scripts/internal/` is template-maintainer-only (card build, release bump, repo-surface guard) and is **never** copied.
    - Release examples: `profiles/release/reusable/` holds reusable-mode callers (copy into `.github/workflows/` and pin the tracker tag you adopted); `profiles/release/copy/` holds copy-mode templates.
+   - Audit family: copy the thin callers from `profiles/audit/` (`tracker-audit.yml`, `post-merge-audit.yml`, `pr-close-guard.yml`) into `.github/workflows/` and pin both the `uses:` reusable-workflow ref and the `tracker-ref` input to the adopted tag; then update required-check contexts (see [profiles/audit/README.md](../profiles/audit/README.md)). The `reusable-*` workflow bodies stay in this repository — do not copy them. The three copied callers are the only runnable audit-family entry points; `reusable-audit.yml`, `reusable-post-merge-audit.yml`, and `reusable-pr-close-guard.yml` are `workflow_call` contracts and never run on their own.
 2. Follow [docs/ADOPTION.md](./ADOPTION.md) / [QUICKSTART](./QUICKSTART.md).
 3. Copy `tracker.config.example.json` to `tracker.config.json`, edit for your project, validate:
    ```bash
@@ -41,8 +42,9 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 | `profiles/desktop/`, `profiles/tooling/`, `profiles/counts/` | opt-in desktop-smoke, tooling-work-profile, and counts-contract wiring |
 | `profiles/release/reusable/` | reusable-mode release caller examples (copy into `.github/workflows/` and pin the adopted tag; non-runnable here) |
 | `profiles/release/copy/` | copy-mode standalone release templates |
+| `profiles/audit/` | audit-family reusable caller examples (`tracker-audit.yml`, `post-merge-audit.yml`, `pr-close-guard.yml`) + permissions/check-name/rollback guidance |
 | `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md` | intake/PR forms |
-| `.github/workflows/` | internal runner callers (CI/security/audit/guards) + `reusable-*` workflow contracts; `release.yml` is the only runnable release caller here |
+| `.github/workflows/` | internal thin runner callers (CI/security/audit family/guards) + `reusable-*` workflow contracts; `release.yml` is the only runnable release caller here |
 | `docs/GUARD_DISTRIBUTION.md` | adoption: transport guard + teammate scope guard |
 | `tests/` | dependency-free Node test suite (`npm test`) |
 | `tracker.config.json` | this repo's self-config for audit/CI |
@@ -73,7 +75,9 @@ This repository is the **source of truth** for Project Tracker OS. It is a publi
 - Template repository: **enabled**; visibility: **public**.
 - Public after the v1.0.0/v1.2.1 validation and the T01 private-access result; branch protection/private reporting follow T03/T04.
 - Branch protection/rulesets pending platform availability (private personal repo 403); apply when public/Pro.
-- Advisory tracker audit skips safely when `TRACKER_TOKEN` is unavailable.
+- Advisory tracker audit (`reusable-audit.yml`) skips cleanly (exit 0, notice in the log) when
+  `TRACKER_TOKEN` is unavailable; strict mode requires the token and fails actionably when it is
+  missing.
 - License: MIT (see `LICENSE`).
 
 ## Downstream reporting

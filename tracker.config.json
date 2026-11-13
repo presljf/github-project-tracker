@@ -129,6 +129,7 @@
   },
   "guard": {
     "transportOnly": true,
-    "allow": [".github/workflows/reusable-release.yml", ".github/workflows/reusable-security.yml"]
+    "allow": [".github/workflows/reusable-release.yml", ".github/workflows/reusable-security.yml"],
+    "requiredChecks": ["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]
   }
 }

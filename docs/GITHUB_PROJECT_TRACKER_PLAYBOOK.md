@@ -161,10 +161,14 @@ Plus:
 
 ### 3.7 Branch protection / required checks
 - Require PR review/checks for `main` (solo maintainers may use admin bypass only for documented emergencies).
-- Required checks: deterministic Linux CI jobs.
-- Advisory initially: expensive desktop/macOS jobs, tracker audit (until stable).
+- Required checks: deterministic Linux CI jobs, plus the PR close guard (`pr-close-guard / guard`).
+- Advisory initially: expensive desktop/macOS jobs, tracker audit (`tracker-audit / audit`), and the
+  post-merge audit (`post-merge-audit / audit`, which opens an OI instead of a red check).
 - Protect release tags/environments.
 - Document exact job names; do not rename required jobs without updating protection.
+- Check contexts change when a copied workflow becomes a reusable caller (v1.4.0 audit family):
+  capture the real names from a green run, update rulesets/protection and
+  `guard.requiredChecks[]` in the same upgrade PR, and remove the old context.
 
 ### 3.8 Release/tag conventions
 - Tags: annotated `vX.Y.Z`.
@@ -389,22 +393,28 @@ Enforcement:
 | CI (lint/format/unit) | push/PR | required | Linux | fast correctness gates | contents: read | none | logs/traces on failure | block merge |
 | E2E/integration | push/PR/nightly | required or advisory per project | Linux/macOS | end-to-end validation | contents: read | none | traces/screenshots | block required job |
 | Desktop/app smoke | main/tags + path/label PRs | advisory on PR, required for release | macOS | native shell smoke | contents: read | none | traces/logs | required on release |
-| Tracker audit | schedule/dispatch + advisory PR | advisory first; release gate later | Linux | tracker invariants | contents: read; project read/write via scoped token | `TRACKER_TOKEN`/GitHub App | job summary/JSON artifact | advisory or release failure |
+| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | schedule/dispatch + advisory PR | advisory by default; strict opt-in for release gates | Linux | tracker invariants | contents: read; project read via scoped token | optional `TRACKER_TOKEN` (advisory skips cleanly; strict required) | job summary + JSON in the log (no artifacts) | advisory never blocks; strict exits 1 on violations; context `tracker-audit / audit` |
+| Post-merge audit — `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `pull_request` closed (merged only); dispatch revalidation with `pr-number` | advisory (opens OI on a real bypass) | Linux | required-check + closing-keyword/partial-PR audit of merged PRs | contents: read, issues: write, pull-requests/checks/statuses/actions read (caller-granted) | `GITHUB_TOKEN` automatic | job summary | context `post-merge-audit / audit`; opens `tracker-contract-exception` OI; unreadable rollup degrades loudly |
+| PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | PR opened/edited/synchronize/reopened/labeled/unlabeled | required for task PRs | Linux | closing-keyword/partial-PR guard | contents/issues/pull-requests read (read-only) | none | report/log only | context `pr-close-guard / guard`; wrong closing target fails |
 | Release | tag `v*` + dispatch | release gate | macOS/OS-specific | build/checksum/publish | contents: write; environment as needed | publish secrets/OIDC as needed | dmg/zip/container/package + sha256 | block publish |
 | Security | PR/schedule | default Dependabot/dependency review; CodeQL opt-in | Linux | dependency/security checks | security-events: write for CodeQL | none | reports/SARIF | advisory/required per project |
 
 ### 10.2 Trigger matrix
 - `push` main: CI, advisory audit.
-- `pull_request`: CI; desktop smoke if path/label; audit advisory.
+- `pull_request`: CI; PR close guard (required for task PRs); desktop smoke if path/label; tracker audit advisory.
+- `pull_request` **closed (merged)**: post-merge audit (`post-merge-audit / audit`).
 - tags `v*`: CI gates + release workflow; required desktop/release jobs.
 - `schedule`: audit/security as configured.
-- `workflow_dispatch`: dry-run release, audit rerun, manual verification.
+- `workflow_dispatch`: dry-run release, audit rerun, manual verification; post-merge audit rerun with
+  `pr-number` to revalidate a past merge (and tracker-audit rerun on demand).
 
 ### 10.3 Token/secret matrix
 | Need | Source | Scope | Notes |
 |---|---|---|---|
 | Repo CI | `GITHUB_TOKEN` | contents: read | default; least privilege |
-| Tracker audit | project-scoped PAT or GitHub App installation token | project read/write (or read for advisory) | store as secret; never print |
+| Tracker audit (`reusable-audit.yml`) | project-scoped PAT or GitHub App installation token | project read (Projects read + Metadata read) | optional `TRACKER_TOKEN`; advisory skips cleanly when absent, strict fails actionably; never print |
+| Post-merge audit (`reusable-post-merge-audit.yml`) | `GITHUB_TOKEN` | contents: read + issues: write + pull-requests/checks/statuses/actions read | caller-granted; `issues: write` opens the bypass OI; checks/statuses/actions read are required for `statusCheckRollup` |
+| PR close guard (`reusable-pr-close-guard.yml`) | `GITHUB_TOKEN` | contents/issues/pull-requests read | read-only; no writes, no secrets |
 | Release publish | `GITHUB_TOKEN` / environment secrets | contents: write | protect tag/environment |
 | Package/cloud publish | OIDC/short-lived or environment secrets | least privilege | no long-lived secrets if avoidable |
 | Signing/notarization/container | project-specific secrets/OIDC | minimal | skip cleanly when absent; document |
@@ -429,8 +439,16 @@ Every workflow must have a documented local equivalent (`npm test`, `npm run lin
 ### 10.7 Hybrid D reuse model
 - Tracker owns reusable workflow/composite-action contracts and templates.
 - Adopting projects keep **thin caller workflows** plus project-specific config/commands; publish/build/sign steps stay project-local.
+- The audit family is shipped reusable in v1.4.0: copy the caller examples from
+  `profiles/audit/` (or write a five-line `uses:` caller), pin both the `uses:` ref and the
+  `tracker-ref` input to the adopted tag, and update required-check contexts in the same upgrade PR.
+  Do not copy the workflow bodies or the audit scripts wholesale.
 - Pin `automation.templateVersion`; validate private cross-repo access.
 - If private reusable workflows are blocked, copy thin callers/composite actions or make the template public.
+- **Rollback (audit family):** keep the previous copied workflows and protection contexts until
+  reusable access is confirmed, or pin back to the previous tag and restore the old callers; never
+  run old and new check contexts side by side in branch protection. Roll back config
+  (`guard.requiredChecks`) and protection in the same change as the callers.
 - No automated template-sync PRs initially; projects follow the upgrade guide and pin exact versions.
 
 ### 10.8 Release profiles
@@ -520,8 +538,11 @@ Best-effort/no SLA. Triage labels and Source field make ownership visible. Secur
 5. Create milestones/release trackers from the program plan.
 6. Create program roadmap → releases → sprints → tasks; wire sub-issues.
 7. Set minimal labels + Source field; remove duplicates.
-8. Install issue/PR templates and the tracker audit caller (copy or reusable).
-9. Configure branch protection/required checks; keep expensive jobs advisory initially.
+8. Install issue/PR templates and the audit-family callers from `profiles/audit/` (reusable mode:
+   copy only the thin callers, pin `uses:` + `tracker-ref` to the adopted tag); keep the old copied
+   workflows only as a documented rollback.
+9. Configure branch protection/required checks; require `pr-close-guard / guard`, keep
+   `post-merge-audit / audit` and `tracker-audit / audit` advisory initially.
 10. Create `tracker.config.json`; pin `automation.templateVersion`; record feedback channel.
 11. Write/link project-specific docs; link the HOW TO USE suite and cards.
 12. Run the audit; fix drift; record accepted exceptions.
@@ -683,5 +704,6 @@ Source = <project>; label `source:downstream`; no secrets/vulnerability details.
 - `docs/DOWNSTREAM_FEEDBACK.md` — reporting/triage/versioning policy
 - `docs/DOCS_STYLE_GUIDE.md` + `docs/reference-cards/` — documentation standards and printable cards
 - `docs/ACTIONS_CATALOG.md` — workflow catalog and token/runner matrices
+- `profiles/audit/` — audit-family reusable caller examples (tracker audit, post-merge audit, PR close guard)
 - `tracker.config.example.json` — config schema/examples
 - `scripts/adopt/cli/bootstrap.mjs`, `audit.mjs`, `task.mjs` — automation

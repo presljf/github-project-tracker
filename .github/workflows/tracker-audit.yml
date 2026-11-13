@@ -1,29 +1,34 @@
+# Thin self caller for reusable-audit.yml (dogfooding the adopter contract).
+# Check context: `tracker-audit / audit`.
+#
+# Advisory by default: PRs give live advisory evidence without blocking; schedule/dispatch keep the
+# weekly baseline. Advisory mode with no TRACKER_TOKEN skips cleanly inside the reusable workflow.
+# `tracker-ref: ''` is self mode — the audit script comes from this checkout.
 name: Tracker audit (advisory)
 
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 15 * * 1'
+  pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: tracker-audit-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Set up Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '22'
-      - name: Run advisory tracker audit
-        env:
-          GH_TOKEN: ${{ secrets.TRACKER_TOKEN }}
-        run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "TRACKER_TOKEN is not configured; skipping advisory audit."
-            exit 0
-          fi
-          node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory
+  tracker-audit:
+    name: tracker-audit
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-audit.yml
+    with:
+      tracker-ref: ''
+      config-path: tracker.config.json
+      mode: advisory
+      json: true
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

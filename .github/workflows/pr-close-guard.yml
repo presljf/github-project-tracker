@@ -1,3 +1,8 @@
+# Thin self caller for reusable-pr-close-guard.yml (dogfooding the adopter contract).
+# Check context: `pr-close-guard / guard`.
+#
+# The guard script is read-only, so this caller grants only contents/issues/pull-requests read
+# (no issues: write). `tracker-ref: ''` is self mode — the script comes from this checkout.
 name: PR close guard
 
 on:
@@ -6,25 +11,18 @@ on:
 
 permissions:
   contents: read
-  issues: read
-  pull-requests: read
+
+concurrency:
+  group: pr-close-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   pr-close-guard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-      - name: Validate closing keywords
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: node scripts/adopt/cli/guard-pr-close.mjs
+    name: pr-close-guard
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: ./.github/workflows/reusable-pr-close-guard.yml
+    with:
+      tracker-ref: ''

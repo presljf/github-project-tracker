@@ -1,0 +1,43 @@
+# COPY-MODE EXAMPLE — reusable-mode tracker audit caller (T04).
+#
+# Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
+# lives under profiles/. Copy it into your repository's .github/workflows/tracker-audit.yml,
+# replace both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
+# with the exact tag/SHA you adopted (v1.4.0+ — the first release that ships reusable-audit.yml),
+# and update your required checks if you promote it (old→new mapping in profiles/audit/README.md).
+#
+# Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-audit.yml
+# (contract in docs/ACTIONS_CATALOG.md §7.6; profile details in profiles/audit/README.md).
+#
+# Advisory by default: pull requests get live advisory evidence without blocking, schedule/dispatch
+# keep the weekly baseline, and advisory mode with no TRACKER_TOKEN skips cleanly inside the
+# reusable workflow. Set `mode: strict` for a release-gate opt-in (strict requires the token and
+# fails actionably without it).
+name: Tracker audit (advisory)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 15 * * 1'
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracker-audit-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tracker-audit:
+    name: tracker-audit
+    permissions:
+      contents: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-audit.yml@v1.3.2
+    with:
+      tracker-ref: v1.3.2
+      config-path: tracker.config.json
+      mode: advisory
+      json: true
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

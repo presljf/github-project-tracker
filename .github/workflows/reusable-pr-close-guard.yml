@@ -1,0 +1,121 @@
+# Reusable PR close guard (T04 / issue #139).
+#
+# Contract: docs/ACTIONS_CATALOG.md §7.6 / §7.11 (catalog owner updates the rows).
+# Runs `guard-pr-close.mjs` for the target PR: task PRs must carry a closing keyword; partial PRs
+# must not; closing keywords must target task trackers only.
+#
+# LEAST PRIVILEGE DECISION: the guard script is read-only (it reads the PR and referenced issues
+# through the API; the caller no longer needs to pass PR_BODY/PR_BRANCH/PR_LABELS — when those env
+# vars are absent the script fetches the live PR, which is also resistant to stale event payloads).
+# This reusable workflow therefore requires only contents: read, issues: read, pull-requests: read.
+# The issue #139 text mentioned `issues: write` (an older copy-mode assumption); a write scope would
+# be unused by the script, so the contract intentionally does not grant it. If a future guard version
+# needs to write, that is a documented permission increase (catalog §7.9) and a caller change.
+#
+# Self mode detection is the canonical hardcoded repository slug `presljf/github-project-tracker`
+# (the template repo's own caller supplies tracker-ref: '' and reads the script from its checkout).
+# No artifacts, no pull_request_target, no secrets.
+
+name: Reusable PR close guard
+
+on:
+  workflow_call:
+    inputs:
+      tracker-ref:
+        description: Exact template tag/SHA to load the guard tooling from (ignored in the template repo itself).
+        required: false
+        type: string
+        default: v1.3.2
+      pr-number:
+        description: >-
+          Target PR number. Empty resolves `github.event.pull_request.number` (callers triggered on
+          pull_request); manual invocations must pass the number.
+        required: false
+        type: string
+        default: ''
+      runs-on:
+        description: Runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: '22'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout tracker tooling
+        if: ${{ github.repository != 'presljf/github-project-tracker' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: presljf/github-project-tracker
+          ref: ${{ inputs.tracker-ref }}
+          path: .tracker
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+      - name: Resolve guard paths
+        id: paths
+        env:
+          CANONICAL_REPOSITORY: presljf/github-project-tracker
+        run: |
+          set -euo pipefail
+
+          workdir="$GITHUB_WORKSPACE"
+
+          if [ "${GITHUB_REPOSITORY:-}" = "$CANONICAL_REPOSITORY" ]; then
+            mode="self"
+            tracker="$GITHUB_WORKSPACE"
+          else
+            mode="downstream"
+            tracker="$GITHUB_WORKSPACE/.tracker"
+          fi
+
+          [ -f "$tracker/scripts/adopt/cli/guard-pr-close.mjs" ] || {
+            echo "::error::PR close guard tooling not found under '$tracker' (mode=${mode})."
+            exit 1
+          }
+
+          echo "mode=${mode}"
+          echo "tracker=${tracker}" >> "$GITHUB_OUTPUT"
+      - name: Resolve target PR
+        id: pr
+        env:
+          PR_INPUT: ${{ inputs.pr-number }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          pr="${PR_INPUT:-${EVENT_PR:-}}"
+          if ! [[ "$pr" =~ ^[0-9]+$ ]] || [ "$pr" -le 0 ]; then
+            echo "::error::pr-number is required: trigger on pull_request or pass pr-number explicitly."
+            exit 1
+          fi
+          echo "number=${pr}" >> "$GITHUB_OUTPUT"
+      - name: Run PR close guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          TRACKER: ${{ steps.paths.outputs.tracker }}
+        run: |
+          set -euo pipefail
+          node "$TRACKER/scripts/adopt/cli/guard-pr-close.mjs"

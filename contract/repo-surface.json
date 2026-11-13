@@ -1345,11 +1345,10 @@
       "class": "internal",
       "status": "shipped",
       "audience": [
-        "template",
-        "adopter"
+        "template"
       ],
       "title": "Post-merge bypass audit",
-      "summary": "Least privilege for the audit: - contents: read -> checkout the repo under audit - issues: write -> open the tracker-contract-exception OI/label - pull-requests: read -> read the merged PR metadata -",
+      "summary": "Thin self caller of reusable-post-merge-audit.yml (dogfooding).",
       "docs": [
         "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
       ]
@@ -1360,11 +1359,10 @@
       "class": "internal",
       "status": "shipped",
       "audience": [
-        "template",
-        "adopter"
+        "template"
       ],
       "title": "PR close guard",
-      "summary": "GitHub Actions workflow pr-close-guard.yml.",
+      "summary": "Thin self caller of reusable-pr-close-guard.yml (dogfooding).",
       "docs": [
         "docs/REFERENCE.md#pr-closing-keyword-guard"
       ]
@@ -1388,12 +1386,12 @@
       "id": "wf:reusable-audit",
       "path": ".github/workflows/reusable-audit.yml",
       "class": "reusable-workflow",
-      "status": "contract-only",
+      "status": "shipped",
       "audience": [
         "adopter"
       ],
       "title": "Reusable audit",
-      "summary": "Documented workflow_call contract; not implemented in this repository yet.",
+      "summary": "Reusable tracker audit: advisory default, strict opt-in, optional TRACKER_TOKEN, JSON log/summary (no artifacts).",
       "docs": [
         "docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract"
       ],
@@ -1523,11 +1521,10 @@
       "class": "internal",
       "status": "shipped",
       "audience": [
-        "template",
-        "adopter"
+        "template"
       ],
       "title": "Tracker audit (advisory)",
-      "summary": "GitHub Actions workflow tracker-audit.yml.",
+      "summary": "Thin self caller of reusable-audit.yml (advisory on schedule/PR; optional TRACKER_TOKEN).",
       "docs": [
         "docs/ACTIONS_CATALOG.md#2-workflow-catalog"
       ]
@@ -1715,6 +1712,99 @@
       "summary": "COPY-MODE EXAMPLE - reusable-mode contract+metadata caller (T03).",
       "docs": [
         "docs/ACTIONS_CATALOG.md#710-reusable-contractyml-contract-metadata-verification-contract"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "wf:reusable-post-merge-audit",
+      "path": ".github/workflows/reusable-post-merge-audit.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable post-merge bypass audit",
+      "summary": "Audits merged PRs for bypassed checks and invalid closing keywords; caller-granted audit permissions.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract"
+      ],
+      "catalogSection": "7.11"
+    },
+    {
+      "id": "wf:reusable-pr-close-guard",
+      "path": ".github/workflows/reusable-pr-close-guard.yml",
+      "class": "reusable-workflow",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Reusable PR close guard",
+      "summary": "Validates closing keywords and PR metadata with read-only caller permissions.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#712-reusable-pr-close-guardyml-pr-close-guard-contract"
+      ],
+      "catalogSection": "7.12"
+    },
+    {
+      "id": "profile:audit-readme",
+      "path": "profiles/audit/README.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Audit family profile",
+      "summary": "Reusable-mode audit-family caller guide: permissions, check-name mapping, token, rollback.",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract",
+        "docs/ADOPTION.md#adoption-contract-verify"
+      ]
+    },
+    {
+      "id": "profile:audit-post-merge-audit",
+      "path": "profiles/audit/post-merge-audit.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Post-merge audit caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode post-merge audit caller (T04).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:audit-pr-close-guard",
+      "path": "profiles/audit/pr-close-guard.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "PR close guard caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode PR close guard caller (T04).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#712-reusable-pr-close-guardyml-pr-close-guard-contract"
+      ],
+      "mode": "reusable",
+      "header": "required"
+    },
+    {
+      "id": "profile:audit-tracker-audit",
+      "path": "profiles/audit/tracker-audit.yml",
+      "class": "copy-mode",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Tracker audit caller example",
+      "summary": "COPY-MODE EXAMPLE - reusable-mode advisory/strict tracker audit caller (T04).",
+      "docs": [
+        "docs/ACTIONS_CATALOG.md#76-reusable-audityml-tracker-audit-contract"
       ],
       "mode": "reusable",
       "header": "required"

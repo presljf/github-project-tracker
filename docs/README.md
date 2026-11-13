@@ -15,7 +15,7 @@ Read in this order depending on your goal:
 | Upgrade a pinned tracker version | [UPGRADING](./UPGRADING.md) |
 | Operate as an agent | [AGENT GUIDE](./AGENT_GUIDE.md) |
 | Use the task CLI | [TASK CLI](./TASK_CLI.md) |
-| Work on CI/security/actions | [ACTIONS CATALOG](./ACTIONS_CATALOG.md) · [CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md) |
+| Work on CI/security/actions | [ACTIONS CATALOG](./ACTIONS_CATALOG.md) · [CI/SECURITY PROFILE](./CI_SECURITY_PROFILE.md) · [audit family profile](../profiles/audit/README.md) |
 | Inspect the repo surface (classes, status, audiences, anchors) | [SURFACE](./SURFACE.md) — generated from `contract/repo-surface.json` |
 | Release a project | [RELEASE PROFILES](./RELEASE_PROFILES.md) |
 | Print quick-reference cards | [Reference cards](./reference-cards/README.md) |
@@ -30,7 +30,10 @@ Read in this order depending on your goal:
 | Guard adoption | [GUARD DISTRIBUTION](./GUARD_DISTRIBUTION.md) |
 | Docs coverage enforcement | [DOCS COVERAGE](./DOCS_COVERAGE.md) |
 
-**Automation availability:** bootstrap, audit, task CLI, reusable CI/security, and release profiles are implemented. Planned contracts are labeled; manual fallbacks remain documented.
+**Automation availability:** bootstrap, the audit family (tracker audit, post-merge audit, and PR
+close guard, shipped as reusable workflows with thin callers), task CLI, reusable
+CI/security/contract/metadata, and release profiles are implemented. E2E/docs reusables remain
+contract-only until T05 (#140). Planned contracts are labeled; manual fallbacks remain documented.
 
 **Docs conventions:** shell snippets are copy-pasteable and show expected results; secrets are never shown; screenshots/diagrams are sanitized and reproducible (Mermaid or text snapshots). See the [style guide](./DOCS_STYLE_GUIDE.md).
 

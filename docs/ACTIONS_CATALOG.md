@@ -22,12 +22,16 @@ This page is the single source of truth for the Actions layer. The [playbook §1
 - [1. How to read this catalog](#1-how-to-read-this-catalog)
 - [2. Workflow catalog](#2-workflow-catalog)
   - [2.8 Tracker contract + metadata verification](#28-tracker-contract-metadata-verification)
+  - [2.9 Post-merge bypass audit (shipped)](#29-post-merge-bypass-audit-shipped)
+  - [2.10 PR close guard (shipped)](#210-pr-close-guard-shipped)
 - [3. Trigger and required-check contract](#3-trigger-and-required-check-contract)
 - [4. Token and secret matrix](#4-token-and-secret-matrix)
 - [5. Runner, cost, and caching guidance](#5-runner-cost-and-caching-guidance)
 - [6. Local-parity commands](#6-local-parity-commands)
 - [7. Reusable workflow and composite action contracts](#7-reusable-workflow-and-composite-action-contracts)
   - [7.10 `reusable-contract.yml` — contract + metadata verification contract](#710-reusable-contractyml-contract-metadata-verification-contract)
+  - [7.11 `reusable-post-merge-audit.yml` — post-merge bypass audit contract](#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract)
+  - [7.12 `reusable-pr-close-guard.yml` — PR close guard contract](#712-reusable-pr-close-guardyml-pr-close-guard-contract)
 - [8. Hybrid D adoption model](#8-hybrid-d-adoption-model)
 - [9. Guardrails: no secrets, no live calls, guarded publishing](#9-guardrails-no-secrets-no-live-calls-guarded-publishing)
 - [10. Validation, T15 handoff, and change protocol](#10-validation-t15-handoff-and-change-protocol)
@@ -60,8 +64,9 @@ Three invariants follow from the definitions:
 | E2E — `e2e.yml` → `reusable-e2e.yml` | PR path/label; optional nightly | advisory by default; required only if project opts in | `ubuntu-latest` (Linux default) | Browser/API end-to-end validation | `contents: read` | none | traces/screenshots/videos on failure, 7d | Advisory unless promoted; quarantine flakes, never auto-promote |
 | Desktop smoke — `desktop-smoke.yml` → `reusable-desktop-smoke.yml` | PR path/label; `push` main paths; tags `v*`; `workflow_dispatch` | advisory on PR; **required release gate** | macOS (`macos-15` baseline) | Native shell/package smoke | `contents: read` | none (unsigned smoke) | smoke logs/summary, 7d | Advisory on PR; blocks release tag gate |
 | Release — `release.yml` → `reusable-release.yml` | `push` tags matching `automation.tagPattern`; `workflow_dispatch` (dry-run default) | **release gate** (not a PR check) | Linux generic/container/package; macOS for signed desktop | Validate version, build, checksum, publish or dry-run | `contents: write` (publish job only); `id-token: write` for OIDC; `packages: write` for container profile | `release` environment secrets; OIDC; `RELEASE_TOKEN` only if org policy requires | archives/dmg/image digest/package + `SHA256SUMS`, 30–90d | Fail closed; dry-run never publishes; tag/version mismatch fails |
-| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | weekly `schedule`; `workflow_dispatch`; optional advisory push-to-main/PR | advisory first (`workflows.audit.mode: advisory`); required at release gate once stable | `ubuntu-latest` | Tracker invariants via `audit.mjs` | `contents: read` + project read via scoped token | `TRACKER_TOKEN` (fixed secret name; project-scoped PAT or GitHub App); absent → skip cleanly | job summary + optional JSON, 14d | Advisory = never blocks; strict = fails release gate; missing token skips advisory |
-| Post-merge audit — `post-merge-audit.yml` | `pull_request` closed (merged only) | advisory (opens OI on real bypass) | `ubuntu-latest` | Required-check + closing-keyword/partial-PR audit of merged PRs | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` | `GITHUB_TOKEN` (automatic; caller must grant the same permissions) | job summary | Advisory: opens `tracker-contract-exception` OI instead of a red X; unreadable rollup degrades to warning + closure-only |
+| Tracker audit — `tracker-audit.yml` → `reusable-audit.yml` | weekly `schedule`; `workflow_dispatch`; advisory `pull_request` | advisory (default); strict opt-in per project | `ubuntu-latest` | Tracker invariants via `audit.mjs` | caller + job `contents: read`; project read via scoped token | `TRACKER_TOKEN` (`required: false`; project read; advisory skips cleanly when absent, strict fails actionably) | none — JSON in the job log + job summary | Advisory = never blocks; strict = fails gate; invalid mode/config errors fail; missing token skips advisory |
+| Post-merge audit — `post-merge-audit.yml` → `reusable-post-merge-audit.yml` | `pull_request` closed (merged only); `workflow_dispatch` with `pr-number` | advisory (opens OI on a real bypass); context `post-merge-audit / audit` | `ubuntu-latest` | Required-check + closing-keyword/partial-PR audit of merged PRs | caller grants `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` (called job's union) | `GITHUB_TOKEN` (automatic; caller must grant the same block) | none — job summary | Advisory: opens `tracker-contract-exception` OI instead of a red X; unreadable rollup degrades to warning + closure-only (exit 0, no false OI); non-merged `pr-number` fails actionably |
+| PR close guard — `pr-close-guard.yml` → `reusable-pr-close-guard.yml` | `pull_request` opened/edited/synchronize/reopened/labeled/unlabeled | required: `pr-close-guard / guard` | `ubuntu-latest` | Closing-keyword and partial-PR rules for tracker task PRs | caller grants `contents: read`, `issues: read`, `pull-requests: read` (read-only) | none (`GITHUB_TOKEN` automatic) | none — job summary | Violations fail the PR check; guard is read-only (no `issues: write`) |
 | Tracker contract — `tracker-contract.yml` → `reusable-contract.yml` | `pull_request`; `push` main; `workflow_dispatch` | required: `tracker-contract / contract`; `tracker-contract / metadata` per project | `ubuntu-latest` | Contract + metadata verification (pinned tooling + adoption contract; live Project metadata) | `contents: read` | `GITHUB_TOKEN` automatic; `TRACKER_TOKEN` (project read) only for metadata — absent with `metadata: true` fails with an actionable message; callers skip metadata on fork PRs | none | Contract/metadata violations fail; missing token or unreadable project fails closed; local parity `npm run verify:tooling`/`verify:contract`/`verify:metadata` |
 | Security — `security.yml` (Dependabot + dependency review + optional CodeQL) | PR dependency review; weekly/monthly `schedule`; CodeQL opt-in | Dependabot default; dependency review advisory then required; CodeQL opt-in advisory | `ubuntu-latest` | Dependency/supply-chain/code scanning | `contents: read`; `security-events: write` (CodeQL job only); `pull-requests: write` only if commenting | none | CodeQL SARIF → code scanning; summary otherwise | Dependency-review policy failure when required; CodeQL advisory until stable |
 | Docs — `docs.yml` → `reusable-docs.yml` | PR/push paths `docs/**`, `**/*.md`; `workflow_dispatch` | optional advisory; can be required for docs-only repos | `ubuntu-latest` | Markdown fence/link/consistency checks | `contents: read` | none | report summary, 7d | Advisory by default; broken fences/relative links fail |
@@ -71,8 +76,8 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 <!-- surface-status:start -->
 <!-- Generated by `node scripts/internal/render-surface.mjs` from `contract/repo-surface.json`. Do not edit by hand. -->
 **Shipped vs contract-only (generated from `contract/repo-surface.json`):**
-- shipped: `checksum`, `reusable-ci.yml`, `reusable-contract.yml`, `reusable-desktop-smoke.yml`, `reusable-guard.yml`, `reusable-release.yml`, `reusable-security.yml`, `setup-node-cache`, `sign-notarize-macos`
-- contract-only: `reusable-audit.yml`, `reusable-docs.yml`, `reusable-e2e.yml`
+- shipped: `checksum`, `reusable-audit.yml`, `reusable-ci.yml`, `reusable-contract.yml`, `reusable-desktop-smoke.yml`, `reusable-guard.yml`, `reusable-post-merge-audit.yml`, `reusable-pr-close-guard.yml`, `reusable-release.yml`, `reusable-security.yml`, `setup-node-cache`, `sign-notarize-macos`
+- contract-only: `reusable-docs.yml`, `reusable-e2e.yml`
 <!-- surface-status:end -->
 
 ### 2.1 CI (required)
@@ -126,13 +131,14 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 
 ### 2.5 Tracker audit (advisory first)
 
-- **Purpose:** run `scripts/adopt/cli/audit.mjs` against the configured project and report tracker invariant violations.
-- **Trigger detail:** existing `tracker-audit.yml` runs Mondays 15:00 UTC and on `workflow_dispatch`; optionally an advisory run on `push` to `main` (throttled by the project) or on PRs once the workflow is stable.
-- **Required status:** advisory first; required only at release gates after a stable policy exists (`workflows.audit.mode: required`). Never required on PRs initially.
-- **Token:** `TRACKER_TOKEN` (config `workflows.audit.tokenSecret`), project-scoped read access. Absent → skip with `exit 0` in advisory mode; strict mode requires the token and fails with an actionable message if missing.
-- **Permissions/secrets:** `contents: read`; token only in `env` for the audit step; never printed or uploaded.
-- **Artifacts:** job summary by default; JSON output (`--json`) as a short-retention artifact if configured (14 days). Findings may name issues; treat archives as sensitive.
-- **Failure mode:** advisory = exit 0 unless the script/config itself errors; strict = exit 1 on violations at the release gate; misconfiguration fails loudly.
+- **Purpose:** run `audit.mjs` against the configured project and report tracker invariant violations; advisory by default, strict only as a deliberate release-gate opt-in.
+- **Reusable caller:** `tracker-audit.yml` (thin caller) → [`reusable-audit.yml`](#76-reusable-audityml-tracker-audit-contract); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/README.md) and pin the adopted tag/SHA. Check context: `tracker-audit / audit`.
+- **Trigger detail:** weekly `schedule` (Mondays 15:00 UTC), `workflow_dispatch`, and — new in T04 — advisory `pull_request`; projects may also run it on `push` to `main`.
+- **Required status:** advisory first; strict is a release-gate opt-in (`mode: strict`), never the default PR check.
+- **Token:** `TRACKER_TOKEN` (`required: false`) with project read (Projects read + Metadata read; project-scoped PAT ≤90 days or GitHub App). Advisory mode with no token prints a notice and skips cleanly (exit 0); strict mode requires the token and fails with an actionable message. Never printed or uploaded.
+- **Permissions/secrets:** caller and job are `contents: read`; project read comes only from the passed token.
+- **Artifacts:** none — when `json: true` (default) the JSON result is echoed to the job log and a job summary is written; nothing is uploaded.
+- **Failure mode:** advisory = exit 0 on violations/warnings; strict = exit 1 on violations; invalid mode, missing config, or missing audit tooling fails closed.
 - **Local parity:** `npm run audit -- --config tracker.config.json --advisory`, strict variant with `--strict` (§6).
 
 ### 2.6 Security
@@ -167,6 +173,29 @@ The three reusable-mode profile callers (`release-macos.yml`, `release-container
 - **Failure mode:** fail closed. Contract/tooling/version violations fail the contract job; a contract mismatch, missing `project.number`, unreadable project, or a metadata run without `TRACKER_TOKEN` fails the metadata job with an actionable message (no silent skip when `metadata: true`).
 - **Local parity:** `npm run verify:tooling -- --root . --contract <contract> --tracker-config <config>`, `npm run verify:contract -- --root . --contract <contract>`, and `npm run verify:metadata -- --repo owner/repo --contract <contract>` (live API + project-read token); see §6.
 - **Migration/check-name note:** v1.3.x adopters copied two workflows with contexts `tracker-contract` and `tracker-metadata`; v1.4.0 emits `tracker-contract / contract` and `tracker-contract / metadata`. Update branch protection/ruleset required checks in the same upgrade PR (major per §7.9) and keep the old copies until the new contexts are green — full steps and token setup in [profiles/contract/README.md](../profiles/contract/README.md).
+
+### 2.9 Post-merge bypass audit (shipped)
+
+- **Purpose:** audit a merged PR for bypassed required checks and invalid closing-keyword/partial-PR usage, and open a `tracker-contract-exception` OI when a real bypass is found (instead of a red X after merge).
+- **Reusable caller:** `post-merge-audit.yml` (thin caller) → [`reusable-post-merge-audit.yml`](#711-reusable-post-merge-audityml-post-merge-bypass-audit-contract); install from [`profiles/audit/post-merge-audit.yml`](../profiles/audit/post-merge-audit.yml). Check context: `post-merge-audit / audit`.
+- **Trigger detail:** `pull_request` closed (the caller runs only when `merged == true`) and `workflow_dispatch` with a required `pr-number` for manual re-audits. The reusable workflow re-validates `state == MERGED` through the API before auditing, so a dispatch on an open/closed-unmerged PR fails actionably.
+- **Required context / status:** `post-merge-audit / audit` — advisory: a detected bypass opens an OI and the job succeeds; it is never a PR-blocking check because it runs after merge.
+- **Caller permissions (must grant the called job's union):** `contents: read` (checkout); `issues: write` (open the `tracker-contract-exception` OI/label); `pull-requests: read` (merged PR metadata); `checks: read` + `statuses: read` + `actions: read` (read `statusCheckRollup`; its GraphQL query also resolves `checkSuite.workflowRun`, which needs Actions read on private repos).
+- **Secrets/artifacts:** none beyond the automatic `GITHUB_TOKEN`; no artifacts — job summary only.
+- **Failure mode:** a real bypass opens an OI (documented advisory record, not a red X); an unreadable rollup (missing `checks`/`statuses`/`actions` read) degrades loudly — warning + job summary — to a closure-only audit and exits 0 so it cannot create a false check-related OI; non-permission/API errors fail closed.
+- **Config note:** required check names come from `guard.requiredChecks[]` in `tracker.config.json`; absent config falls back to the legacy default list (`ci / ci-gate`, `docs-guard`, `pr-close-guard`). Update it to the new reusable contexts when migrating, otherwise every merge is flagged as a bypass.
+- **Local parity:** `GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<merged-pr> npm run audit:post-merge -- --config tracker.config.json` (§6).
+
+### 2.10 PR close guard (shipped)
+
+- **Purpose:** enforce the tracker's PR closing rules on every PR update: a task PR must carry a closing keyword (`Closes/Fixes/Resolves #N`) targeting a task issue; a `partial` PR must use `Refs`/`Part of` and must not close the task; closing a sprint/release/stream tracker is rejected.
+- **Reusable caller:** `pr-close-guard.yml` (thin caller) → [`reusable-pr-close-guard.yml`](#712-reusable-pr-close-guardyml-pr-close-guard-contract); install from [`profiles/audit/pr-close-guard.yml`](../profiles/audit/pr-close-guard.yml). Check context: `pr-close-guard / guard`.
+- **Trigger detail:** `pull_request` `opened`, `edited`, `synchronize`, `reopened`, `labeled`, `unlabeled` (a label edit can change the `partial` decision).
+- **Required/optional status:** required in this repository (`pr-close-guard / guard`); adopters should require it as they migrate (old copied context: `pr-close-guard`).
+- **Permissions:** read-only least privilege — caller and job grant `contents: read`, `issues: read`, `pull-requests: read`. The guard script fetches the live PR and referenced issues through the API (event env vars optional), so no `issues: write` is needed; a future write requirement would be a documented permission increase (§7.9).
+- **Secrets/artifacts:** none (automatic `GITHUB_TOKEN`); no artifacts.
+- **Failure mode:** violations fail the PR check with the specific rule; API/permission errors fail closed; fork PRs are supported because the token is read-only.
+- **Local parity:** `GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<pr> npm run guard:pr-close` (§6).
 
 ---
 
@@ -244,9 +273,10 @@ Label and path rules:
 | Consumer | Identity / token | Permissions or scopes | Storage | Rotation | Notes |
 |---|---|---|---|---|---|
 | CI, E2E, desktop smoke | `GITHUB_TOKEN` | `contents: read` | automatic | per-run, ephemeral | Read-only for fork PRs regardless of declared permissions |
-| Post-merge audit | `GITHUB_TOKEN` | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` | automatic | per-run, ephemeral | Private repos need `checks: read` + `statuses: read` + `actions: read` for `statusCheckRollup` (its GraphQL query resolves `checkSuite.workflowRun`, which needs Actions read); the copied caller must carry the same block. **Historical note: fixed in v1.3.2; the v1.3.0 tag predates this correction (it landed post-tag in the tooling stream, `[Stream] v1.3.1-maintenance`) — adopters pinned to v1.3.0 add `actions: read` to their copied caller.** Unreadable rollup degrades to warning + closure-only audit (no red X, no false check-related OI) |
-| Tracker audit (advisory) | `TRACKER_TOKEN` — classic PAT with `project` (+ repo read) or fine-grained Projects read + Metadata read; or a GitHub App installation token with Projects: read (org-owned projects) | project read | repo/org secret, or environment secret for release-gate mode | ≤90 days for PATs; App tokens 1 h | Optional: workflow skips cleanly when absent. User-owned Projects v2 generally need an OAuth/PAT `project` scope; validate App access on your owner type |
-| Tracker audit (strict release gate) | same | project read | `release` environment secret | same | Audit is read-only; no write scopes needed |
+| Post-merge audit (`reusable-post-merge-audit.yml`) | `GITHUB_TOKEN` (automatic) | caller grants `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` — the same union the called job declares | automatic | per-run, ephemeral | `issues: write` opens the `tracker-contract-exception` OI; `checks`/`statuses`/`actions` read are needed for `statusCheckRollup` (its GraphQL query resolves `checkSuite.workflowRun`). Unreadable rollup degrades to warning + closure-only (exit 0, no false OI); fork-originated PRs get a read-only token by default, so OI creation can fail loudly there |
+| PR close guard (`reusable-pr-close-guard.yml`) | `GITHUB_TOKEN` (automatic) | caller and job grant `contents: read`, `issues: read`, `pull-requests: read` (read-only) | automatic | per-run, ephemeral | The guard script reads the PR and referenced issues through the API; no write scope is needed or granted. Fork PRs are supported (read-only token is sufficient) |
+| Tracker audit (advisory) | `TRACKER_TOKEN` (`required: false`) — classic PAT with `project` (+ repo read) or fine-grained Projects read + Metadata read; or a GitHub App installation token with Projects: read (org-owned projects) | project read | repo/org secret | ≤90 days for PATs; App tokens 1 h | Optional: advisory mode with no token prints a notice and skips cleanly (exit 0). User-owned Projects v2 generally need an OAuth/PAT `project` scope; validate App access on your owner type |
+| Tracker audit (strict release gate) | same | project read | repo/org secret (or a protected environment secret when the gate runs in one) | same | Audit is read-only; no write scopes needed. Missing token fails actionably in strict mode |
 | Contract + metadata verification (`reusable-contract.yml`) | `GITHUB_TOKEN` for the offline contract job; `TRACKER_TOKEN` for the metadata job only | contract: `contents: read`; metadata token: project read (Projects read + Metadata read) | `GITHUB_TOKEN` automatic; `TRACKER_TOKEN` repo/org secret | PAT ≤90 days; App installation tokens 1 h | Metadata runs only when `metadata: true` — fork PRs pass `false`; missing token with metadata enabled fails with an actionable message instead of skipping. Read-only, no write scopes; contract job sends no secrets |
 | Release publish (generic) | `GITHUB_TOKEN` | `contents: write` (publish job only) | automatic | per-run | Protected tag + `release` environment; never a PAT |
 | Desktop signing/notarization | environment secrets: certificate `.p12` (base64), certificate password, Apple ID, app-specific password; team ID is a non-secret repo/environment variable | n/a | `release` environment secrets/variables | certificate ≤1 year; rotate passwords | Skipped cleanly when absent; values never printed or uploaded |
@@ -317,11 +347,13 @@ Node setup, cache, and dependency install in the reusable workflows now run thro
 | E2E | `e2e-${{ github.workflow }}-${{ github.ref }}` | yes | 20 min |
 | Desktop smoke | `desktop-smoke-${{ github.workflow }}-${{ github.ref }}` | yes | 30 min |
 | Release | `release-${{ github.ref }}` | **no** | 60 min |
-| Tracker audit | `tracker-audit` | **no** | 10 min |
+| Tracker audit | `tracker-audit-${{ github.event_name }}-${{ github.ref }}` | yes | no explicit timeout (GitHub default) |
+| Post-merge audit | `post-merge-audit-${{ github.event.pull_request.number || inputs['pr-number'] }}` | **no** | no explicit timeout (GitHub default) |
+| PR close guard | `pr-close-guard-${{ github.event.pull_request.number }}` | yes | no explicit timeout (GitHub default) |
 | Security/docs | `security-${{ github.ref }}` / `docs-${{ github.ref }}` | yes | 15 / 5 min |
 
-- Cancel superseded PR runs; never cancel a tag or release run halfway through publishing.
-- Artifact retention: 7 days for advisory failure logs/screenshots; 14 days for audit JSON; 30–90 days for release checksums/artifacts. Keep job summaries for the human-readable record.
+- Cancel superseded PR runs; never cancel a tag or release run halfway through publishing. The post-merge audit is not cancelled (`cancel-in-progress: false`) because a half-run audit could skip a bypass check.
+- Artifact retention: 7 days for advisory failure logs/screenshots; 30–90 days for release checksums/artifacts. Keep job summaries for the human-readable record — the audit family uploads no artifacts (JSON is echoed to the log + summary). Audit-family callers set no explicit timeout; add `timeout-minutes` when a project's audit can be slow.
 - Cost controls beyond caching: label/path gating, schedules weekly not hourly, early-failing lint before tests, matrix minimization, single OS unless required, and no artifact upload on success unless it is a product artifact.
 
 ---
@@ -340,6 +372,8 @@ Every workflow must be reproducible locally with no CI-only steps; the commands 
 | Release (container) | `docker build -t <image> .`; `docker run` smoke | image builds and starts locally | project-defined |
 | Release (package) | `npm pack --dry-run` | tarball file list, no secrets or extra files | project-defined |
 | Tracker audit | `npm run audit -- --config tracker.config.json --advisory`; strict: add `--strict` | `Tracker audit — <repo> (advisory)`; violations listed; advisory exit 0, strict exits 1 on violations | **now** |
+| Post-merge audit | `GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<merged-pr> npm run audit:post-merge -- --config tracker.config.json` | audit summary; `tracker-contract-exception` OI opened on a real bypass; unreadable rollup warns + closure-only, exit 0 | **now** |
+| PR close guard | `GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<pr> npm run guard:pr-close` | `PR closing-keyword guard OK.` or the violation list; exit 1 on violations | **now** |
 | Security | `npm ls --all`; optional `npm audit --audit-level=high` | dependency tree resolves; audit findings listed (network, advisory only) | `npm ls` **now**; audit optional |
 | Docs | `git diff --check`; fence parity; optional Markdown lint | no output from `git diff --check`; `balanced` fence count | **now** |
 
@@ -353,6 +387,7 @@ awk '/^```/{n++} END {print n, (n % 2 ? "UNBALANCED" : "balanced")}' docs/ACTION
 Additional notes:
 
 - The template repo's own tests run with `npm test` (Node's built-in test runner); `npm run validate:config` validates the example configs.
+- The audit-family scripts read `GITHUB_REPOSITORY`/`PR_NUMBER` from the environment (plus optional `PR_BODY`/`PR_BRANCH`/`PR_LABELS` for the close guard and `--config` for the audits); there is no `--repo`/`--pr` flag. The guard fetches the live PR when the event env vars are absent.
 - The Node profile is merged into adopting projects from `profiles/node/package.example.json`; do not overwrite project scripts wholesale ([profile README](../profiles/node/README.md)).
 - Release/desktop commands using credentials are documented as dry-runs only; never paste real secrets into a terminal history or issue.
 - External link checking is not a default local gate (network, flaky); review relative links with the docs command above and rendered Markdown previews.
@@ -361,7 +396,7 @@ Additional notes:
 
 ## 7. Reusable workflow and composite action contracts
 
-Contracts for CI/security/release are implemented as shipped YAML; the tracker contract + metadata verification workflow is shipped as well (§7.10); contracts for E2E/desktop/docs/audit-wrapper remain **contract-only** until implemented. Each contract states its status where relevant. Machine-checkable class/status/audience truth (generated from `contract/repo-surface.json`): [SURFACE](./SURFACE.md).
+Contracts for CI/security/release are implemented as shipped YAML; the tracker contract + metadata verification workflow (§7.10) and the audit family (§7.6, §7.11, §7.12) are shipped too. Contracts for E2E and docs remain **contract-only** until T05. Each contract states its status where relevant. Machine-checkable class/status/audience truth (generated from `contract/repo-surface.json`): [SURFACE](./SURFACE.md).
 
 ### 7.1 Naming and ref conventions
 
@@ -509,17 +544,28 @@ Input semantics: `dry-run: true` (the default) performs the full build/validatio
 
 ### 7.6 `reusable-audit.yml` — tracker audit contract
 
+**Availability:** shipped (T04) — `.github/workflows/reusable-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/tracker-audit.yml` (self mode passes `tracker-ref: ''`); adopters copy [`profiles/audit/tracker-audit.yml`](../profiles/audit/tracker-audit.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `tracker-audit / audit` (caller job `tracker-audit` / called job `audit`).
+
 | Interface | Definition |
 |---|---|
-| Inputs | `config-path` string default `tracker.config.json`; `mode` string enum `advisory`/`strict` default `advisory`; `json` boolean default `true` |
-| Outputs | `violations-count`, `ok` (`'true'`/`'false'`), summary text |
-| Secrets | `TRACKER_TOKEN` (`required: false`; advisory skips cleanly when unset, strict fails with a configuration message) |
-| Permissions | `contents: read`; project read comes from the token |
-| Runner | `ubuntu-latest`, timeout 10 min |
-| Artifacts | job summary by default; optional JSON, 14-day retention |
-| Stability | new optional inputs minor; mode/default changes or output renames major; token requirement changes major |
+| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA to load `audit.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative); `mode` string default `advisory` — validated `advisory`/`strict`; `json` boolean default `true` (echo the JSON result in the job log); `working-directory` string default `'.'`; `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Outputs | `ok` (`'true'`/`'false'`), `violations-count`, `warnings-count` (empty when the advisory run skips for a missing token) |
+| Secrets | `TRACKER_TOKEN` (`required: false`; project read). Advisory mode with no token: notice + clean skip (exit 0). Strict mode with no token: actionable failure |
+| Permissions | `contents: read` (caller and job); project read comes only from the token |
+| Runner | `ubuntu-latest` (`runs-on` input) |
+| Artifacts | none — JSON is echoed to the job log (`json: true`) and a job summary is written; nothing is uploaded |
+| Stability | optional input additions are minor; mode/default changes, output renames, or required-secret changes are major per §7.9 |
 
-Existing behavioral contract (preserve in T15): when `TRACKER_TOKEN` is empty the advisory run prints a skip message and exits 0; invalid config/errors exit 1; advisory violations exit 0; strict violations exit 1.
+**Behavior:**
+- Self mode is keyed on the canonical repository slug (`presljf/github-project-tracker`); the template's caller passes `tracker-ref: ''` and the script comes from the checkout. Downstream, the pinned template ref is checked out to `.tracker/` and `audit.mjs` comes from that tag.
+- `mode` is validated up front (`advisory`/`strict`; invalid values fail the job). `config-path` is resolved under `working-directory`.
+- Advisory mode with an empty `TRACKER_TOKEN` emits a notice and skips the audit step (job succeeds; the outputs are empty). Strict mode requires the token and fails actionably without it.
+- When `json: true` the JSON result is parsed to set `ok`/`violations-count`/`warnings-count` and to write the job summary; warnings are never blocking (the script exits 0 for them). Invalid config or missing tooling fails closed.
+- No artifacts, no `pull_request_target`, no write permissions; the only secret is the optional `TRACKER_TOKEN`.
+
+**Consumers:** the template's own `.github/workflows/tracker-audit.yml` (advisory on `schedule`, `workflow_dispatch`, and `pull_request`; context `tracker-audit / audit`) and adopting repositories using [`profiles/audit/tracker-audit.yml`](../profiles/audit/tracker-audit.yml).
+
+**Migration note (v1.3.x adopters):** the copied tracker-audit workflow reported the bare context `audit` (from its job name); the reusable caller reports `tracker-audit / audit`. Update protection in the same PR that upgrades the pin (major per §7.9); the copy-mode example header shows both pins to replace.
 
 ### 7.7 `reusable-security.yml` and `reusable-docs.yml`
 
@@ -630,6 +676,55 @@ Composite action rules:
 
 **Migration note (v1.3.x adopters):** replace the copied `tracker-contract.yml` + `tracker-metadata.yml` workflows with one caller that pins this reusable workflow. The old contexts `tracker-contract`/`tracker-metadata` become `tracker-contract / contract` and `tracker-contract / metadata`; update branch protection/ruleset required checks in the same PR that upgrades the pin (major per §7.9) and keep the old copies until the new contexts are green. Full steps, token setup, and local verification: [profiles/contract/README.md](../profiles/contract/README.md).
 
+### 7.11 `reusable-post-merge-audit.yml` — post-merge bypass audit contract
+
+**Availability:** shipped (T04) — `.github/workflows/reusable-post-merge-audit.yml`, `on: workflow_call` only, job `audit`. The template's own caller is `.github/workflows/post-merge-audit.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/post-merge-audit.yml`](../profiles/audit/post-merge-audit.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `post-merge-audit / audit` (caller job `post-merge-audit` / called job `audit`).
+
+| Interface | Definition |
+|---|---|
+| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA for the audit tooling; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative; required-check names come from `guard.requiredChecks[]`); `working-directory` string default `'.'`; `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual dispatch must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Outputs | `ok` (`'true'` when the merged PR passed the audit; a degraded rollup still passes with a warning) |
+| Secrets | none — the automatic `GITHUB_TOKEN` is used |
+| Permissions | called job declares `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`; the caller must grant at least that union |
+| Runner | `ubuntu-latest` (`runs-on` input) |
+| Artifacts | none — job summary only |
+| Stability | optional input additions are minor; changing the required permission union, output names, trigger semantics, or the emitted check context is major per §7.9 |
+
+**Behavior:**
+- Resolves the target PR from `pr-number` or the triggering event, then **re-validates `state == MERGED` through the API** before auditing; a dispatch for an open/closed-unmerged PR fails actionably instead of auditing it.
+- Runs `post-merge-audit.mjs --config <config-path>` from `working-directory` with `GH_TOKEN` (automatic), `GITHUB_REPOSITORY`, and `PR_NUMBER`: required checks from `guard.requiredChecks[]`, closing-keyword/partial-PR rules, and an OI on a real bypass.
+- On a real bypass it opens a `tracker-contract-exception` OI (advisory record, not a red X). An unreadable `statusCheckRollup` — missing `checks`/`statuses`/`actions` read — degrades loudly (warning + job summary) to closure-only auditing and exits 0, so it cannot create a false check-related OI. Non-permission/API errors still fail closed.
+- Fork caveat: fork-originated `pull_request` events get a read-only `GITHUB_TOKEN` by default, so `issues: write` (OI creation) can fail; the audit fails loudly rather than silently skipping. Enable "Send write tokens to workflows from pull requests" only as a documented decision.
+- No artifacts, no `pull_request_target`, no secrets beyond the automatic token. Self mode is keyed on the canonical repository slug; downstream checks the pinned ref into `.tracker/`.
+
+**Consumers:** the template's own `.github/workflows/post-merge-audit.yml` (context `post-merge-audit / audit`) and adopting repositories using [`profiles/audit/post-merge-audit.yml`](../profiles/audit/post-merge-audit.yml).
+
+**Migration note (v1.3.x adopters):** the copied post-merge workflow reported the bare context `audit` (its job name matched the tracker audit's); the reusable caller reports `post-merge-audit / audit`. Keep the same caller permission union, update branch protection in the same PR (major per §7.9), and update `guard.requiredChecks[]` to the new reusable contexts — otherwise the audit flags every merge as a bypass.
+
+### 7.12 `reusable-pr-close-guard.yml` — PR close guard contract
+
+**Availability:** shipped (T04) — `.github/workflows/reusable-pr-close-guard.yml`, `on: workflow_call` only, job `guard`. The template's own caller is `.github/workflows/pr-close-guard.yml` (self mode, `tracker-ref: ''`); adopters copy [`profiles/audit/pr-close-guard.yml`](../profiles/audit/pr-close-guard.yml) into `.github/workflows/` and pin the adopted tag/SHA. Check context: `pr-close-guard / guard` (caller job `pr-close-guard` / called job `guard`).
+
+| Interface | Definition |
+|---|---|
+| Inputs | `tracker-ref` string default `v1.3.2` (exact tag/SHA for the guard tooling; ignored in the template repo itself); `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual invocations must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Outputs | none (pass/fail job) |
+| Secrets | none — the automatic `GITHUB_TOKEN` is used |
+| Permissions | called job declares `contents: read`, `issues: read`, `pull-requests: read`; the caller grants the same read-only union. No `issues: write` is required or granted |
+| Runner | `ubuntu-latest` (`runs-on` input) |
+| Artifacts | none |
+| Stability | optional input additions are minor; permission increases, output/check-context changes, or trigger-semantics changes are major per §7.9 |
+
+**Behavior:**
+- Resolves the target PR from `pr-number` or the triggering event, then fetches the live PR and referenced issues through the API (event env vars are optional — this is robust against stale payloads).
+- Enforces: task PRs carry a closing keyword targeting a task issue; `partial` PRs use `Refs`/`Part of` and never a closing keyword; closing a sprint/release/stream tracker is rejected; closing references to missing issues fail.
+- Read-only by design: the older copy-mode assumption that the guard needed `issues: write` is obsolete — the script only reads. A future write requirement would be a documented permission increase and caller change (§7.9).
+- Fork PRs are supported: the read-only token is sufficient and no secrets are involved. No artifacts, no `pull_request_target`.
+
+**Consumers:** the template's own `.github/workflows/pr-close-guard.yml` (required context `pr-close-guard / guard`) and adopting repositories using [`profiles/audit/pr-close-guard.yml`](../profiles/audit/pr-close-guard.yml).
+
+**Migration note (v1.3.x adopters):** the copied guard reported the bare context `pr-close-guard`; the reusable caller reports `pr-close-guard / guard`. Update branch protection/rulesets in the same PR that upgrades the pin (major per §7.9).
+
 ---
 
 ## 8. Hybrid D adoption model
@@ -697,6 +792,7 @@ Run these on a scratch private repo with read access to the template that pins t
 - [ ] Caller-granted permissions are sufficient; called workflow cannot exceed them.
 - [ ] Explicit secret passing works (`secrets: TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}`), and the audit workflow skips cleanly when the secret is absent.
 - [ ] Required check display names match the documented contract after one green run.
+- [ ] Audit-family contexts (`tracker-audit / audit`, `post-merge-audit / audit`, `pr-close-guard / guard`) captured from a green run before protecting.
 - [ ] Fork PR run receives no secrets and read-only token behavior is as expected.
 - [ ] Environment `release` approval is required before publish; dispatch dry-run leaves no release behind.
 - [ ] Personal-account vs organization behavior recorded (private cross-repo calls are commonly limited to the same organization and may be blocked by policy; personal private repos generally cannot share across repos).
@@ -777,14 +873,24 @@ jobs:
     dry-run: false
 ```
 
-Audit skip pattern (already shipped in `.github/workflows/tracker-audit.yml`, preserve it):
+Audit-family callers use the reusable workflows instead of inline skip logic — the skip/fail policy
+lives in `reusable-audit.yml` (§7.6): advisory mode with no token prints a notice and skips (exit 0),
+strict mode fails actionably. Call shape:
 
-```bash
-if [ -z "$GH_TOKEN" ]; then
-  echo "TRACKER_TOKEN is not configured; skipping advisory audit."
-  exit 0
-fi
+```yaml
+jobs:
+  audit:
+    permissions:
+      contents: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-audit.yml@v1.4.0
+    with:
+      mode: advisory        # strict for a release-gate opt-in
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}   # optional in advisory mode
 ```
+
+The post-merge audit and PR close guard consume the automatic `GITHUB_TOKEN` and pass no secret
+(§7.11, §7.12); their caller permissions are the least-privilege contracts documented there.
 
 ### 9.4 Working with untrusted input
 
@@ -850,6 +956,7 @@ Performed for this catalog:
 | [HOW TO USE §13 — audit](./HOW_TO_USE.md#13-audit) | Manual audit checklist until automation is stable |
 | [Node profile command mapping](../profiles/node/README.md#command-mapping) | Local parity for lint/format/verify |
 | [profiles/contract](../profiles/contract/README.md) | Reusable-mode contract + metadata caller, token setup, check-name mapping, and v1.3.x migration steps |
+| [profiles/audit](../profiles/audit/README.md) | Reusable-mode audit-family callers (tracker audit, post-merge audit, PR close guard), caller permissions, check-name mapping, token setup, rollback |
 | [tracker config schema](../schemas/tracker.config.schema.json) | `workflows.ci`, `workflows.audit`, `workflows.release` contract keys |
 | [SECURITY.md](../SECURITY.md) | Private vulnerability reporting; never expose tokens |
 | [Shipped audit workflow](../.github/workflows/tracker-audit.yml) | Current advisory baseline and skip behavior |

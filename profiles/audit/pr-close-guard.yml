@@ -1,0 +1,38 @@
+# COPY-MODE EXAMPLE — reusable-mode PR close guard caller (T04).
+#
+# Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
+# lives under profiles/. Copy it into your repository's .github/workflows/pr-close-guard.yml,
+# replace both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
+# with the exact tag/SHA you adopted (v1.4.0+ — the first release that ships
+# reusable-pr-close-guard.yml), and update your required checks (old→new mapping in
+# profiles/audit/README.md).
+#
+# Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml
+# (contract in docs/ACTIONS_CATALOG.md §7.12; profile details in profiles/audit/README.md).
+#
+# READ-ONLY least privilege: the guard script reads the PR and referenced issues through the API
+# (it fetches the live PR when event env vars are absent, which is robust against stale payloads),
+# so the caller grants only contents/issues/pull-requests read — no issues: write.
+name: PR close guard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-close-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-close-guard:
+    name: pr-close-guard
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml@v1.3.2
+    with:
+      tracker-ref: v1.3.2
