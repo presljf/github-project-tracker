@@ -147,7 +147,8 @@
         "eslint.config.mjs",
         "prettier.config.mjs",
         ".prettierignore",
-        "package-lock.json"
+        "package-lock.json",
+        ".gitignore"
       ],
       "docs": [
         "docs/REFERENCE.md",
