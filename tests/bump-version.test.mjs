@@ -37,6 +37,16 @@ function repo() {
   );
   fs.mkdirSync(path.join(root, 'profiles/contract'), { recursive: true });
   fs.writeFileSync(path.join(root, 'profiles/contract/tracker-contract.yml'), 'with:\n  tracker-ref: v1.2.0\n');
+  fs.writeFileSync(
+    path.join(root, 'docs/GUARD_DISTRIBUTION.md'),
+    [
+      'Align `tracker-ref` with the layout: v1.2.0 and earlier ship `scripts/github|docs/**`; v1.2.0+ ships `scripts/adopt/**`.',
+      'Rollback: the v1.2.0 tag keeps the inline workflows.',
+      'Restore the previously copied workflow from the v1.2.0 tag (it runs the scripts inline).',
+      'A pinned v1.2.0 checkout still carries the inline workflow.',
+      '',
+    ].join('\n'),
+  );
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"version":"1.2.0"}\n');
   fs.writeFileSync(path.join(root, 'tests.fixture.md'), 'v1.2.0\n');
   execFileSync('git', ['add', '.'], { cwd: root });
@@ -63,6 +73,8 @@ test('plans only allowlisted active files and preserves sprint keys', () => {
   assert.equal(changes.find((c) => c.file === 'profiles/contract/tracker-contract.yml').edits.length, 1);
   // Historical validation records are excluded from the bump.
   assert.ok(!files.includes('docs/DOCS_VALIDATION.md'));
+  // Predecessor-layout / rollback references are historical and must not be rewritten.
+  assert.ok(!files.includes('docs/GUARD_DISTRIBUTION.md'), 'historical layout/rollback lines are excluded');
 });
 test('apply changes only planned lines', () => {
   const root = repo();

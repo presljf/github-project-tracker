@@ -143,7 +143,7 @@
         "adopter"
       ],
       "title": "ACTIONS CATALOG",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -155,7 +155,7 @@
         "adopter"
       ],
       "title": "ADOPTION — zero to first task",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -167,7 +167,7 @@
         "adopter"
       ],
       "title": "AGENT GUIDE",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -203,7 +203,7 @@
         "template"
       ],
       "title": "DOCS STYLE GUIDE",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -227,7 +227,7 @@
         "adopter"
       ],
       "title": "Downstream feedback",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -251,7 +251,7 @@
         "template"
       ],
       "title": "GITHUB APP SPIKE",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -263,7 +263,7 @@
         "adopter"
       ],
       "title": "GitHub Project Tracker Playbook",
-      "summary": "Docs version: v1.3.2-docs.1 · Status: Project Tracker OS v1.0.0 playbook",
+      "summary": "Docs version: v1.4.0-docs.1 · Status: Project Tracker OS v1.0.0 playbook",
       "docs": []
     },
     {
@@ -287,7 +287,7 @@
         "adopter"
       ],
       "title": "HOW TO USE — exhaustive handbook",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -299,7 +299,7 @@
         "adopter"
       ],
       "title": "MULTI-PROJECT",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -311,7 +311,7 @@
         "template"
       ],
       "title": "PUBLICATION",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -323,7 +323,7 @@
         "adopter"
       ],
       "title": "Quickstart — first tracker in ~10 minutes",
-      "summary": "Docs version: v1.3.2-docs.1 · Full handbook: HOW TO USE · Reference: REFERENCE",
+      "summary": "Docs version: v1.4.0-docs.1 · Full handbook: HOW TO USE · Reference: REFERENCE",
       "docs": []
     },
     {
@@ -335,7 +335,7 @@
         "template"
       ],
       "title": "Documentation index",
-      "summary": "Docs version: v1.3.2-docs.1 (targets Project Tracker OS v1.3.2; refreshed before release)",
+      "summary": "Docs version: v1.4.0-docs.1 (targets Project Tracker OS v1.4.0; refreshed before release)",
       "docs": []
     },
     {
@@ -347,7 +347,7 @@
         "adopter"
       ],
       "title": "REFERENCE",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -359,7 +359,7 @@
         "adopter"
       ],
       "title": "RELEASE PROFILES",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -383,7 +383,7 @@
         "adopter"
       ],
       "title": "TASK CLI",
-      "summary": "Docs version: v1.3.2-docs.1 · Status: available now",
+      "summary": "Docs version: v1.4.0-docs.1 · Status: available now",
       "docs": []
     },
     {
@@ -395,7 +395,7 @@
         "adopter"
       ],
       "title": "Template repository guide",
-      "summary": "Docs version: v1.3.2-docs.1 · Template target: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Template target: v1.4.0",
       "docs": []
     },
     {
@@ -407,7 +407,7 @@
         "adopter"
       ],
       "title": "TROUBLESHOOTING",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -419,7 +419,7 @@
         "adopter"
       ],
       "title": "UPGRADING",
-      "summary": "Docs version: v1.3.2-docs.1 · Target template: v1.3.2",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {
@@ -431,7 +431,7 @@
         "template"
       ],
       "title": "Docs assets — diagram/screenshot policy",
-      "summary": "Docs version: v1.3.2-docs.1",
+      "summary": "Docs version: v1.4.0-docs.1",
       "docs": []
     },
     {

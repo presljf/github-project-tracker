@@ -9,6 +9,61 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## v1.4.0 — Reusable verification workflows, repo-surface cleanup, required adoption contract
+
+Minor release (D1 second delivery). **Breaking for adopters that re-pin (D3):** six new reusable
+callers are now required and must be present, pinned to the exact `@v1.4.0` release tag, with a
+matching `tracker-ref`; the scripts tree moved to class-first families with no shims, and release
+caller examples moved under `profiles/`. Read the consolidated old→new table and rollback rules in
+[UPGRADING § v1.4.0](docs/UPGRADING.md#v140-breaking-class-first-script-families-and-non-runnable-release-examples)
+before upgrading a pin.
+
+- **Repo surface + scripts reorg (T01, #134):** `contract/repo-surface.json` classifies every
+  workflow/action/profile/script/doc audience; blocking `verify-surface` guard (SURFACE_* codes)
+  wired into CI; scripts moved to `scripts/adopt/{cli,lib,docs}` + `scripts/internal` (no shims,
+  stable `npm run` aliases); release examples moved to `profiles/release/reusable/`; migration docs.
+- **Catalog truth + setup-node-cache + batching + debt guard (T02, #137):** shipped
+  `.github/actions/setup-node-cache` consumed by the reusable workflows; generated `docs/SURFACE.md`
+  and the catalog §2 status block; `npm run gate:local` ordered checkpoint (skip-not-pass);
+  generated `docs/TECH_DEBT.md` + debt register/guard; coverage baseline.
+- **Contract + metadata reusable (T03, #138):** `reusable-contract.yml` with `contract`/`metadata`
+  jobs and an isolated `version-guard`; dogfooded self caller; `profiles/contract` + check-name
+  migration docs; `release:bump` covers `tracker-ref` pins; tooling-profile metadata gap recorded
+  as accepted debt `debt-019`.
+- **Audit family reusables (T04, #139):** `reusable-audit.yml` (advisory/strict, optional
+  `TRACKER_TOKEN`), `reusable-post-merge-audit.yml` (caller-granted audit scopes, script-owned
+  merged-state revalidation), `reusable-pr-close-guard.yml` (read-only); tracker callers converted
+  to thin dogfooded wrappers; branch protection + `guard.requiredChecks` migrated in the same
+  window; transport-only rule preserved (no raw `gh` in workflows).
+- **E2E + counts reusables (T05, #140):** `reusable-e2e.yml` Playwright wrapper consuming
+  `setup-node-cache` via `job.workflow_repository`/`job.workflow_sha`, failure-only pinned
+  artifacts; `reusable-counts.yml` counts-docs guard (no suite inventory); live `counts-docs /
+  counts` no-op and `e2e-fixture` dispatch proof; tracked `node_modules` symlink removed and
+  `.gitignore` fixed.
+- **Required adoption contract + release gate (T06, #141):** the six v1.4.0 callers are
+  `requiredWorkflows` in `contract/adoption-contract.json`; `verify-contract` enforces presence, the
+  exact `@v1.4.0` tag, and a matching `tracker-ref` (line-anchored, job-scoped; commented/expression
+  bypasses rejected); `reusable-release.yml` gains an opt-in `contract-gate` (default false,
+  `contents: read` only) that runs `verify-tooling` + `verify-contract` + the offline release gate
+  before build; new `guard:hygiene` tracked-file check wired into `gate:local` (17 steps) and CI.
+- **Local-first batching + health:** `gate:local` one-command checkpoint, batch/evidence conventions,
+  debt register + expiry/label guard, generated tech-debt report, and bounded low-risk fixes.
+- **Docs/version record:** UPGRADING six-caller migration table + required-contract rules + opt-in
+  release gate + post-tag CastDeck C1–C3 verification; ADOPTION / ACTIONS CATALOG / CI SECURITY
+  PROFILE / GUARD DISTRIBUTION / REFERENCE / RELEASE PROFILES / profile READMEs refreshed; version,
+  docs version, contract metadata, examples, and reference cards at **v1.4.0**; `docs/SURFACE.md` +
+  `docs/TECH_DEBT.md` regenerated.
+- **Known limitations:** the reusable release gate enforces the offline contract half only; the open
+  `tracker-contract-exception` OI check stays the release-procedure step
+  (`npm run gate:release -- --repo owner/repo`) because requiring `issues: read` would invalidate
+  existing caller permission grants. `debt-019` (tooling-profile-aware `verify-metadata`) remains
+  accepted for v1.5.0. Real Playwright/browser and counts-baseline downstream validation is CastDeck
+  C3 after the tag; the template's E2E fixture proves wiring only (`browsers: none`).
+- **Verification:** 421 tests, `GATE_LOCAL_OK 17/17`, docs check 64 md, surface 131 entries
+  (130 shipped/1 contract-only), self-repo `verify:tooling`/`verify:contract`/`gate:release`; live
+  release dry-run `43480677464` on the release head (contract-gate/build/checksum success, publish
+  skipped). The release PR's post-merge audit and stream close evidence will be recorded on #142/#132.
+
 ## v1.3.2 — Patch release: post-v1.3.0 fixes + close-out reconciliation
 
 Patch release of the v1.3.0 contract surface: fixes merged to `main` after the v1.3.0 tag, with no

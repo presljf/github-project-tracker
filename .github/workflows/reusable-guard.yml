@@ -7,7 +7,7 @@ on:
         description: Exact template tag/SHA to load the guard from.
         required: false
         type: string
-        default: v1.3.2
+        default: v1.4.0
       config-path:
         description: Project tracker config path (for allowlist).
         required: false

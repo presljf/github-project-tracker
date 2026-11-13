@@ -2,7 +2,7 @@
 
 # Repository surface
 
-**Tracker version:** v1.3.2 · **Source:** `contract/repo-surface.json` · **Renderer:** `node scripts/internal/render-surface.mjs`
+**Tracker version:** v1.4.0 · **Source:** `contract/repo-surface.json` · **Renderer:** `node scripts/internal/render-surface.mjs`
 
 > Generated file. Edit `contract/repo-surface.json` and run `npm run surface:render`; the
 > `render-surface --check` gate fails when this file is stale. Do not edit by hand.

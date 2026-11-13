@@ -1,6 +1,6 @@
 # Docs assets — diagram/screenshot policy
 
-**Docs version:** v1.3.2-docs.1
+**Docs version:** v1.4.0-docs.1
 
 The docs use **reproducible, sanitized diagrams and expected-output snapshots** instead of binary screenshots wherever possible.
 

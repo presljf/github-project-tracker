@@ -63,7 +63,7 @@ export function versionPattern(from) {
 const VERSION_CONTEXT =
   /(docs version|target template|target\s+v|templateVersion|pinnedVersion|trackerVersion|"ref"\s*:|uses:\s|default:\s*v|latest patch|status:\s*v|release:\s*v|tag\s+v?|placeholder|upgrade-tracker|tracker-ref)/i;
 const HISTORICAL =
-  /(released as|result recorded|live t08|historical|remains immutable|superseded|incident|reusable workflow ref parses|composite action ref works)/i;
+  /(released as|result recorded|live t08|historical|remains immutable|superseded|incident|reusable workflow ref parses|composite action ref works|tag keeps the|from the v\d+\.\d+\.\d+ tag|and earlier ship|revert to the v\d+\.\d+\.\d+|pinned v\d+\.\d+\.\d+ checkout)/i;
 export function planVersionBump({ root, from, to }) {
   const allow = ALLOW.map(globToRegex);
   const exclude = EXCLUDE.map(globToRegex);

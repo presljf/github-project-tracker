@@ -21,7 +21,7 @@ on:
         description: Exact template release tag (`@v<version>`) to load the audit tooling from (ignored in the template repo itself).
         required: false
         type: string
-        default: v1.3.2
+        default: v1.4.0
       config-path:
         description: Tracker config path (working-directory-relative).
         required: false

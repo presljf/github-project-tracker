@@ -1,6 +1,6 @@
 # TROUBLESHOOTING
 
-**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
+**Docs version:** v1.4.0-docs.1 · Target template: v1.4.0
 Symptom → cause → fix. Run `gh --version` and `gh auth status` first; many failures are auth/scope/ID issues.
 
 ## Contents

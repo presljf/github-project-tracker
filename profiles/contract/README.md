@@ -35,7 +35,7 @@ Check contexts produced by a caller job named `tracker-contract`:
 
 | Input | Type | Default | Meaning |
 |---|---|---|---|
-| `tracker-ref` | string | `v1.3.2` | Exact template release tag to load the adoption contract and verification tooling from (must match the `uses:` tag). Downstream: the tag you adopted. Self mode (`tracker-ref: ''`): the caller checkout. |
+| `tracker-ref` | string | `v1.4.0` | Exact template release tag to load the adoption contract and verification tooling from (must match the `uses:` tag). Downstream: the tag you adopted. Self mode (`tracker-ref: ''`): the caller checkout. |
 | `config-path` | string | `tracker.config.json` | Tracker config path (working-directory-relative; default `.` = repository root). Affects `verify-tooling` only. |
 | `contract-path` | string | `''` | Adoption contract path (working-directory-relative or absolute). Empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream. |
 | `runs-on` | string | `ubuntu-latest` | Runner label for both jobs. |
@@ -82,7 +82,7 @@ otherwise.
 ## Migration from the v1.3.x copied workflows
 
 1. Copy [tracker-contract.yml](./tracker-contract.yml) to `.github/workflows/tracker-contract.yml`;
-   replace **both** pinned `@v1.3.2` refs (the `uses:` reusable-workflow ref and `tracker-ref`)
+   replace **both** pinned `@v1.4.0` refs (the `uses:` reusable-workflow ref and `tracker-ref`)
    with the exact release tag (`@v<version>`) you adopted — `v1.4.0` is the first release that ships
    `reusable-contract.yml`, so the tag must contain it.
 2. Keep the `metadata:` expression (`false` on pull requests, `true` on `push` to `main` and

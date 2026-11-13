@@ -1,6 +1,6 @@
 # ADOPTION — zero to first task
 
-**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
+**Docs version:** v1.4.0-docs.1 · Target template: v1.4.0
 This guide onboards a **new project** onto the tracker. The CastDeck pilot is only an example; do not copy its product-specific plan.
 
 > **Automation note:** bootstrap/audit/task CLI are available now. This manual path explains the steps; the same config drives `bootstrap.mjs`, and the CLIs automate the lifecycle.
@@ -290,7 +290,7 @@ Contract + metadata verification is reusable-mode (no copied verifier workflows)
 [`profiles/contract/tracker-contract.yml`](../profiles/contract/tracker-contract.yml) into
 `.github/workflows/`, then pin **both** refs — the reusable-workflow `uses:` ref and the
 `tracker-ref` input — to the exact tracker tag you adopted. v1.4.0 is the first release that ships
-`reusable-contract.yml`; replace the example's `@v1.3.2` placeholders. The caller job
+`reusable-contract.yml`; replace the example's `@v1.4.0` placeholders. The caller job
 `tracker-contract` exposes two check contexts:
 
 - `tracker-contract / contract` — offline `verify-tooling` + `verify-contract`; make this a

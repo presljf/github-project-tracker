@@ -2,7 +2,7 @@
 #
 # Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
 # lives under profiles/. Copy it into your repository's .github/workflows/tracker-contract.yml,
-# replace both pinned @v1.3.2 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
+# replace both pinned @v1.4.0 refs (the `uses:` reusable-workflow ref and the `tracker-ref` input)
 # with the exact release tag (`@v<version>`) you adopted (v1.4.0+ — the first release that ships
 # reusable-contract.yml), and update your required checks to the new contexts (old→new mapping in
 # profiles/contract/README.md).
@@ -35,9 +35,9 @@ jobs:
     # called reusable workflow's jobs; both jobs declare contents: read only.
     permissions:
       contents: read
-    uses: presljf/github-project-tracker/.github/workflows/reusable-contract.yml@v1.3.2
+    uses: presljf/github-project-tracker/.github/workflows/reusable-contract.yml@v1.4.0
     with:
-      tracker-ref: v1.3.2
+      tracker-ref: v1.4.0
       config-path: tracker.config.json
       # Fork pull requests never receive repository secrets, so metadata stays off there; it runs
       # on push to main and workflow_dispatch, where TRACKER_TOKEN is available.

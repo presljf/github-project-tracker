@@ -1,6 +1,6 @@
 # PUBLICATION
 
-**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
+**Docs version:** v1.4.0-docs.1 · Target template: v1.4.0
 **Status:** public template repository — decision recorded 2026-11-11 (T01, [#39](https://github.com/presljf/github-project-tracker/issues/39)); publication/security checklist completed 2026-11-11 (T04, [#42](https://github.com/presljf/github-project-tracker/issues/42)).
 **Owner:** repository maintainer. Re-run §3 whenever visibility, license, security settings, maintainers, secrets, or release gating change, and before each release tag.
 **Scope:** publication posture and security checklist for this repository. Security reporting policy is [SECURITY.md](../SECURITY.md); downstream intake is [DOWNSTREAM_FEEDBACK.md](./DOWNSTREAM_FEEDBACK.md).

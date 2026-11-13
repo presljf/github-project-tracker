@@ -2,7 +2,7 @@
 #
 # Non-runnable example: GitHub executes only workflows under .github/workflows/, and this file
 # lives under profiles/. Copy it into your repository's .github/workflows/ and pin the tracker ref
-# to the tag you adopted (replace @v1.3.2 below). The runnable self-repo caller is
+# to the tag you adopted (replace @v1.4.0 below). The runnable self-repo caller is
 # .github/workflows/release.yml.
 #
 # Reusable workflow: presljf/github-project-tracker/.github/workflows/reusable-release.yml (contract in
@@ -63,7 +63,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
-    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.3.2
+    uses: presljf/github-project-tracker/.github/workflows/reusable-release.yml@v1.4.0
     with:
       profile: container
       version: ${{ inputs.version }}
@@ -71,7 +71,7 @@ jobs:
       publish: ${{ inputs.publish }}
       # Opt in to the v1.4.0 adoption-contract gate; tracker-ref is the exact adopted tag.
       contract-gate: ${{ inputs.contract-gate }}
-      tracker-ref: v1.3.2
+      tracker-ref: v1.4.0
       # Template placeholder: builds a dependency-free `FROM scratch` image so the container
       # pipeline (build -> save -> guarded push) is exercisable without a project Dockerfile.
       # Replace with the project's real `docker build` command; the reusable workflow saves the
