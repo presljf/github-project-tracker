@@ -19,8 +19,6 @@ import { parseArgs, UsageError } from '../lib/cli.mjs';
 
 /** Backwards-compatible default required check list (the tracker's own names). */
 export const DEFAULT_REQUIRED_CHECKS = Object.freeze(['ci / ci-gate', 'docs-guard', 'pr-close-guard']);
-/** @deprecated kept for existing imports/tests; prefer DEFAULT_REQUIRED_CHECKS. */
-export const REQUIRED_CHECKS = DEFAULT_REQUIRED_CHECKS;
 
 const DEGRADED_WARNING =
   'WARNING: statusCheckRollup is unreadable (permission/API error); degrading post-merge audit to closure-only. ' +

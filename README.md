@@ -60,6 +60,7 @@ See [docs/ROADMAP_v1.1.0.md](docs/ROADMAP_v1.1.0.md): P0 rate-limit hardening, a
 - [Adoption](docs/ADOPTION.md) · [Upgrading](docs/UPGRADING.md)
 - [Agent guide](docs/AGENT_GUIDE.md) · [Multi-project](docs/MULTI_PROJECT.md)
 - [Actions catalog](docs/ACTIONS_CATALOG.md) · [CI/security profile](docs/CI_SECURITY_PROFILE.md) · [Release profiles](docs/RELEASE_PROFILES.md)
+- [Repository surface map](docs/SURFACE.md) — generated classification/status map from the repo-surface manifest
 - [Docs style guide](docs/DOCS_STYLE_GUIDE.md) · [Reference cards](docs/reference-cards/README.md) · [Template repo guide](docs/TEMPLATE_REPO.md)
 - [Guard distribution](docs/GUARD_DISTRIBUTION.md) — no-copy transport/scope enforcement
 - [Downstream feedback](docs/DOWNSTREAM_FEEDBACK.md) · [Support](SUPPORT.md) · [Security](SECURITY.md)

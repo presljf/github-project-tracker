@@ -18,6 +18,9 @@ Operating protocol for agents (and humans delegating to agents) using the tracke
 11. **Close-out includes the board.** A `Closes #N` merge closes the issue without updating Project
     Status, and `done` refuses closed issues. Run `npm run reconcile:status` after every merge and
     `--apply` before sprint/release close; verify the hierarchy tree and advisory audit (REFERENCE §5.9).
+12. **Local-first batching.** Batch related edits locally and run one `npm run gate:local` per
+    reviewable checkpoint; remote runs happen only at PR head/final evidence. Never claim remote
+    evidence from a local run (REFERENCE §21).
 
 ## Work profiles
 
@@ -87,6 +90,8 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
       `task.mjs`, assert it before starting (REFERENCE §5.9).
 - [ ] Check remote-only suites: do not plan visible local runs; use the guard/hidden mode and plan
       the remote evidence run.
+- [ ] Plan local batching: one `npm run gate:local` per reviewable checkpoint; push and run remote
+      CI only at PR head/final evidence (see Local-first batching).
 - [ ] Check docs/related issues for context.
 
 ## Check-in
@@ -107,6 +112,22 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
 - If scope/estimate changes: [plan-change](./comment-templates/plan-change.md) + label + sprint/release/field updates.
 - Run the local gates named in the task; capture output.
 
+## Local-first batching
+
+Batch related edits locally instead of scattering partial remote runs:
+
+- Batch related edits; run one `npm run gate:local` per reviewable checkpoint (not per file and not
+  only at PR time). The gate runs the ordered local stack — tests, lint, format, docs, config/
+  tooling/contract/surface guards, release gate, docs coverage — and prints `GATE_LOCAL_OK n/n` on
+  success or `GATE_LOCAL_FAIL n/n` plus failing tails.
+- Local green is checkpoint evidence, not remote evidence: attach the `GATE_LOCAL_OK ...` line (or
+  `--json` result) and push only at PR head/final. CI repeats the independent check; remote-only
+  suites still need their remote run (§Remote-only suites).
+- Steps that cannot run locally are skipped with a notice (e.g. no `origin/main` to diff against);
+  skips are never counted as passes — record them at check-out instead of silently assuming green.
+- Counts still come from the counted runner: local iteration counts are not delivery evidence.
+- Full reference: [REFERENCE §21](./REFERENCE.md#21-local-first-verification-and-batching).
+
 ## Review / check-out
 
 - Attach PR/evidence; set In Review only when ready for review.
@@ -123,6 +144,16 @@ npm run guard:local-suite -- --suite desktop-smoke --mode report --json
   `node scripts/adopt/cli/audit.mjs --config tracker.config.json --advisory`, then attach the result as
   close-out evidence. Commands: [REFERENCE §5.8–5.9](./REFERENCE.md#58-reconcile-status-close-out-project-status).
 - Do not claim completion for unverified work; mark Blocked/defer instead.
+
+### Session resume
+
+A stopped session must leave a checkpoint another agent can resume from:
+
+- **Required checkpoint fields:** branch/base, exact `HEAD`, last `gate:local` output (or `--json`
+  result), files touched, next action, open risks/blockers.
+- **Resume checklist:** read the checkpoint; confirm branch/`HEAD` is unchanged (or rebase
+  deliberately); re-run `npm run gate:local` before continuing; then start the next batch.
+- Post the checkpoint as a task comment and keep Status accurate (In Progress/Blocked); no silent WIP.
 
 ## Multi-agent boundaries
 

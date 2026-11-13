@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "blockingClasses": ["shim", "monkey-patch", "temp-fix"],
+    "reviewCadence": "monthly"
+  },
+  "entries": []
+}

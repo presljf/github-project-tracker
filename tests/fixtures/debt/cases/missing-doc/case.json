@@ -1,0 +1,8 @@
+{
+  "expect": {
+    "errors": [
+      "DEBT_DOC_MISSING"
+    ]
+  },
+  "autoDoc": false
+}

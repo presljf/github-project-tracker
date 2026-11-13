@@ -1,0 +1,22 @@
+{
+  "register": {
+    "schemaVersion": 1,
+    "policy": { "blockingClasses": ["shim", "monkey-patch", "temp-fix"], "reviewCadence": "monthly" },
+    "entries": [
+      {
+        "id": "case-003",
+        "class": "dead-export",
+        "pointer": "scripts/does-not-exist.mjs:1",
+        "owner": "@case",
+        "expiry": "2099-01-01",
+        "reason": "pointer target removed",
+        "status": "accepted",
+        "risk": "low",
+        "effort": "S",
+        "decision": "register",
+        "detectedBy": "scan"
+      }
+    ]
+  },
+  "expect": { "errors": ["DEBT_POINTER_NOT_FOUND"] }
+}

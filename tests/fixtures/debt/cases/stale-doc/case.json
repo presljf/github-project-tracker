@@ -1,0 +1,4 @@
+{
+  "doc": "# stale tech debt page\n",
+  "expect": { "errors": ["DEBT_DOC_STALE"] }
+}

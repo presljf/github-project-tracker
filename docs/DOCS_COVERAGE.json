@@ -195,6 +195,29 @@
         "docs/REFERENCE.md",
         "docs/UPGRADING.md"
       ]
+    },
+    {
+      "id": "surface-tooling",
+      "paths": [
+        "scripts/internal/render-surface.mjs",
+        "scripts/internal/surface-shared.mjs",
+        "contract/repo-surface.json"
+      ],
+      "docs": [
+        "docs/SURFACE.md",
+        "docs/DOCS_COVERAGE.md"
+      ]
+    },
+    {
+      "id": "debt-register",
+      "paths": [
+        "scripts/internal/scan-debt.mjs",
+        "contract/debt-register.json"
+      ],
+      "docs": [
+        "docs/TECH_DEBT.md",
+        "docs/AGENT_GUIDE.md"
+      ]
     }
   ]
 }

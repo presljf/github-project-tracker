@@ -3,12 +3,24 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { GitHubCli } from '../lib/github.mjs';
+import { UsageError } from '../lib/cli.mjs';
 
 const RELEASE = /^\[Release\]\s+([^\s—-]+)/i;
 const SPRINT = /^\[Sprint\]\s+([^\s—-]+)/i;
 const TASK = /^\[([^\]]*?-T\d+)\]/i;
 const LEGACY_RELEASE = /^\[([^\]]+)\]\s+Release\b/i;
 const LEGACY_SPRINT = /^\[([^\]]+)\]\s+Sprint\b/i;
+
+/**
+ * Resolve the audited repo from `--repo` or `GITHUB_REPOSITORY`. Generic CLIs carry no hardcoded
+ * repository default; a missing value is an actionable usage error, not a silent personal repo.
+ */
+export function resolveRepoArgument({ repo = null, env = process.env } = {}) {
+  const value = String(repo ?? '').trim() || String(env?.GITHUB_REPOSITORY ?? '').trim();
+  if (!/^[^/\s]+\/[^/\s]+$/.test(value))
+    throw new UsageError('repo is required: pass --repo owner/repo or set GITHUB_REPOSITORY (no hardcoded default)');
+  return value;
+}
 
 export function classifyTitle(title = '') {
   const release = title.match(RELEASE);
@@ -84,7 +96,17 @@ function main() {
   const contract = JSON.parse(
     fs.readFileSync(get('contract', path.join(root, 'contract/adoption-contract.json')), 'utf8'),
   );
-  const repo = get('repo', 'presljf/github-project-tracker');
+  let repo;
+  try {
+    repo = resolveRepoArgument({ repo: get('repo', null) });
+  } catch (error) {
+    if (error instanceof UsageError) {
+      console.error(`error: ${error.message}`);
+      process.exitCode = 2;
+      return;
+    }
+    throw error;
+  }
   const [owner, name] = repo.split('/');
   const config = JSON.parse(fs.readFileSync(path.join(root, 'tracker.config.json'), 'utf8'));
   const projectNumber = Number(get('project', config.project?.number || 0));

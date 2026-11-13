@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalTitle, expectedType, buildReconciliationPlan } from '../scripts/adopt/cli/reconcile-metadata.mjs';
+import {
+  canonicalTitle,
+  expectedType,
+  buildReconciliationPlan,
+  resolveRepoArgument,
+} from '../scripts/adopt/cli/reconcile-metadata.mjs';
 
 test('canonicalizes legacy release/sprint titles', () => {
   assert.equal(canonicalTitle('[v0.5.0] Release tracking — Quick wins'), '[Release] v0.5.0 — Quick wins');
@@ -43,4 +48,12 @@ test('plans missing sprint parent links and exceptions', () => {
     task.actions.find((a) => a.type === 'parent'),
     { type: 'parent', from: 'none', to: 2 },
   );
+});
+
+test('repo argument resolves from --repo or GITHUB_REPOSITORY and never defaults silently', () => {
+  assert.equal(resolveRepoArgument({ repo: 'owner/repo', env: {} }), 'owner/repo');
+  assert.equal(resolveRepoArgument({ repo: null, env: { GITHUB_REPOSITORY: 'env/repo' } }), 'env/repo');
+  assert.equal(resolveRepoArgument({ repo: 'flag/repo', env: { GITHUB_REPOSITORY: 'env/repo' } }), 'flag/repo');
+  assert.throws(() => resolveRepoArgument({ repo: null, env: {} }), /repo is required: pass --repo owner\/repo/);
+  assert.throws(() => resolveRepoArgument({ repo: 'not-a-repo', env: {} }), /repo is required/);
 });

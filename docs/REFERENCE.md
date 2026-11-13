@@ -29,6 +29,7 @@
 - [18. Environment variables](#18-environment-variables)
 - [19. Expected outputs and diagrams](#19-expected-outputs-and-diagrams)
 - [20. Versioning](#20-versioning)
+- [21. Local-first verification and batching](#21-local-first-verification-and-batching)
 
 ## 1. Repository map
 
@@ -879,6 +880,55 @@ Sanitized diagrams are Mermaid in [HOW_TO_USE](./HOW_TO_USE.md) (hierarchy/statu
 
 `npm run verify:checksums -- --dir <artifact-dir>` verifies `SHA256SUMS` before a manual draft release; asset/checksum mismatch fails closed.
 
+
+## 21. Local-first verification and batching
+
+`npm run gate:local` (`node scripts/internal/gate-local.mjs`) is the one-command local checkpoint:
+it runs the ordered stack below, fails fast at the first failing step by default (`--continue` keeps
+going), captures per-step output tails, and prints `GATE_LOCAL_OK n/n` on success or
+`GATE_LOCAL_FAIL n/n` plus the failing steps' tails. It is offline: no network or live-GitHub steps
+(`gate:release` runs without `--repo`, and the contract/tooling verifiers take the self-repo path).
+
+| # | Step | Command | Notes |
+|---|---|---|---|
+| 1 | unit tests | `npm test` | |
+| 2 | lint | `npm run lint` | |
+| 3 | format | `npm run format:check` | |
+| 4 | docs links/anchors | `npm run docs:check` | |
+| 5 | version consistency | `npm run guard:versions` | |
+| 6 | config validation | `npm run validate:config` | |
+| 7 | tooling verification | `npm run verify:tooling` | self-repo safe |
+| 8 | adoption contract | `npm run verify:contract` | self-repo safe |
+| 9 | release gate | `npm run gate:release` | no `--repo`; bypass check skipped |
+| 10 | GitHub transport guard | `npm run guard:gh` | |
+| 11 | dependency guard | `npm run guard:deps` | skipped with notice when `origin/main` is unavailable |
+| 12 | repo-surface guard | `npm run verify:surface -- --root . --require-manifest` | |
+| 13 | repo surface check | `npm run surface:check` | skipped with notice when the alias is not defined |
+| 14 | debt guard | `npm run guard:debt -- --check` | skipped with notice when the alias is not defined |
+| 15 | docs coverage | `node scripts/adopt/docs/guard-docs.mjs --base ${GATE_LOCAL_BASE:-origin/main}` | skipped with notice when the base ref is unresolved |
+| 16 | counts guard | `npm run guard:docs:counts` | no-op expected when `docs.counts` is absent |
+
+Options/env:
+
+- `--json` prints the machine-readable result (`ok`, `counts`, `results[]` with status/duration/
+  exit code/tails); `--list` prints the ordered step table (`--list --json` for JSON).
+- `GATE_LOCAL_BASE` sets the docs-coverage base (default `origin/main`); `GATE_LOCAL_TIMEOUT_MS`
+  sets the per-step timeout (default 10 minutes).
+- A skipped step is never a pass: `GATE_LOCAL_OK` reports attempted passes only and lists the skip
+  count; resolve prerequisites or record the skips in the check-out rather than assuming green.
+
+Policy:
+
+- **Batch:** run one `gate:local` per reviewable checkpoint, not per file and not only at PR time.
+- **Evidence:** attach the `GATE_LOCAL_OK n/n` line (or JSON result) at check-out using the
+  template's `Local iterations: N · Full local suites: N · Remote runs: <urls/none>` line.
+- **Remote-only caveat:** local runs are not remote evidence. CI/release runs happen at PR head/
+  final evidence, and suites declared under `verification.remoteOnly[]` still require their remote
+  visible run (§5.6); hidden local runs stay non-authoritative.
+- **Session resume:** hand-off/checkpoint fields and the resume checklist are in
+  [AGENT GUIDE](./AGENT_GUIDE.md#session-resume) (`### Session resume` under Review/check-out).
+- `gate:local` duplicates the `docs-guard` CI job as a subset (parity enforced by
+  `tests/gate-local.test.mjs`), so remote CI remains the independent check.
 
 ## Lint/format self-check (T18)
 

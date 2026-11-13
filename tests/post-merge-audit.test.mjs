@@ -6,7 +6,6 @@ import path from 'node:path';
 import { validateConfig } from '../scripts/adopt/cli/validate-config.mjs';
 import {
   DEFAULT_REQUIRED_CHECKS,
-  REQUIRED_CHECKS,
   evaluateBypass,
   isCheckRollupPermissionError,
   loadGuardConfig,
@@ -145,7 +144,6 @@ test('degraded evaluation skips checks but still enforces closure rules', () => 
 
 test('default required checks are exported and used when no config block exists', () => {
   assert.deepEqual([...DEFAULT_REQUIRED_CHECKS], ['ci / ci-gate', 'docs-guard', 'pr-close-guard']);
-  assert.deepEqual([...REQUIRED_CHECKS], [...DEFAULT_REQUIRED_CHECKS]);
   assert.deepEqual(resolveRequiredChecks({}), { checks: [...DEFAULT_REQUIRED_CHECKS], source: 'default', errors: [] });
   assert.deepEqual(resolveRequiredChecks({ guard: {} }), {
     checks: [...DEFAULT_REQUIRED_CHECKS],
