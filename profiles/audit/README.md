@@ -32,7 +32,7 @@ executed by GitHub: copy the callers into `.github/workflows/` and pin the adopt
 
 1. Copy the callers you use into `.github/workflows/`: `tracker-audit.yml`,
    `post-merge-audit.yml`, and/or `pr-close-guard.yml`.
-2. Replace **both** pinned `@v1.3.2` refs in each copied file — the `uses:` reusable-workflow ref
+2. Replace **both** pinned `@v1.4.0` refs in each copied file — the `uses:` reusable-workflow ref
    and the `tracker-ref` input — with the exact release tag (`@v<version>`) you adopted (v1.4.0+;
    the requiredWorkflows check rejects SHA pins). Never `@main`.
 3. Keep the caller permissions exactly as shown (they are the called jobs' union; the called

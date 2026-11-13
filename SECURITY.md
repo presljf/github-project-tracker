@@ -4,11 +4,11 @@
 
 ## Supported versions
 
-The template/Project Tracker OS is supported at the latest released `v1.0.x` line. Downstream projects are responsible for their own product security policies and dependency updates.
+The template/Project Tracker OS is supported at the latest released `v1.x` line. Downstream projects are responsible for their own product security policies and dependency updates.
 
 | Version | Supported |
 |---|---|
-| `v1.0.x` (latest patch, currently `v1.3.2`) | :white_check_mark: |
+| `v1.4.x` (current minor, currently `v1.4.0`) | :white_check_mark: |
 | earlier/untagged snapshots | :x: |
 
 ## Reporting a vulnerability

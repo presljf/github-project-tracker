@@ -34,7 +34,7 @@ on:
         description: Exact template release tag (`@v<version>`) to load the contract and verification tooling from.
         required: false
         type: string
-        default: v1.3.2
+        default: v1.4.0
       config-path:
         description: Tracker config path (working-directory-relative; default `.` resolves to the repository root).
         required: false

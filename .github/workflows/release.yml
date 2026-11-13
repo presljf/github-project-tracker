@@ -12,7 +12,7 @@
 #
 # Adopters: for the macOS/container/package profiles, copy the matching caller example from
 # profiles/release/reusable/ into .github/workflows/ and pin the template ref to the tag you
-# adopted (replace @v1.3.2 in the copied file). For the generic profile, copy this caller and keep
+# adopted (replace @v1.4.0 in the copied file). For the generic profile, copy this caller and keep
 # .github/workflows/reusable-release.yml in sync (or call the template by pinned ref — see
 # docs/RELEASE_PROFILES.md), and replace the build-command with your project's real build.
 # GitHub executes only .github/workflows/, so profiles/ examples never run in place.
@@ -77,7 +77,7 @@ jobs:
       # make actions/checkout use the tracker default branch) and keep the caller grant at
       # contents/packages/id-token write.
       contract-gate: ${{ github.event_name == 'workflow_dispatch' && inputs.contract-gate || false }}
-      tracker-ref: v1.3.2
+      tracker-ref: v1.4.0
       # Template release artifact: deterministic source archive + manifest. Replace with the
       # adopting project's real build command.
       build-command: |

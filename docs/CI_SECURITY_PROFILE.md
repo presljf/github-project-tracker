@@ -170,7 +170,7 @@ jobs:
 If the template repository is public (or private reusable-workflow access is granted), the caller may reference it instead of copying:
 
 ```yaml
-    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.3.2
+    uses: presljf/github-project-tracker/.github/workflows/reusable-ci.yml@v1.4.0
 ```
 
 Private template caveat: reusable workflows in a private repository need explicit access from the caller repository, and the caller's Actions settings must allow reusable workflows. If either is unavailable, copy the two reusable files and the thin caller; never edit the copy's contract without recording a local deviation (see [UPGRADING](./UPGRADING.md)).

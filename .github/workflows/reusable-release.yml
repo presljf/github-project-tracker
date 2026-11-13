@@ -169,7 +169,7 @@ on:
           and verification tooling. Ignored when this workflow runs in the template repository itself.
         type: string
         required: false
-        default: v1.3.2
+        default: v1.4.0
       contract-path:
         description: >-
           Adoption contract path for the opt-in contract gate (repository-root-relative or absolute).

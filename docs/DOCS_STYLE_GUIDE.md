@@ -1,6 +1,6 @@
 # DOCS STYLE GUIDE
 
-**Docs version:** `v1.3.2-docs.1` · Target template: `v1.3.2`
+**Docs version:** `v1.4.0-docs.1` · Target template: `v1.4.0`
 **Status:** authored by T13; authoritative for the documentation suite. T12 uses the [review checklist](#11-review-checklist-t12) as the fresh-eyes gate. The printable reference cards follow the same voice and rules.
 **Scope:** Markdown documentation in this repository (playbook, HOW TO USE suite, reference, troubleshooting, adoption/upgrade guides, agent guide, policies, indexes, and reference cards). Code comments and issue-form YAML are out of scope, except where docs quote them.
 

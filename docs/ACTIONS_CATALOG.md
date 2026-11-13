@@ -1,6 +1,6 @@
 # ACTIONS CATALOG
 
-**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
+**Docs version:** v1.4.0-docs.1 · Target template: v1.4.0
 **Scope:** canonical catalog and contracts for GitHub Actions in Project Tracker OS — workflows, triggers, required checks, tokens/secrets, runners/costs, local parity, reusable-workflow and composite-action interfaces, and the hybrid D adoption model.
 **Status:** T09 authored the catalog; T15/T10 implemented the CI/security/release workflows and actions; T12 reconciled interfaces/availability before the v1.0.0 tag.
 **Availability key:** **shipped** = a runnable workflow/action YAML exists in this repo (`.github/workflows/` or `.github/actions/`); **contract-only** = interface documented here but not yet implemented. Files under `profiles/` are non-runnable examples/copy sources — GitHub never executes them, so they are not counted as shipped workflows. Contract-only items are never claimed as shipped.
@@ -566,7 +566,7 @@ the adopted tag), with standalone copy-mode templates under `profiles/release/co
 
 | Interface | Definition |
 |---|---|
-| Inputs | `profile` (generic/macos/container/package) default `generic`; `version`; `tag-pattern` default `^v\d+\.\d+\.\d+$`; `dry-run` default `true`; `publish` default `false`; `artifact-globs` default `dist/**`; `checksum-algorithm` default `sha256`; `build-command`; `working-directory`; `node-version`; `macos-runner`; `macos-team-id`; `macos-signing-identity`; `image-name`; `package-registries`; `artifact-name`; `retention-days`; release metadata inputs (`release-name`, `draft`, `prerelease`); opt-in contract gate: `contract-gate` default `false`, `tracker-ref` default `v1.3.2` (exact release tag; v1.4.0+ for downstream), `contract-path` default `''`, `config-path` default `tracker.config.json` |
+| Inputs | `profile` (generic/macos/container/package) default `generic`; `version`; `tag-pattern` default `^v\d+\.\d+\.\d+$`; `dry-run` default `true`; `publish` default `false`; `artifact-globs` default `dist/**`; `checksum-algorithm` default `sha256`; `build-command`; `working-directory`; `node-version`; `macos-runner`; `macos-team-id`; `macos-signing-identity`; `image-name`; `package-registries`; `artifact-name`; `retention-days`; release metadata inputs (`release-name`, `draft`, `prerelease`); opt-in contract gate: `contract-gate` default `false`, `tracker-ref` default `v1.4.0` (exact release tag; v1.4.0+ for downstream), `contract-path` default `''`, `config-path` default `tracker.config.json` |
 | Outputs | `version`, `artifacts`, `checksums-file`, `release-url` (empty on dry-run), `dry-run` |
 | Secrets | `RELEASE_TOKEN` (optional, only when org policy forbids the default token for publishing); `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_PASSWORD` (optional, desktop profile); `NPM_TOKEN` (optional, package profile when OIDC trusted publishing is unavailable) — all `required: false`; team ID / signing identity are non-secret inputs. The opt-in contract gate uses no secret |
 | Permissions | caller grants `contents: write`; `id-token: write` only for OIDC publish jobs; `packages: write` only for container profile; the opt-in `contract-gate` job requests `contents: read` only (no new caller grant) |
@@ -598,7 +598,7 @@ reads its own checkout); downstream must pass the exact adopted release tag (v1.
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag to load `audit.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative); `mode` string default `advisory` — validated `advisory`/`strict`; `json` boolean default `true` (echo the JSON result in the job log); `working-directory` string default `'.'`; `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.4.0` (exact release tag to load `audit.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative); `mode` string default `advisory` — validated `advisory`/`strict`; `json` boolean default `true` (echo the JSON result in the job log); `working-directory` string default `'.'`; `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `ok` (`'true'`/`'false'`), `violations-count`, `warnings-count` (empty when the advisory run skips for a missing token) |
 | Secrets | `TRACKER_TOKEN` (`required: false`; project read **and** repo/issues read for private adopters — classic PAT `project` + `repo`; fine-grained Projects read + Metadata read + repository contents/issues read). Advisory mode with no token: notice + clean skip (exit 0). Strict mode with no token: actionable failure |
 | Permissions | `contents: read` (caller and job); project read comes only from the token |
@@ -704,7 +704,7 @@ Composite action rules:
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact template release tag to load the adoption contract + verification tooling from; self mode passes `''` to use the caller checkout); `config-path` string default `tracker.config.json` (working-directory-relative; default `.` = repository root; feeds `verify-tooling` only); `contract-path` string default `''` (empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream); `runs-on` string default `ubuntu-latest`; `version-guard-command` string default `''` (optional trusted offline command; runs in a separate `version-guard` job that never checks out the pinned template ref); `metadata` boolean default `true` (live metadata job; requires the secret; pass `false` on fork PRs); `working-directory` string default `'.'`; `submodule-path` string default `.tracker-os` (tracker submodule whose pinned tag `verify-tooling` checks; missing → notice + skip); `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.4.0` (exact template release tag to load the adoption contract + verification tooling from; self mode passes `''` to use the caller checkout); `config-path` string default `tracker.config.json` (working-directory-relative; default `.` = repository root; feeds `verify-tooling` only); `contract-path` string default `''` (empty auto-detects `contract/adoption-contract.json` in self mode and `.tracker/contract/adoption-contract.json` downstream); `runs-on` string default `ubuntu-latest`; `version-guard-command` string default `''` (optional trusted offline command; runs in a separate `version-guard` job that never checks out the pinned template ref); `metadata` boolean default `true` (live metadata job; requires the secret; pass `false` on fork PRs); `working-directory` string default `'.'`; `submodule-path` string default `.tracker-os` (tracker submodule whose pinned tag `verify-tooling` checks; missing → notice + skip); `node-version` string default `'22'` |
 | Outputs | `contract-ok` (`'true'` when `verify-tooling` and `verify-contract` both pass); `metadata-ok` (`'true'` when the metadata job passes; empty when the job is skipped) |
 | Secrets | `TRACKER_TOKEN` (`required: false`; required only when `metadata: true`) — project read (Projects read + Metadata read); PAT ≤90 days or a GitHub App installation token; pass explicitly by name, never `secrets: inherit` |
 | Permissions | `contents: read` only (workflow and both jobs); no write scopes, no artifacts, no `pull_request_target` |
@@ -732,7 +732,7 @@ Composite action rules:
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag for the audit tooling; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative; required-check names come from `guard.requiredChecks[]`); `working-directory` string default `'.'`; `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual dispatch must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.4.0` (exact release tag for the audit tooling; ignored in the template repo itself); `config-path` string default `tracker.config.json` (working-directory-relative; required-check names come from `guard.requiredChecks[]`); `working-directory` string default `'.'`; `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual dispatch must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `ok` (`'true'` when the audit job completed; a detected bypass still completes by opening the OI, and a degraded rollup passes with a warning) |
 | Secrets | none — the automatic `GITHUB_TOKEN` is used |
 | Permissions | called job declares `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`; the caller must grant at least that union |
@@ -757,7 +757,7 @@ Composite action rules:
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag for the guard tooling; ignored in the template repo itself); `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual invocations must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.4.0` (exact release tag for the guard tooling; ignored in the template repo itself); `pr-number` string default `''` (empty resolves `github.event.pull_request.number`; manual invocations must pass it); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | none (pass/fail job) |
 | Secrets | none — the automatic `GITHUB_TOKEN` is used |
 | Permissions | called job declares `contents: read`, `issues: read`, `pull-requests: read`; the caller grants the same read-only union. No `issues: write` is required or granted |
@@ -781,7 +781,7 @@ Composite action rules:
 
 | Interface | Definition |
 |---|---|
-| Inputs | `tracker-ref` string default `v1.3.2` (exact release tag to load `guard-docs-counts.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (repository-root-relative; `docs.counts` configures the contract); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
+| Inputs | `tracker-ref` string default `v1.4.0` (exact release tag to load `guard-docs-counts.mjs` from; ignored in the template repo itself); `config-path` string default `tracker.config.json` (repository-root-relative; `docs.counts` configures the contract); `runs-on` string default `ubuntu-latest`; `node-version` string default `'22'` |
 | Outputs | `counts-ok` (`'true'` when the guard passed, or when no `docs.counts` policy is configured) |
 | Secrets | none |
 | Permissions | `contents: read` (caller and job) |
@@ -893,7 +893,7 @@ The config keys come from `schemas/tracker.config.schema.json` and `tracker.conf
 ### 8.4 Copy fallback procedure
 
 1. Run the private-access validation (§8.5). If any required ref fails, choose `copy` — do not fork the template or edit reusable contracts locally.
-2. Copy only the thin caller(s) and the composite action directory from the pinned template tag (download the release archive, do not copy from `main`). Release callers are copy sources under `profiles/release/reusable/` (reusable-mode caller: copy into `.github/workflows/`, then replace the pinned `uses: ...@v1.3.2` ref with the tag you adopted) and `profiles/release/copy/` (standalone copy-mode callers). `profiles/` is never executed by GitHub, so a copied caller must land in `.github/workflows/` to run.
+2. Copy only the thin caller(s) and the composite action directory from the pinned template tag (download the release archive, do not copy from `main`). Release callers are copy sources under `profiles/release/reusable/` (reusable-mode caller: copy into `.github/workflows/`, then replace the pinned `uses: ...@v1.4.0` ref with the tag you adopted) and `profiles/release/copy/` (standalone copy-mode callers). `profiles/` is never executed by GitHub, so a copied caller must land in `.github/workflows/` to run.
 3. Record in the project docs/config: copied file list, origin template version/ref, local overrides, and `workflows.ci.mode: copy`.
 4. Preserve contract names and guards: same input/secret names, same dry-run/tag/environment guards, same permission model. Project-specific changes are minimal, commented, and listed as overrides.
 5. Run local parity (§6), then one advisory PR run before promoting/requiring anything.

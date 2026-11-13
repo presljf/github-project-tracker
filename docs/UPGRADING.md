@@ -1,6 +1,6 @@
 # UPGRADING
 
-**Docs version:** v1.3.2-docs.1 · Target template: v1.3.2
+**Docs version:** v1.4.0-docs.1 · Target template: v1.4.0
 The tracker is versioned; downstream projects pin an exact version and upgrade deliberately.
 
 ## Version semantics
@@ -31,7 +31,7 @@ existing board. No config change is required.
 - New `reconcile-status` command (`npm run reconcile:status`) to list and fix Project Status drift
   left by `Closes #N` auto-closes.
 
-## v1.4.0 — breaking: class-first script families and non-runnable release examples
+## v1.4.0 breaking: class-first script families and non-runnable release examples
 
 v1.4.0 ships a **breaking change**: the scripts tree moved into class-first families and the old
 paths are gone (no shims). The break is an accepted exception (D10) on the v1.x line; tags at or
@@ -97,8 +97,8 @@ Rules:
    (`@v<version>`, v1.4.0+; earlier tags do not contain `scripts/adopt/**` or the v1.4.0 contract).
    The `requiredWorkflows` check accepts only the tag form and a matching `tracker-ref`: a SHA,
    no-`v` ref, empty `tracker-ref`, or stale tooling pin fails. `reusable-e2e.yml` has no
-   `tracker-ref` input; its `uses:` ref is the only pin. The examples use `v1.3.2` placeholders
-   until the tag exists; replace them with the acquired tag.
+   `tracker-ref` input; its `uses:` ref is the only pin. The examples pin `v1.4.0`; replace that
+   with the exact tag you adopt.
 2. The contract enforces **presence + exact pin**, not caller job names or triggers (those stay
    project-owned). The contexts in the table are the bundled callers' defaults; capture your real
    names from a green run and update branch protection/rulesets plus `guard.requiredChecks[]` in the
@@ -158,11 +158,11 @@ migrate in the same PR as the pin bump:
 | `tracker-metadata.yml` (verify-metadata) | `tracker-metadata` | `tracker-contract / metadata` |
 
 1. Copy `profiles/contract/tracker-contract.yml` into `.github/workflows/` and replace **both**
-   `@v1.3.2` refs — the reusable-workflow `uses:` ref and the `tracker-ref` input — with the exact
+   `@v1.4.0` refs — the reusable-workflow `uses:` ref and the `tracker-ref` input — with the exact
    release tag (`@v<version>`) you adopt (v1.4.0+; the requiredWorkflows check does not accept a
    SHA pin). `tracker-ref` must be a released tag that contains the new `scripts/adopt/**` tooling
-   and `contract/adoption-contract.json`; replace the example's `v1.3.2` placeholders rather than
-   relying on them.
+   and `contract/adoption-contract.json`; replace the example's `v1.4.0` pins rather than relying on
+   them.
 2. Create/refresh the `TRACKER_TOKEN` repository secret: project-scoped PAT with Projects +
    Metadata **read** (≤90 days) or a GitHub App installation token, stored as a repository secret
    (never in config, comments, or artifacts), passed explicitly by name (never `secrets: inherit`),
@@ -204,8 +204,8 @@ copied workflows stay on their pinned pre-v1.4.0 tags; migrate in the same PR as
    (`pr-close-guard.yml`, `post-merge-audit.yml`, `tracker-audit.yml`) and pin **both** the
    reusable-workflow `uses:` ref and the `tracker-ref` input to the exact release tag
    (`@v<version>`) you adopt (v1.4.0+; the requiredWorkflows check does not accept a SHA pin).
-   Replace the `v1.3.2` placeholders in the examples; `tracker-ref` must be a released tag
-   containing the current `scripts/adopt/**` tooling.
+   Replace the `v1.4.0` pins in the examples; `tracker-ref` must be a released tag containing the
+   current `scripts/adopt/**` tooling.
 2. Grant caller permissions exactly as documented (called workflows can only downgrade them):
    - `pr-close-guard.yml`: `contents: read`, `issues: read`, `pull-requests: read` — read-only.
    - `post-merge-audit.yml`: `contents: read`, `issues: write`, `pull-requests: read`,

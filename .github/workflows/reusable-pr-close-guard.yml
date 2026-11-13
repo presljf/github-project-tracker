@@ -25,7 +25,7 @@ on:
         description: Exact template release tag (`@v<version>`) to load the guard tooling from (ignored in the template repo itself).
         required: false
         type: string
-        default: v1.3.2
+        default: v1.4.0
       pr-number:
         description: >-
           Target PR number. Empty resolves `github.event.pull_request.number` (callers triggered on

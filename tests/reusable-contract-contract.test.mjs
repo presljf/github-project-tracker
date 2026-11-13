@@ -188,7 +188,7 @@ test('reusable-contract.yml is workflow_call only with the documented inputs', (
     'working-directory',
   ]);
   const expected = {
-    'tracker-ref': { default: 'v1.3.2', required: 'false' },
+    'tracker-ref': { default: 'v1.4.0', required: 'false' },
     'config-path': { default: 'tracker.config.json', required: 'false' },
     'contract-path': { default: '', required: 'false' },
     'runs-on': { default: 'ubuntu-latest', required: 'false' },
@@ -468,7 +468,7 @@ test('profiles/contract copy-mode example matches the reusable contract', () => 
   const example = fs.readFileSync(file, 'utf8');
   const firstLine = example.split(/\r?\n/).find((line) => line.trim() !== '');
   assert.match(firstLine, /^# COPY-MODE EXAMPLE/);
-  assert.match(example, /uses: presljf\/github-project-tracker\/\.github\/workflows\/reusable-contract\.yml@v1\.3\.2/);
+  assert.match(example, /uses: presljf\/github-project-tracker\/\.github\/workflows\/reusable-contract\.yml@v1\.4\.0/);
   assert.doesNotMatch(example, /pull_request_target/);
 });
 
@@ -478,7 +478,7 @@ test('profiles/contract README documents token setup, pin, and check contexts', 
   const readme = fs.readFileSync(file, 'utf8');
   for (const phrase of [
     'reusable-contract.yml',
-    '@v1.3.2',
+    '@v1.4.0',
     'TRACKER_TOKEN',
     'tracker-contract / contract',
     'tracker-contract / metadata',
