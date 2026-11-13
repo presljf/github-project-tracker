@@ -904,7 +904,7 @@ going), captures per-step output tails, and prints `GATE_LOCAL_OK n/n` on succes
 | 11 | dependency guard | `npm run guard:deps` | skipped with notice when `origin/main` is unavailable |
 | 12 | repo-surface guard | `npm run verify:surface -- --root . --require-manifest` | |
 | 13 | repo surface check | `npm run surface:check` | skipped with notice when the alias is not defined |
-| 14 | debt guard | `npm run guard:debt -- --check` | skipped with notice when the alias is not defined |
+| 14 | debt guard | `npm run guard:debt` | skipped with notice when the alias is not defined |
 | 15 | docs coverage | `node scripts/adopt/docs/guard-docs.mjs --base ${GATE_LOCAL_BASE:-origin/main}` | skipped with notice when the base ref is unresolved |
 | 16 | counts guard | `npm run guard:docs:counts` | no-op expected when `docs.counts` is absent |
 
