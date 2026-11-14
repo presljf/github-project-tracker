@@ -185,6 +185,15 @@ export async function checkDoR({ config, github, issueNumber, owner, dryRun = fa
   return { ctx, kind, warning: wip, profile, stream: streamCtx };
 }
 
+function assertTaskBranch({ branch, issueNumber }) {
+  if (!/^task\//.test(String(branch || ''))) return;
+  if (new RegExp(`^task/${issueNumber}(?:[-/]|$)`).test(String(branch))) return;
+  throw new Error(
+    `branch ${JSON.stringify(branch)} does not belong to task #${issueNumber}; ` +
+      `switch to task/${issueNumber}-<slug> or use release/hotfix/chore`,
+  );
+}
+
 function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
   const exec = gitExec || ((args) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' }).trim());
   if (createBranch && !dryRun) {
@@ -241,6 +250,7 @@ export async function startTask({
     stream,
   });
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
+  assertTaskBranch({ branch: git.branch, issueNumber });
   const dorSummary = profile.isTooling
     ? 'type/stream/fields/acceptance/dependencies checked'
     : 'type/milestone/fields/acceptance/dependencies checked';

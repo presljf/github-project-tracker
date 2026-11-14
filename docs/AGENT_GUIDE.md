@@ -194,3 +194,6 @@ Install hooks once per clone: `npm run hooks:install`.
 - Emergency overrides (`TRACKER_ALLOW_MAIN_COMMIT=1`, `TRACKER_ALLOW_MAIN_PUSH=1`) warn loudly and must be recorded.
 - Do not issue unconditional `git checkout main`; assert the branch before committing. The main-history guard opens an OI for any main commit without a merged PR.
 - CastDeck's private/personal plan cannot enforce remote branch protection; hooks, detection, and the release gate are the fallback, not a claim of platform enforcement.
+
+Before starting a task, create `task/<issue>-<slug>`; `task.mjs start` rejects a task branch for a
+different issue.

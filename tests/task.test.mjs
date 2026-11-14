@@ -135,6 +135,20 @@ test('start dry-run validates without mutations', async () => {
   assert.equal(github.items[0].status, 'Todo');
 });
 
+test('start rejects a task branch for another issue', async () => {
+  const github = fake();
+  await assert.rejects(
+    () => startTask({ ...baseArgs(), github, branch: 'task/999-other', dryRun: true }),
+    /does not belong to task #5/,
+  );
+});
+
+test('start accepts a task branch for the issue', async () => {
+  const github = fake();
+  const result = await startTask({ ...baseArgs(), github, branch: 'task/5-ok', dryRun: true });
+  assert.equal(result.branch, 'task/5-ok');
+});
+
 test('start rejects WIP violation', async () => {
   const github = fake({
     issues: [issue(), issue(6, { assignees: [{ login: 'owner' }] })],

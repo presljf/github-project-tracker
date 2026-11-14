@@ -1070,3 +1070,9 @@ the same TrackerOS transport, so a rate-limited GraphQL path does not force an a
 
 `scripts/adopt/mcp/server.mjs` exposes narrow proposal/context/task-status/audit tools over stdio.
 It exposes proposal accept/defer/reject in addition to intake/read tools, and does not expose generic GitHub or project-item mutation tools. See [MCP.md](./MCP.md).
+
+### Task-start branch guard
+
+`task.mjs start` rejects a `task/*` branch that does not begin with the task issue number:
+`task/<issue>-<slug>`. `release/*`, `hotfix/*`, and `chore/*` branches remain allowed. The commit
+hook separately blocks commits on `main`/`master`.
