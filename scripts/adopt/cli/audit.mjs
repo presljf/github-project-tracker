@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, UsageError } from '../lib/cli.mjs';
+import { missingProposalSections, PROPOSAL_LABEL, PROPOSAL_STATUS } from '../lib/proposal.mjs';
 import {
   closedEvidenceRules,
   fieldMissingCode,
@@ -21,6 +22,7 @@ import {
 } from '../lib/work-profile.mjs';
 
 export function issueKind(title) {
+  if (/^\[Proposal\]\s+/i.test(title)) return 'proposal';
   if (/^\[(Program|Roadmap)\]/i.test(title)) return 'roadmap';
   if (/^\[Stream\]/i.test(title)) return 'stream';
   if (/^\[Release\]/i.test(title) || /^\[v?\d+\.\d+\.\d+\]\s*Release\b/i.test(title)) return 'release';
@@ -189,6 +191,13 @@ export function auditTracker({ config, data, strict = false }) {
           add(requirement.code, issue, `open task has no ${requirement.noun} tracker ancestor`);
       }
     }
+    if (kind === 'proposal') {
+      if (!issue.labels.includes(PROPOSAL_LABEL))
+        add('PROPOSAL_LABEL_MISSING', issue, `proposal is missing label ${PROPOSAL_LABEL}`);
+      for (const section of missingProposalSections(issue.body)) {
+        add('PROPOSAL_SECTION_MISSING', issue, `proposal body is missing required section: ## ${section}`);
+      }
+    }
     // Hierarchy integrity: an open product sprint must sit under a [Release] ancestor. Its child
     // tasks can carry a sprint ancestor while the sprint itself is orphaned (the #137 incident);
     // closed/historical sprints are exempt and the tooling profile has no release container.
@@ -205,6 +214,12 @@ export function auditTracker({ config, data, strict = false }) {
       for (const field of requiredItemFields(profile, kind)) {
         if (!item[field.toLowerCase()]) add(fieldMissingCode(profile, field), issue, `project field ${field} is empty`);
       }
+      if (kind === 'proposal' && item.status !== PROPOSAL_STATUS)
+        add(
+          'PROPOSAL_STATUS_MISSING',
+          issue,
+          `proposal project status is ${JSON.stringify(item.status || '')}; expected ${PROPOSAL_STATUS}`,
+        );
       if (issue.labels.includes('source:downstream') && !item.source)
         add('FIELD_SOURCE_MISSING', issue, 'downstream issue has no Source field');
       if (item.status === 'Blocked') {

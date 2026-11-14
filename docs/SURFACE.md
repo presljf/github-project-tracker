@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 131 |
-| Paths | 169 |
-| Shipped | 130 |
+| Entries | 133 |
+| Paths | 171 |
+| Shipped | 132 |
 | Contract-only | 1 |
 
 ## Class map
@@ -23,8 +23,8 @@
 | `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 12 | 11 | 1 |
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
-| `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 28 | 28 | 0 |
-| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 8 | 8 | 0 |
+| `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 29 | 29 | 0 |
+| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 9 | 9 | 0 |
 | `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 61 | 61 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
@@ -88,7 +88,7 @@
 
 ### adopter-cli
 
-28 path(s) · 28 shipped · 0 contract-only.
+29 path(s) · 29 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -105,6 +105,7 @@
 | `scripts/adopt/cli/merge-pr.mjs` | shipped | adopter | Merge pr | — | `docs/REFERENCE.md#no-admin-merge-wrapper` |
 | `scripts/adopt/cli/post-merge-audit.mjs` | shipped | adopter | Post merge audit | — | `docs/REFERENCE.md#post-merge-bypass-audit` |
 | `scripts/adopt/cli/project-field-option.mjs` | shipped | adopter | Project field option | — | `docs/REFERENCE.md#55-project-field-option` |
+| `scripts/adopt/cli/proposal.mjs` | shipped | adopter | Proposal | — | `docs/PROPOSALS.md` |
 | `scripts/adopt/cli/rate-limit.mjs` | shipped | adopter | Rate limit | — | `docs/REFERENCE.md#rate-limit-behavior` |
 | `scripts/adopt/cli/reconcile-metadata.mjs` | shipped | adopter | Reconcile metadata | — | `docs/ADOPTION.md#metadata-reconciliation` |
 | `scripts/adopt/cli/reconcile-status.mjs` | shipped | adopter | Reconcile status | — | `docs/REFERENCE.md#58-reconcile-status-close-out-project-status` |
@@ -123,7 +124,7 @@
 
 ### adopter-lib
 
-8 path(s) · 8 shipped · 0 contract-only.
+9 path(s) · 9 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -132,6 +133,7 @@
 | `scripts/adopt/lib/guards.mjs` | shipped | adopter | Guards | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/playwright-remote-guard.mjs` | shipped | adopter | Playwright remote guard | — | `docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy` |
 | `scripts/adopt/lib/preflight.mjs` | shipped | adopter | Preflight | — | `docs/REFERENCE.md#1-repository-map` |
+| `scripts/adopt/lib/proposal.mjs` | shipped | adopter | Proposal contract | — | `docs/PROPOSALS.md` |
 | `scripts/adopt/lib/rate-state.mjs` | shipped | adopter | Rate state | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/verification-policy.mjs` | shipped | adopter | Verification policy | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/work-profile.mjs` | shipped | adopter | Work profile | — | `docs/REFERENCE.md#1-repository-map` |

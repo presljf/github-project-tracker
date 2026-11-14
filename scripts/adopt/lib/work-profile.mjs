@@ -47,6 +47,7 @@ export function getWorkProfileAdapter(config = {}) {
 /** Project fields an item of `kind` must carry; used by DoR and the mode-aware audit. */
 export function requiredItemFields(profile, kind) {
   const fields = [...CORE_FIELDS];
+  if (kind === 'proposal') return [...fields, 'Source'];
   if (profile.isTooling) {
     if (kind === 'stream' || kind === 'task') fields.push(profile.streamField);
     return fields;
@@ -73,6 +74,7 @@ export function taskAncestryRequirements(profile) {
 
 /** Milestone requirement per profile (tooling deliveries are versioned by the tag). */
 export function requiresMilestone(profile, kind) {
+  if (kind === 'proposal') return false;
   return profile.isTooling ? false : kind !== 'roadmap';
 }
 

@@ -10,6 +10,7 @@
     "bootstrap": "node scripts/adopt/cli/bootstrap.mjs",
     "audit": "node scripts/adopt/cli/audit.mjs",
     "task": "node scripts/adopt/cli/task.mjs",
+    "proposal": "node scripts/adopt/cli/proposal.mjs",
     "stream": "node scripts/adopt/cli/stream.mjs",
     "field-option": "node scripts/adopt/cli/project-field-option.mjs",
     "validate:config": "node scripts/adopt/cli/validate-config.mjs",

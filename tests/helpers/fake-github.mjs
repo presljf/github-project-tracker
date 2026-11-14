@@ -128,6 +128,53 @@ export class FakeGitHub {
     return issue;
   }
 
+  async getIssueView(owner, repo, number) {
+    this.calls.push(['getIssueView', owner, repo, number]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (!issue) return null;
+    return {
+      ...structuredClone(issue),
+      url: issue.url || `https://github.com/${owner}/${repo}/issues/${number}`,
+      state: issue.state || 'OPEN',
+      labels: issue.labels || [],
+      issueType: issue.issueType || (issue.type ? { name: issue.type } : null),
+      body: issue.body || '',
+    };
+  }
+
+  async updateIssueTitle(owner, repo, number, title) {
+    this.mutations.push(['updateIssueTitle', number, title]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (issue) issue.title = title;
+    return issue;
+  }
+
+  async updateIssueBody(owner, repo, number, body) {
+    this.mutations.push(['updateIssueBody', number, body]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (issue) issue.body = body;
+    return issue;
+  }
+
+  async addLabels(owner, repo, number, labels = []) {
+    this.mutations.push(['addLabels', number, labels]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (!issue) return null;
+    issue.labels = issue.labels || [];
+    for (const label of labels) {
+      if (!issue.labels.some((entry) => (entry.name || entry) === label)) issue.labels.push(label);
+    }
+    return issue;
+  }
+
+  async listIssues(owner, repo, options = 'all') {
+    this.calls.push(['listIssues', owner, repo, options]);
+    const state = typeof options === 'string' ? options : options.state || 'all';
+    return structuredClone(
+      this.issues.filter((issue) => state === 'all' || (issue.state || 'OPEN').toLowerCase() === state.toLowerCase()),
+    );
+  }
+
   async listSubIssues(owner, repo, parent) {
     this.calls.push(['listSubIssues', parent]);
     const children = this.subIssues.get(parent) || [];

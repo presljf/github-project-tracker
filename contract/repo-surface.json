@@ -1914,6 +1914,34 @@
       ],
       "mode": "reusable",
       "header": "required"
+    },
+    {
+      "id": "script:proposal",
+      "path": "scripts/adopt/cli/proposal.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Proposal",
+      "summary": "Proposal lifecycle CLI: template/import/list.",
+      "docs": [
+        "docs/PROPOSALS.md"
+      ]
+    },
+    {
+      "id": "script:proposal-lib",
+      "path": "scripts/adopt/lib/proposal.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Proposal contract",
+      "summary": "Proposal title/body/status contract and template helpers.",
+      "docs": [
+        "docs/PROPOSALS.md"
+      ]
     }
   ]
 }
