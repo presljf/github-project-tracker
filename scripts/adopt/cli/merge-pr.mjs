@@ -59,7 +59,7 @@ async function main() {
     throw new Error(
       `required checks not green; missing=${result.missing.join(',') || 'none'} failing=${result.failing.join(',') || 'none'}`,
     );
-  gh.mergePullRequest(owner, name, pr, { method, deleteBranch });
+  gh.mergePullRequest(owner, name, pr, { method, deleteBranch, headRefName: pull.headRefName });
   console.log(`PR #${pr} merged normally; required checks green: ${required.join(', ')}`);
 }
 

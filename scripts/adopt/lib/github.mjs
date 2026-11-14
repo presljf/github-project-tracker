@@ -622,14 +622,35 @@ export class GitHubCli {
     );
   }
 
-  mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true } = {}) {
+  mergePullRequest(owner, repo, number, { method = 'squash', deleteBranch = true, headRefName = null } = {}) {
     this._beforeMutation();
+    const mergeMethod = method === 'merge' ? 'merge' : method === 'rebase' ? 'rebase' : 'squash';
     const args = ['pr', 'merge', String(number), '--repo', `${owner}/${repo}`];
     if (method === 'merge') args.push('--merge');
     else if (method === 'rebase') args.push('--rebase');
     else args.push('--squash');
     if (deleteBranch) args.push('--delete-branch');
-    return this.run(args);
+    try {
+      return this.run(args);
+    } catch (error) {
+      const text = `${error?.message || ''}\n${error?.stderr || ''}`;
+      if (!/rate limit|secondary|abuse/i.test(text)) throw error;
+      // GraphQL secondary limits can block `gh pr merge` while REST remains available. Keep the
+      // merge inside the TrackerOS transport instead of falling back to an ad-hoc raw command.
+      const result = this.run(
+        ['api', '--method', 'PUT', `repos/${owner}/${repo}/pulls/${number}/merge`, '-f', `merge_method=${mergeMethod}`],
+        { json: true },
+      );
+      if (deleteBranch && headRefName) {
+        this.run(
+          ['api', '--method', 'DELETE', `repos/${owner}/${repo}/git/refs/heads/${encodeURIComponent(headRefName)}`],
+          {
+            allowFailure: true,
+          },
+        );
+      }
+      return result;
+    }
   }
 
   _graphql(query, variables) {

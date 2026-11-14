@@ -1061,3 +1061,7 @@ requires it to be merged and to close the task. It accepts GitHub's `closingIssu
 explicit `Closes/Fixes/Resolves #N` in the PR body. Historical task PRs reviewed before this guard
 may be listed in `guard.taskPrLinkExceptions` with an issue number and reason; exceptions are
 auditable and should not be added for current work.
+
+The `merge-pr.mjs` wrapper verifies required checks before merging. If GitHub's GraphQL secondary
+limit rejects `gh pr merge`, it falls back to the REST merge endpoint and deletes the branch through
+the same TrackerOS transport, so a rate-limited GraphQL path does not force an ad-hoc raw merge.
