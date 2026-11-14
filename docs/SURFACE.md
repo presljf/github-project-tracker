@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 135 |
-| Paths | 173 |
-| Shipped | 134 |
+| Entries | 137 |
+| Paths | 175 |
+| Shipped | 136 |
 | Contract-only | 1 |
 
 ## Class map
@@ -23,9 +23,9 @@
 | `reusable-workflow` | Reusable `workflow_call` contract workflows | .github/workflows/reusable-*.yml | 12 | 11 | 1 |
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
-| `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 29 | 29 | 0 |
+| `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 30 | 30 | 0 |
 | `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 10 | 10 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 62 | 62 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 63 | 63 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
@@ -88,7 +88,7 @@
 
 ### adopter-cli
 
-29 path(s) · 29 shipped · 0 contract-only.
+30 path(s) · 30 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -121,6 +121,7 @@
 | `scripts/adopt/docs/check-docs.mjs` | shipped | adopter | Check docs | — | `docs/DOCS_VALIDATION.md` |
 | `scripts/adopt/docs/check-versions.mjs` | shipped | adopter | Check versions | — | `docs/DOCS_VALIDATION.md` |
 | `scripts/adopt/docs/guard-docs.mjs` | shipped | adopter | Guard docs | — | `docs/REFERENCE.md#docs-coverage-guard` |
+| `scripts/adopt/mcp/server.mjs` | shipped | adopter | TrackerOS MCP server | — | `docs/MCP.md` |
 
 ### adopter-lib
 
@@ -141,7 +142,7 @@
 
 ### internal
 
-76 path(s) · 76 shipped · 0 contract-only.
+77 path(s) · 77 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -176,6 +177,7 @@
 | `docs/GITHUB_PROJECT_TRACKER_PLAYBOOK.md` | shipped | adopter | GitHub Project Tracker Playbook | — | — |
 | `docs/GUARD_DISTRIBUTION.md` | shipped | adopter | No-copy guard distribution | — | — |
 | `docs/HOW_TO_USE.md` | shipped | adopter | HOW TO USE — exhaustive handbook | — | — |
+| `docs/MCP.md` | shipped | adopter | MCP | — | — |
 | `docs/MULTI_PROJECT.md` | shipped | adopter | MULTI-PROJECT | — | — |
 | `docs/PROPOSALS.md` | shipped | adopter | PROPOSALS | — | — |
 | `docs/PUBLICATION.md` | shipped | template | PUBLICATION | — | — |

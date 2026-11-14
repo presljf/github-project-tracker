@@ -47,7 +47,8 @@
     "surface:check": "node scripts/internal/render-surface.mjs --check",
     "gate:local": "node scripts/internal/gate-local.mjs",
     "scan:debt": "node scripts/internal/scan-debt.mjs --advisory",
-    "guard:debt": "node scripts/internal/scan-debt.mjs --check"
+    "guard:debt": "node scripts/internal/scan-debt.mjs --check",
+    "mcp": "node scripts/adopt/mcp/server.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

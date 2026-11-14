@@ -240,5 +240,16 @@
         "docs/PROPOSALS.md"
       ]
     }
+,
+    {
+      "id": "mcp",
+      "paths": [
+        "scripts/adopt/mcp/"
+      ],
+      "docs": [
+        "docs/MCP.md",
+        "docs/REFERENCE.md"
+      ]
+    }
   ]
 }

@@ -442,3 +442,9 @@ main-history detection plus the release gate where branch protection is unavaila
 Audit now verifies that a closed task's recorded PR is merged and closes the task. If a historical
 pilot predates this rule, add its issue and reason to `guard.taskPrLinkExceptions`; do not use an
 exception for current work.
+
+### Narrow MCP facade
+
+After the PR-link and task-status guards are green, the TrackerOS MCP server
+(`scripts/adopt/mcp/server.mjs`) can be the agent's TrackerOS operation surface. It exposes proposal
+intake, issue context, task status, and audit tools only; see [MCP.md](./MCP.md).
