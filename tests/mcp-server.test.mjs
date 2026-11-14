@@ -1,6 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleRequest } from '../scripts/adopt/mcp/server.mjs';
+import {
+  ALLOWED_WRITE_TOOLS,
+  LOCKED_WRITE_TOOLS,
+  READ_TOOLS,
+  WRITE_LOCK_GATE,
+  assertWriteSurfaceLocked,
+  createTools,
+  handleRequest,
+} from '../scripts/adopt/mcp/server.mjs';
+
+/** The complete default surface. Adding or removing a tool must update this list in review. */
+const EXPECTED_TOOLS = [
+  'tracker_audit',
+  'tracker_issue_context',
+  'tracker_proposal_create',
+  'tracker_proposal_list',
+  'tracker_task_status',
+];
+
+const TRANSITION_TOOLS = ['tracker_proposal_accept', 'tracker_proposal_defer', 'tracker_proposal_reject'];
 
 function tools() {
   return {
@@ -12,22 +31,76 @@ function tools() {
   };
 }
 
+async function listedToolDefs() {
+  const response = await handleRequest({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, tools());
+  return response.result.tools;
+}
+
 test('initializes with tools capability', async () => {
   const response = await handleRequest({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }, tools());
   assert.equal(response.result.serverInfo.name, 'tracker-os');
   assert.deepEqual(response.result.capabilities, { tools: {} });
 });
 
-test('lists the narrow TrackerOS tools', async () => {
-  const response = await handleRequest({ jsonrpc: '2.0', id: 2, method: 'tools/list' }, tools());
-  const names = response.result.tools.map((tool) => tool.name);
-  assert.ok(names.includes('tracker_proposal_list'));
-  assert.ok(names.includes('tracker_issue_context'));
-  assert.ok(names.includes('tracker_audit'));
-  assert.ok(names.includes('tracker_proposal_accept'));
-  assert.ok(names.includes('tracker_proposal_defer'));
-  assert.ok(names.includes('tracker_proposal_reject'));
+test('lists only read/plan tools plus guarded proposal intake', async () => {
+  const names = (await listedToolDefs()).map((tool) => tool.name).sort();
+  assert.deepEqual(names, EXPECTED_TOOLS);
   assert.ok(!names.includes('github_graphql'));
+});
+
+test('default surface excludes locked proposal transitions', async () => {
+  const names = (await listedToolDefs()).map((tool) => tool.name);
+  for (const locked of TRANSITION_TOOLS) assert.ok(!names.includes(locked), `${locked} must stay locked`);
+});
+
+test('write-surface contract partitions the default surface', () => {
+  assert.deepEqual([...READ_TOOLS, ...ALLOWED_WRITE_TOOLS].sort(), EXPECTED_TOOLS);
+  assert.deepEqual(ALLOWED_WRITE_TOOLS, ['tracker_proposal_create']);
+  // Pinned: deleting a locked entry is how a transition write would sneak back in.
+  assert.deepEqual([...LOCKED_WRITE_TOOLS].sort(), TRANSITION_TOOLS);
+  assert.equal(WRITE_LOCK_GATE.phase, 'P2.2');
+  assert.ok(WRITE_LOCK_GATE.requires.length > 0);
+});
+
+test('write-surface guard accepts the default surface', async () => {
+  const summary = assertWriteSurfaceLocked(await listedToolDefs());
+  assert.deepEqual(summary.read, READ_TOOLS);
+  assert.deepEqual(summary.write, ALLOWED_WRITE_TOOLS);
+});
+
+test('write-surface guard fails server startup when a transition write returns', async () => {
+  const listed = await listedToolDefs();
+  for (const locked of TRANSITION_TOOLS) {
+    const drifted = [...listed, { name: locked, description: 'drift', inputSchema: { type: 'object' } }];
+    assert.throws(() => assertWriteSurfaceLocked(drifted), /write surface locked until P2\.2/);
+    assert.throws(() => assertWriteSurfaceLocked(drifted), new RegExp(locked));
+  }
+});
+
+test('write-surface guard rejects unclassified and duplicate tools', async () => {
+  const listed = await listedToolDefs();
+  assert.throws(
+    () => assertWriteSurfaceLocked([...listed, { name: 'tracker_merge', inputSchema: { type: 'object' } }]),
+    /unclassified MCP tool\(s\): tracker_merge/,
+  );
+  assert.throws(() => assertWriteSurfaceLocked([...listed, listed[0]]), /duplicate MCP tool definition/);
+});
+
+test('tool handlers mirror the locked surface', () => {
+  const handlers = Object.keys(createTools({ config: {}, github: {} })).sort();
+  assert.deepEqual(handlers, EXPECTED_TOOLS);
+});
+
+test('calling a locked transition is an unknown tool, not a hidden write', async () => {
+  const surface = createTools({ config: {}, github: {} });
+  for (const locked of TRANSITION_TOOLS) {
+    const response = await handleRequest(
+      { jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: locked, arguments: { issue: 1 } } },
+      surface,
+    );
+    assert.equal(response.error.code, -32602);
+    assert.match(response.error.message, new RegExp(`unknown tool: ${locked}`));
+  }
 });
 
 test('calls a tool and returns text content', async () => {

@@ -447,4 +447,6 @@ exception for current work.
 
 After the PR-link and task-status guards are green, the TrackerOS MCP server
 (`scripts/adopt/mcp/server.mjs`) can be the agent's TrackerOS operation surface. It exposes proposal
-intake, issue context, task status, and audit tools only; see [MCP.md](./MCP.md).
+intake, issue context, task status, and audit tools only; the MCP write surface is locked to
+validated `[Proposal]` intake, and proposal accept/defer/reject stay CLI-only until the P2.2
+credential/approval gate (#186). See [MCP.md](./MCP.md).

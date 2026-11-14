@@ -1069,7 +1069,10 @@ the same TrackerOS transport, so a rate-limited GraphQL path does not force an a
 ### TrackerOS MCP facade
 
 `scripts/adopt/mcp/server.mjs` exposes narrow proposal/context/task-status/audit tools over stdio.
-It exposes proposal accept/defer/reject in addition to intake/read tools, and does not expose generic GitHub or project-item mutation tools. See [MCP.md](./MCP.md).
+The MCP write surface is locked to validated `[Proposal]` intake: proposal accept/defer/reject stay
+CLI-only until the P2.2 credential/approval gate, enforced by a startup check and a pinned tool-list
+test (#186). It does not expose generic GitHub or project-item mutation tools. See
+[MCP.md](./MCP.md).
 
 ### Task-start branch guard
 
