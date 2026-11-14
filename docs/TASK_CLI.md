@@ -173,3 +173,10 @@ as a no-op. Dev tooling is approved in `tracker.dependencies.json`; see issue #8
 
 `start` warns loudly in the check-in when `core.hooksPath` is not `.githooks`; run
 `npm run hooks:install` before starting work.
+
+## Proposal acceptance
+
+Proposals are intake, not tasks. `proposal.mjs accept` converts the same issue in place into a
+task: it adds the task title/body and type, links it under the target Stream or Sprint, sets the
+delivery/milestone fields, and moves it to **Todo**. `defer` moves a proposal to **Deferred**;
+`reject` closes it as not planned. See [PROPOSALS.md](./PROPOSALS.md).

@@ -377,6 +377,13 @@ v1.4.0 evidence) and `stream.mjs close`'s default gate command works for Tracker
 - **Verification:** config validate + CI + audit + smoke
 ```
 
+## Optional: adopt proposal intake
+
+Add `status:proposed` / `status:deferred` labels and the `Proposed` / `Deferred` Status options,
+then import existing standalone issues with `proposal.mjs import`. Proposals are board-managed but
+are exempt from Release/Sprint/Stream, milestone, task sections, and task hierarchy until
+accepted. See [PROPOSALS.md](./PROPOSALS.md).
+
 ## Optional: adopt the tooling work profile
 
 v1.3.0 adds an optional `workProfile` (`product` default, or `tooling`) plus an optional

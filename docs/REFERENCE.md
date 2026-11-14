@@ -1046,3 +1046,10 @@ block direct pushes to main/master, and warn on checkout to main. `main-history-
 `tracker-contract-exception` OI when a main commit has no merged PR. Explicit env overrides are
 warned and must be recorded; they do not bypass remote protection.
 
+
+### Proposal lifecycle
+
+`scripts/adopt/cli/proposal.mjs` manages intake that is not yet delivery work. It validates the
+`[Proposal]` title/body contract, imports proposals onto the board with `Status = Proposed`, and
+supports `accept` (in-place conversion to a task), `defer`, and `reject`. See
+[PROPOSALS.md](./PROPOSALS.md) and the task conversion path in [TASK_CLI.md](./TASK_CLI.md).

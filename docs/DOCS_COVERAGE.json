@@ -230,6 +230,15 @@
         "docs/ACTIONS_CATALOG.md",
         "docs/ADOPTION.md"
       ]
+    },
+    {
+      "id": "templates",
+      "paths": [
+        "templates/"
+      ],
+      "docs": [
+        "docs/PROPOSALS.md"
+      ]
     }
   ]
 }
