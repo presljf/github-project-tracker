@@ -568,6 +568,10 @@
           "description": "Check-run names required by the post-merge bypass audit (GitHub check context names, e.g. 'ci / ci-gate'). Absent keeps the backwards-compatible default list; adopters set their real check names."
         }
 ,
+        "commentReview": {
+          "type": "boolean",
+          "description": "Require a comment-review digest at task start and reject stale comments at check-out (default true)."
+        },
         "taskPrLinkExceptions": {
           "type": "array",
           "description": "Reviewed historical task issues whose recorded checkout PR predates linked-PR enforcement.",

@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 137 |
-| Paths | 175 |
-| Shipped | 136 |
+| Entries | 138 |
+| Paths | 176 |
+| Shipped | 137 |
 | Contract-only | 1 |
 
 ## Class map
@@ -24,7 +24,7 @@
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 30 | 30 | 0 |
-| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 10 | 10 | 0 |
+| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 11 | 11 | 0 |
 | `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 63 | 63 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
@@ -125,11 +125,12 @@
 
 ### adopter-lib
 
-10 path(s) · 10 shipped · 0 contract-only.
+11 path(s) · 11 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
 | `scripts/adopt/lib/cli.mjs` | shipped | adopter | Cli | — | `docs/REFERENCE.md#1-repository-map` |
+| `scripts/adopt/lib/comment-review.mjs` | shipped | adopter | Comment review | — | `docs/REFERENCE.md` |
 | `scripts/adopt/lib/github.mjs` | shipped | adopter | Github | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/guards.mjs` | shipped | adopter | Guards | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/playwright-remote-guard.mjs` | shipped | adopter | Playwright remote guard | — | `docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy` |
