@@ -24,6 +24,9 @@ test('lists the narrow TrackerOS tools', async () => {
   assert.ok(names.includes('tracker_proposal_list'));
   assert.ok(names.includes('tracker_issue_context'));
   assert.ok(names.includes('tracker_audit'));
+  assert.ok(names.includes('tracker_proposal_accept'));
+  assert.ok(names.includes('tracker_proposal_defer'));
+  assert.ok(names.includes('tracker_proposal_reject'));
   assert.ok(!names.includes('github_graphql'));
 });
 
