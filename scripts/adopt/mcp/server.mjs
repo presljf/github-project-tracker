@@ -13,7 +13,7 @@ import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from '../cli/validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
-import { createProposal, listProposals } from '../cli/proposal.mjs';
+import { acceptProposal, createProposal, deferProposal, listProposals, rejectProposal } from '../cli/proposal.mjs';
 import { statusTask } from '../cli/task.mjs';
 import { auditTracker, collectAuditData } from '../cli/audit.mjs';
 
@@ -63,6 +63,56 @@ const TOOL_DEFS = [
       additionalProperties: false,
       required: ['issue'],
       properties: { issue: { type: 'integer', minimum: 1 } },
+    },
+  },
+  {
+    name: 'tracker_proposal_accept',
+    description: 'Accept a proposal into a Stream or Release/Sprint task.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['issue', 'title'],
+      properties: {
+        issue: { type: 'integer', minimum: 1 },
+        title: { type: 'string', minLength: 1 },
+        stream: { type: 'integer', minimum: 1 },
+        release: { type: 'integer', minimum: 1 },
+        sprint: { type: 'integer', minimum: 1 },
+        milestone: { type: 'string' },
+        area: { type: 'string' },
+        kind: { type: 'string' },
+        estimate: { type: 'string' },
+        source: { type: 'string' },
+        dryRun: { type: 'boolean' },
+      },
+    },
+  },
+  {
+    name: 'tracker_proposal_defer',
+    description: 'Defer a proposal with a reason and Deferred board status.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['issue', 'reason'],
+      properties: {
+        issue: { type: 'integer', minimum: 1 },
+        reason: { type: 'string', minLength: 1 },
+        dryRun: { type: 'boolean' },
+      },
+    },
+  },
+  {
+    name: 'tracker_proposal_reject',
+    description: 'Reject a proposal, close it as not planned, and set Done.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['issue', 'reason'],
+      properties: {
+        issue: { type: 'integer', minimum: 1 },
+        reason: { type: 'string', minLength: 1 },
+        dryRun: { type: 'boolean' },
+      },
     },
   },
   {
@@ -130,6 +180,41 @@ export function createTools({ config, github }) {
     },
     async tracker_task_status(args = {}) {
       return statusTask({ config, github, issueNumber: args.issue });
+    },
+    async tracker_proposal_accept(args = {}) {
+      return acceptProposal({
+        config,
+        github,
+        issueNumber: args.issue,
+        title: args.title,
+        streamNumber: args.stream,
+        releaseNumber: args.release,
+        sprintNumber: args.sprint,
+        milestone: args.milestone,
+        area: args.area,
+        kind: args.kind,
+        estimate: args.estimate,
+        source: args.source,
+        dryRun: Boolean(args.dryRun),
+      });
+    },
+    async tracker_proposal_defer(args = {}) {
+      return deferProposal({
+        config,
+        github,
+        issueNumber: args.issue,
+        reason: args.reason,
+        dryRun: Boolean(args.dryRun),
+      });
+    },
+    async tracker_proposal_reject(args = {}) {
+      return rejectProposal({
+        config,
+        github,
+        issueNumber: args.issue,
+        reason: args.reason,
+        dryRun: Boolean(args.dryRun),
+      });
     },
     async tracker_audit() {
       const data = await collectAuditData(github, config);

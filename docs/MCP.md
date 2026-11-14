@@ -20,6 +20,9 @@ The process speaks newline-delimited JSON-RPC 2.0 on stdin/stdout. Logs go to st
 | `tracker_proposal_create` | write | Create a validated `[Proposal]` issue |
 | `tracker_issue_context` | read | Issue body, comments, labels, project item |
 | `tracker_task_status` | read | Task status, assignees, delivery fields |
+| `tracker_proposal_accept` | write | Convert a proposal in place into a Stream/Release/Sprint task |
+| `tracker_proposal_defer` | write | Deferred status + reason |
+| `tracker_proposal_reject` | write | Done + close as not planned + reason |
 | `tracker_audit` | read | TrackerOS violations and warnings |
 
 There is deliberately no `graphql`, `project_item_edit`, `create_issue`, or generic GitHub
@@ -44,5 +47,5 @@ passthrough tool.
 
 ## Current scope
 
-This slice is proposal intake plus read-only context/task/audit tools. Task mutation tools and
-credential/runner isolation are follow-ups.
+This slice is proposal intake/lifecycle plus read-only context/task/audit tools. Task mutation
+tools and credential/runner isolation are follow-ups.
