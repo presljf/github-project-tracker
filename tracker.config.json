@@ -130,6 +130,20 @@
   "guard": {
     "transportOnly": true,
     "allow": [".github/workflows/reusable-release.yml", ".github/workflows/reusable-security.yml"],
-    "requiredChecks": ["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]
+    "requiredChecks": ["ci / ci-gate", "docs-guard", "pr-close-guard / guard"],
+    "taskPrLinkExceptions": [
+      {
+        "issue": 117,
+        "reason": "Pilot used partial PR #123 (part 1/3); task closed manually before the linked-PR guard. Reviewed historical exception."
+      },
+      {
+        "issue": 126,
+        "reason": "Pilot used partial PR #127; task closed manually before the linked-PR guard. Reviewed historical exception."
+      },
+      {
+        "issue": 128,
+        "reason": "Pilot used partial PR #129; task closed manually before the linked-PR guard. Reviewed historical exception."
+      }
+    ]
   }
 }

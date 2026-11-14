@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, UsageError } from '../lib/cli.mjs';
+import { pullClosesIssue } from '../lib/pr-link.mjs';
 import {
   missingProposalSections,
   PROPOSAL_DEFERRED_STATUS,
@@ -79,6 +80,22 @@ function normalizeComments(comments) {
     );
   }
   return map;
+}
+
+/** Extract the PR recorded in a task's check-out comment. */
+export function checkoutPrFromComments(comments = []) {
+  const list = (comments || []).map((comment) => (typeof comment === 'string' ? comment : comment.body || ''));
+  for (const body of list) {
+    const match = /- \*\*PR:\*\*\s*https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/(\d+)/i.exec(body);
+    if (match) return { number: Number(match[1]), url: match[0].replace(/^- \*\*PR:\*\*\s*/i, '') };
+  }
+  return null;
+}
+
+function normalizePrLinks(prLinks) {
+  if (!prLinks) return null;
+  if (prLinks instanceof Map) return prLinks;
+  return new Map(Object.entries(prLinks).map(([number, link]) => [Number(number), link]));
 }
 
 function normalizeSubIssues(subIssues) {
@@ -158,11 +175,15 @@ export function auditTracker({ config, data, strict = false }) {
   const issueByNumber = new Map(issues.map((issue) => [issue.number, issue]));
   const items = normalizeItems(data.projectItems);
   const comments = normalizeComments(data.comments);
+  const prLinks = normalizePrLinks(data.prLinks);
   const subIssues = normalizeSubIssues(data.subIssues);
   const dependencies = normalizeDependencies(data.dependencies);
   const { ancestorKindsFor } = ancestryLookup({ issues, subIssues });
   const evidenceRules = closedEvidenceRules(profile);
   const ancestryRequirements = taskAncestryRequirements(profile);
+  const prLinkExceptions = new Set(
+    (config.guard?.taskPrLinkExceptions || []).map((entry) => Number(entry.issue ?? entry)),
+  );
 
   const hasCheckIn = (number) =>
     (comments.get(number) || []).some((body) => /###\s*Check-in|Status\s*→\s*In Progress/i.test(body));
@@ -180,6 +201,23 @@ export function auditTracker({ config, data, strict = false }) {
         if (!rule.kinds.includes(kind)) continue;
         if (rule.requiresStreamAncestry && !ancestorKindsFor(issue.number).has('stream')) continue;
         if (!hasEvidence(issue.number, rule.pattern)) add(rule.code, issue, rule.message);
+      }
+      if (prLinks && kind === 'task' && !prLinkExceptions.has(issue.number)) {
+        const recorded = checkoutPrFromComments(comments.get(issue.number));
+        if (recorded) {
+          const link = prLinks.get(issue.number);
+          if (!link) add('TASK_PR_UNVERIFIED', issue, `recorded PR #${recorded.number} was not fetched for audit`);
+          else if (String(link.state || '').toUpperCase() !== 'MERGED')
+            add('TASK_PR_NOT_MERGED', issue, `recorded PR #${recorded.number} is not merged`);
+          else {
+            if (!pullClosesIssue(link, issue.number))
+              add(
+                'TASK_PR_LINK_MISSING',
+                issue,
+                `recorded PR #${recorded.number} does not close #${issue.number} (add Closes #${issue.number})`,
+              );
+          }
+        }
       }
       continue;
     }
@@ -354,7 +392,22 @@ export async function collectAuditData(github, config) {
         dependencyBatch?.[issue.number] ?? (await github.issueDependencies(repoOwner, repoName, issue.number));
     }
   }
-  return { issues, projectItems, comments, subIssues, dependencies };
+  const prLinks = {};
+  if (typeof github.getPullRequest === 'function') {
+    for (const raw of issues) {
+      const issue = normalizeIssue(raw);
+      if (issue.state === 'OPEN' || issueKind(issue.title) !== 'task') continue;
+      const recorded = checkoutPrFromComments(comments[issue.number]);
+      if (!recorded) continue;
+      try {
+        const pull = await github.getPullRequest(repoOwner, repoName, recorded.number);
+        if (pull) prLinks[issue.number] = pull;
+      } catch (error) {
+        prLinks[issue.number] = { error: error?.message || String(error) };
+      }
+    }
+  }
+  return { issues, projectItems, comments, subIssues, dependencies, prLinks };
 }
 
 function usage() {

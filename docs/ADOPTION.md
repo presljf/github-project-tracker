@@ -436,3 +436,9 @@ Historical metadata exceptions are explicit, OI-linked, and expiring. They are r
 Install `.githooks` with `npm run hooks:install`; do not require unconditional branch switching in
 automation. Use `git switch -c task/...`, assert the branch before commits, and rely on
 main-history detection plus the release gate where branch protection is unavailable.
+
+### Closed-task PR-link audit
+
+Audit now verifies that a closed task's recorded PR is merged and closes the task. If a historical
+pilot predates this rule, add its issue and reason to `guard.taskPrLinkExceptions`; do not use an
+exception for current work.
