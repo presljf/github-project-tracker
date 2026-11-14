@@ -1942,6 +1942,32 @@
       "docs": [
         "docs/PROPOSALS.md"
       ]
+    },
+    {
+      "id": "script:pr-link",
+      "path": "scripts/adopt/lib/pr-link.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "PR link",
+      "summary": "Closing-keyword and linked-issue helpers for task PRs.",
+      "docs": [
+        "docs/REFERENCE.md"
+      ]
+    },
+    {
+      "id": "doc:proposals",
+      "path": "docs/PROPOSALS.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "PROPOSALS",
+      "summary": "Board-managed proposal intake, acceptance, and defer/reject lifecycle.",
+      "docs": []
     }
   ]
 }

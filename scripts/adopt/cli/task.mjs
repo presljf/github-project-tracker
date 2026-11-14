@@ -12,6 +12,7 @@ import { evaluateCleanTree, gitStatus } from '../lib/preflight.mjs';
 import { issueKind } from './audit.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, parseIssueRef, UsageError } from '../lib/cli.mjs';
+import { pullClosesIssue } from '../lib/pr-link.mjs';
 import { doneRequiresPr, getWorkProfileAdapter } from '../lib/work-profile.mjs';
 
 const STATUSES = ['Todo', 'In Progress', 'In Review', 'Blocked', 'Done'];
@@ -371,8 +372,7 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
     if (!pull) throw new Error(`PR #${number} not found`);
     if (String(pull.state).toUpperCase() !== 'MERGED')
       throw new Error(`DoD: PR #${number} is not merged; merge it before task done`);
-    const closing = (pull.closingIssuesReferences || []).map((entry) => Number(entry.number ?? entry));
-    if (!closing.includes(issueNumber))
+    if (!pullClosesIssue(pull, issueNumber))
       throw new Error(`DoD: PR #${number} does not close #${issueNumber}; add Closes #${issueNumber} to the PR body`);
   }
   const body = [

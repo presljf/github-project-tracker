@@ -1053,3 +1053,15 @@ warned and must be recorded; they do not bypass remote protection.
 `[Proposal]` title/body contract, imports proposals onto the board with `Status = Proposed`, and
 supports `accept` (in-place conversion to a task), `defer`, and `reject`. See
 [PROPOSALS.md](./PROPOSALS.md) and the task conversion path in [TASK_CLI.md](./TASK_CLI.md).
+
+### Closed-task PR-link audit
+
+`audit` parses the `- **PR:**` line from a closed task's check-out comment, fetches the PR, and
+requires it to be merged and to close the task. It accepts GitHub's `closingIssuesReferences` or an
+explicit `Closes/Fixes/Resolves #N` in the PR body. Historical task PRs reviewed before this guard
+may be listed in `guard.taskPrLinkExceptions` with an issue number and reason; exceptions are
+auditable and should not be added for current work.
+
+The `merge-pr.mjs` wrapper verifies required checks before merging. If GitHub's GraphQL secondary
+limit rejects `gh pr merge`, it falls back to the REST merge endpoint and deletes the branch through
+the same TrackerOS transport, so a rate-limited GraphQL path does not force an ad-hoc raw merge.

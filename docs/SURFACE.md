@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 133 |
-| Paths | 171 |
-| Shipped | 132 |
+| Entries | 135 |
+| Paths | 173 |
+| Shipped | 134 |
 | Contract-only | 1 |
 
 ## Class map
@@ -24,8 +24,8 @@
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 29 | 29 | 0 |
-| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 9 | 9 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 61 | 61 | 0 |
+| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 10 | 10 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 62 | 62 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
@@ -124,7 +124,7 @@
 
 ### adopter-lib
 
-9 path(s) · 9 shipped · 0 contract-only.
+10 path(s) · 10 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -132,6 +132,7 @@
 | `scripts/adopt/lib/github.mjs` | shipped | adopter | Github | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/guards.mjs` | shipped | adopter | Guards | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/playwright-remote-guard.mjs` | shipped | adopter | Playwright remote guard | — | `docs/REFERENCE.md#56-guard-local-suite-remote-only-verification-policy` |
+| `scripts/adopt/lib/pr-link.mjs` | shipped | adopter | PR link | — | `docs/REFERENCE.md` |
 | `scripts/adopt/lib/preflight.mjs` | shipped | adopter | Preflight | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/proposal.mjs` | shipped | adopter | Proposal contract | — | `docs/PROPOSALS.md` |
 | `scripts/adopt/lib/rate-state.mjs` | shipped | adopter | Rate state | — | `docs/REFERENCE.md#1-repository-map` |
@@ -140,7 +141,7 @@
 
 ### internal
 
-75 path(s) · 75 shipped · 0 contract-only.
+76 path(s) · 76 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -176,6 +177,7 @@
 | `docs/GUARD_DISTRIBUTION.md` | shipped | adopter | No-copy guard distribution | — | — |
 | `docs/HOW_TO_USE.md` | shipped | adopter | HOW TO USE — exhaustive handbook | — | — |
 | `docs/MULTI_PROJECT.md` | shipped | adopter | MULTI-PROJECT | — | — |
+| `docs/PROPOSALS.md` | shipped | adopter | PROPOSALS | — | — |
 | `docs/PUBLICATION.md` | shipped | template | PUBLICATION | — | — |
 | `docs/QUICKSTART.md` | shipped | adopter | Quickstart — first tracker in ~10 minutes | — | — |
 | `docs/README.md` | shipped | template | Documentation index | — | — |
