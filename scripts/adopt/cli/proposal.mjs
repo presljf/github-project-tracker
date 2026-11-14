@@ -68,6 +68,65 @@ function optionOrThrow(ctx, fieldName, value) {
   return { field, option };
 }
 
+async function readProject({ config, github }) {
+  const { repoOwner, repoName, owner } = repoParts(config);
+  const projects = await github.listProjects(owner);
+  const project = projects.find(
+    (entry) => entry.number === config.project.number || entry.title === config.project.title,
+  );
+  if (!project) throw new Error(`project ${config.project.number} not found`);
+  const fields = await github.listFields(owner, config.project.number);
+  const field = (name) => fields.find((entry) => entry.name === name);
+  const option = (name, value) => field(name)?.options?.find((entry) => entry.name === value);
+  return { config, github, repoOwner, repoName, owner, project, fields, field, option };
+}
+
+export async function createProposal({
+  config,
+  github,
+  title,
+  bodyFile,
+  area = 'cross',
+  kind = 'infra',
+  estimate = 'M',
+  source = 'Internal',
+  priority,
+  dryRun = false,
+} = {}) {
+  if (!title) throw new UsageError('--title is required');
+  if (!bodyFile) throw new UsageError('--body-file is required');
+  const body = fs.readFileSync(path.resolve(bodyFile), 'utf8');
+  const missing = missingProposalSections(body);
+  if (missing.length) {
+    throw new UsageError(
+      `proposal body is missing required section(s): ${missing.map((s) => `## ${s}`).join(', ')}. ` +
+        'Use `proposal.mjs template` and fill them first.',
+    );
+  }
+  const proposalTitle = toProposalTitle(title);
+  const ctx = await readProject({ config, github });
+  const values = { Status: PROPOSAL_STATUS, Area: area, Kind: kind, Estimate: estimate, Source: source };
+  if (priority) values.Priority = priority;
+  const resolved = new Map();
+  for (const [field, value] of Object.entries(values)) resolved.set(field, optionOrThrow(ctx, field, value));
+  const plan = { ok: true, action: 'create', dryRun, title: proposalTitle, body, fields: values };
+  if (dryRun) return plan;
+
+  const issue = await github.createIssue(ctx.repoOwner, ctx.repoName, {
+    title: proposalTitle,
+    body,
+    labels: [PROPOSAL_LABEL],
+  });
+  await github.setIssueType(ctx.repoOwner, ctx.repoName, issue.number, config.issueTypes?.feature || PROPOSAL_TYPE);
+  const item = await github.addProjectItem(ctx.owner, config.project.number, issue.url);
+  if (!item?.id) throw new Error('project item id missing after add');
+  for (const field of Object.keys(values)) {
+    const { field: fieldObj, option } = resolved.get(field);
+    await github.setProjectItemField(ctx.project.id, item.id, fieldObj.id, option.id);
+  }
+  return { ...plan, issue: issue.number, url: issue.url };
+}
+
 export async function importProposal({
   config,
   github,
@@ -406,6 +465,8 @@ function usage() {
     '',
     'Commands:',
     '  template                         Print the proposal body template',
+    '  create --title TEXT --body-file F [--area A] [--kind K] [--estimate S|M|L]',
+    '         [--source S] [--priority P] [--dry-run] [--json]',
     '  import --issue N [--body-file F] [--area A] [--kind K] [--estimate S|M|L]',
     '         [--source S] [--priority P] [--dry-run] [--json]',
     '  list [--json]',
@@ -466,7 +527,20 @@ if (isMain) {
       if (errors.length) throw new UsageError(`invalid config:\n- ${errors.join('\n- ')}`);
       const github = createGitHub();
       let result;
-      if (command === 'import') {
+      if (command === 'create') {
+        result = await createProposal({
+          config,
+          github,
+          title: args.title,
+          bodyFile: args['body-file'],
+          area: args.area,
+          kind: args.kind,
+          estimate: args.estimate,
+          source: args.source,
+          priority: args.priority,
+          dryRun: Boolean(args['dry-run']),
+        });
+      } else if (command === 'import') {
         result = await importProposal({
           config,
           github,
@@ -514,6 +588,15 @@ if (isMain) {
         console.log(`Proposals (${result.count}):`);
         for (const proposal of result.proposals)
           console.log(`- #${proposal.number} ${proposal.title} [${proposal.status || 'off-board'}]`);
+      } else if (result.action === 'create') {
+        console.log(
+          `${result.dryRun ? 'DRY-RUN' : 'created'} proposal${result.issue ? ` #${result.issue}` : ''}: ${result.title}`,
+        );
+        console.log(
+          `- fields: ${Object.entries(result.fields)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(', ')}`,
+        );
       } else if (result.action === 'accept') {
         console.log(
           `${result.dryRun ? 'DRY-RUN' : 'accepted'} proposal #${result.issue} -> ${result.title}` +

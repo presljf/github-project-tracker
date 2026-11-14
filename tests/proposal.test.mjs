@@ -1,8 +1,12 @@
 import test from 'node:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import { issueKind } from '../scripts/adopt/cli/audit.mjs';
 import {
   acceptProposal,
+  createProposal,
   deferProposal,
   importProposal,
   listProposals,
@@ -226,4 +230,33 @@ test('proposal reject records reason and closes the issue', async () => {
   assert.equal(gh.issues.find((entry) => entry.number === 100).state, 'CLOSED');
   assert.equal(gh.items.find((entry) => entry.id === 'ITEM_100').status, 'Done');
   assert.ok(gh.comments[100][0].includes('Out of scope'));
+});
+
+test('proposal create makes a board-managed proposal', async () => {
+  const gh = new FakeGitHub({
+    projects: [{ id: 'P1', number: 1, title: 'Project Tracker', owner: 'owner' }],
+    fields: fields(),
+    issues: [],
+    items: [],
+  });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'proposal-create-'));
+  const bodyFile = path.join(dir, 'body.md');
+  fs.writeFileSync(bodyFile, proposalTemplate());
+  try {
+    const result = await createProposal({
+      config: config(),
+      github: gh,
+      title: 'Board-managed intake',
+      bodyFile,
+    });
+    assert.equal(result.action, 'create');
+    const issue = gh.issues.find((entry) => entry.number === result.issue);
+    assert.equal(issue.title, '[Proposal] Board-managed intake');
+    assert.equal(issue.type, 'Feature');
+    const item = gh.items.find((entry) => entry.content.number === result.issue);
+    assert.equal(item.status, 'Proposed');
+    assert.equal(item.area, 'cross');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

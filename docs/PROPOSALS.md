@@ -40,6 +40,10 @@ delivery container, task ancestry, or task body sections.
 # Scaffold
 node scripts/adopt/cli/proposal.mjs template
 
+# Create a new proposal issue
+node scripts/adopt/cli/proposal.mjs create --title "Board-managed intake" \
+  --body-file /tmp/proposal.md --area cross --kind infra --estimate M --source Internal
+
 # Import an existing free-form issue
 node scripts/adopt/cli/proposal.mjs import --issue 169 --body-file /tmp/proposal-169.md \
   --area cross --kind infra --estimate M --source Internal
