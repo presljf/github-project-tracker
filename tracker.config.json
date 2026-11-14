@@ -12,7 +12,7 @@
     "title": "Program roadmap",
     "body": "# Project Tracker OS \u2014 program roadmap\n\nSee issue #1.\n"
   },
-  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done"],
+  "statuses": ["Todo", "In Progress", "In Review", "Blocked", "Done", "Proposed", "Deferred"],
   "fields": {
     "Stream": {
       "options": ["v1.3.1-maintenance"]
@@ -44,7 +44,7 @@
   },
   "labels": {
     "risk": ["risk:low", "risk:medium", "risk:high"],
-    "process": ["plan-change", "source:downstream", "status:needs-triage"]
+    "process": ["plan-change", "source:downstream", "status:needs-triage", "status:proposed", "status:deferred"]
   },
   "releases": [
     {

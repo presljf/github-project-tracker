@@ -236,6 +236,13 @@ Enable built-in workflows (Project → ⋯ → Workflows):
 
 Only process/risk labels: `risk:low|medium|high`, `plan-change`, `source:downstream`, `status:needs-triage`. Do not add area/release/sprint/type labels.
 
+
+### Proposal intake
+
+Use `node scripts/adopt/cli/proposal.mjs import` for ideas and guards that are not yet committed
+delivery work. They appear on the board as `Proposed`, without Release/Sprint/Stream or milestone.
+Accept one only when it becomes scheduled work. See [PROPOSALS.md](./PROPOSALS.md).
+
 ## 6. Read the board
 
 1. Open the project **In flight** view: active work first.

@@ -81,6 +81,13 @@ Create In flight, Current sprint, Roadmap, Blocked, Release readiness, Recently 
 Enable native Task/Bug/Feature. If unavailable, document the fallback (Kind) in your adoption notes; do not add type labels.
 
 ### 2.6 Labels
+
+### 2.6.1 Proposal intake
+
+If the project needs a board-managed backlog, add the `status:proposed` and `status:deferred`
+labels, add `Proposed`/`Deferred` Status options, and import proposals with
+`proposal.mjs import`. Proposals carry no Release/Sprint/Stream or milestone until accepted; see
+[PROPOSALS.md](./PROPOSALS.md).
 Create only `risk:low|medium|high`, `plan-change`, `source:downstream`, `status:needs-triage`. No dimension labels.
 
 ### 2.7 Remote-only verification suites (optional)
