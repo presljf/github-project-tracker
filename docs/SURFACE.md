@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 138 |
-| Paths | 176 |
-| Shipped | 137 |
+| Entries | 144 |
+| Paths | 182 |
+| Shipped | 143 |
 | Contract-only | 1 |
 
 ## Class map
@@ -24,8 +24,8 @@
 | `reusable-action` | Reusable composite actions | .github/actions/<name>/action.yml | 3 | 3 | 0 |
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 30 | 30 | 0 |
-| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 11 | 11 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 63 | 63 | 0 |
+| `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 16 | 16 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 64 | 64 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
@@ -125,10 +125,15 @@
 
 ### adopter-lib
 
-11 path(s) · 11 shipped · 0 contract-only.
+16 path(s) · 16 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
+| `scripts/adopt/lib/broker-authority.mjs` | shipped | adopter | Broker authority | — | `docs/BROKER_STORE.md` |
+| `scripts/adopt/lib/broker-ledger.mjs` | shipped | adopter | Broker ledger | — | `docs/BROKER_STORE.md` |
+| `scripts/adopt/lib/broker-outbox.mjs` | shipped | adopter | Broker outbox | — | `docs/BROKER_STORE.md` |
+| `scripts/adopt/lib/broker-policy.mjs` | shipped | adopter | Broker policy | — | `docs/BROKER_STORE.md` |
+| `scripts/adopt/lib/broker-store.mjs` | shipped | adopter | Broker store | — | `docs/BROKER_STORE.md` |
 | `scripts/adopt/lib/cli.mjs` | shipped | adopter | Cli | — | `docs/REFERENCE.md#1-repository-map` |
 | `scripts/adopt/lib/comment-review.mjs` | shipped | adopter | Comment review | — | `docs/REFERENCE.md` |
 | `scripts/adopt/lib/github.mjs` | shipped | adopter | Github | — | `docs/REFERENCE.md#1-repository-map` |
@@ -143,7 +148,7 @@
 
 ### internal
 
-77 path(s) · 77 shipped · 0 contract-only.
+78 path(s) · 78 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -167,6 +172,7 @@
 | `docs/ACTIONS_CATALOG.md` | shipped | adopter | ACTIONS CATALOG | — | — |
 | `docs/ADOPTION.md` | shipped | adopter | ADOPTION — zero to first task | — | — |
 | `docs/AGENT_GUIDE.md` | shipped | adopter | AGENT GUIDE | — | — |
+| `docs/BROKER_STORE.md` | shipped | adopter | Broker control-plane store | — | — |
 | `docs/CI_SECURITY_PROFILE.md` | shipped | adopter | CI, required-check, and security profile | — | — |
 | `docs/DOCS_COVERAGE.json` | shipped | template | Docs coverage rules | — | `docs/DOCS_COVERAGE.md#mechanism` |
 | `docs/DOCS_COVERAGE.md` | shipped | adopter | Documentation coverage enforcement | — | — |

@@ -1074,6 +1074,15 @@ CLI-only until the P2.2 credential/approval gate, enforced by a startup check an
 test (#186). It does not expose generic GitHub or project-item mutation tools. See
 [MCP.md](./MCP.md).
 
+### Broker control-plane store
+
+`scripts/adopt/lib/broker-store.mjs` (with `broker-policy`, `broker-authority`, `broker-ledger`, and
+`broker-outbox`) is the P0.1 authority store: SQLite at `~/.tracker-broker/broker.db` (0600, WAL),
+policy validation that rejects unknown fields, human-approved grants and args-hash-bound leases, an
+outbox written before mutations, and a hash-chained call log mirrored to `audit.jsonl`. The read-only
+query API is `queryCalls`/`storeDiagnostics`. Same-user file modes are operational only — see
+[BROKER_STORE.md](./BROKER_STORE.md).
+
 ### Task-start branch guard
 
 `task.mjs start` rejects a `task/*` branch that does not begin with the task issue number:

@@ -1996,6 +1996,88 @@
       "docs": []
     },
     {
+      "id": "script:broker-store",
+      "path": "scripts/adopt/lib/broker-store.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker store",
+      "summary": "SQLite control-plane store: migrations, permissions, call-log query, diagnostics.",
+      "docs": [
+        "docs/BROKER_STORE.md"
+      ]
+    },
+    {
+      "id": "script:broker-policy",
+      "path": "scripts/adopt/lib/broker-policy.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker policy",
+      "summary": "Fail-closed broker policy validation: tier, tools, limits, paths, approval, TTL.",
+      "docs": [
+        "docs/BROKER_STORE.md"
+      ]
+    },
+    {
+      "id": "script:broker-authority",
+      "path": "scripts/adopt/lib/broker-authority.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker authority",
+      "summary": "Approvals, plans, grants, leases, revocations, and idempotency records.",
+      "docs": [
+        "docs/BROKER_STORE.md"
+      ]
+    },
+    {
+      "id": "script:broker-ledger",
+      "path": "scripts/adopt/lib/broker-ledger.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker ledger",
+      "summary": "Hash-chained call log and append-only JSONL audit copy.",
+      "docs": [
+        "docs/BROKER_STORE.md"
+      ]
+    },
+    {
+      "id": "script:broker-outbox",
+      "path": "scripts/adopt/lib/broker-outbox.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker outbox",
+      "summary": "Mutation intent before GitHub writes plus startup reconciliation.",
+      "docs": [
+        "docs/BROKER_STORE.md"
+      ]
+    },
+    {
+      "id": "doc:broker-store",
+      "path": "docs/BROKER_STORE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Broker control-plane store",
+      "summary": "P0.1 store, policy, grants/leases, outbox, and hash-chained call log.",
+      "docs": []
+    },
+    {
       "id": "script:comment-review",
       "path": "scripts/adopt/lib/comment-review.mjs",
       "class": "adopter-lib",
