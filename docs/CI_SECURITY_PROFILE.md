@@ -35,7 +35,7 @@ This profile centralizes CI and security logic once, in reusable workflows, and 
 | [tracker-audit.yml](../.github/workflows/tracker-audit.yml) | Thin self caller (schedule/dispatch/PR, advisory); check context `tracker-audit / audit`. |
 | [reusable-post-merge-audit.yml](../.github/workflows/reusable-post-merge-audit.yml) | Reusable post-merge bypass audit via `on: workflow_call`: audits merged PRs for bypassed required checks/closing-keyword misuse and opens a `tracker-contract-exception` OI; caller-granted audit permissions. |
 | [post-merge-audit.yml](../.github/workflows/post-merge-audit.yml) | Thin self caller (`pull_request` closed + dispatch with `pr-number`); check context `post-merge-audit / audit`. |
-| [reusable-pr-close-guard.yml](../.github/workflows/reusable-pr-close-guard.yml) | Reusable PR close guard via `on: workflow_call`: read-only closing-keyword/partial-PR validation. |
+| [reusable-pr-close-guard.yml](../.github/workflows/reusable-pr-close-guard.yml) | Reusable PR close guard via `on: workflow_call`: read-only closing-keyword and task-link validation. |
 | [pr-close-guard.yml](../.github/workflows/pr-close-guard.yml) | Thin self caller (PR edit events); check context `pr-close-guard / guard`. |
 | [reusable-contract.yml](../.github/workflows/reusable-contract.yml) | Reusable contract + metadata verification via `on: workflow_call`: offline `contract` job (verify-tooling/verify-contract, no secrets) and live `metadata` job (verify-metadata, optional `TRACKER_TOKEN` with Projects + Metadata read). |
 | [tracker-contract.yml](../.github/workflows/tracker-contract.yml) | Thin self caller for this repository; check contexts `tracker-contract / contract` and `tracker-contract / metadata`. |
@@ -350,7 +350,7 @@ called workflows can only downgrade the caller token):
 
 | Caller | Why these scopes | Caller permissions |
 | --- | --- | --- |
-| PR close guard | Read-only: fetches the live PR + referenced issues to validate closing keywords and partial-PR rules | `contents: read`, `issues: read`, `pull-requests: read` |
+| PR close guard | Read-only: fetches the live PR + referenced issues to validate closing keywords and task-link rules | `contents: read`, `issues: read`, `pull-requests: read` |
 | Post-merge audit | Opens the `tracker-contract-exception` OI/label; `statusCheckRollup` also resolves `checkSuite.workflowRun`, which needs Actions read | `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read` |
 | Tracker audit | Reads the project/issues only; no write scopes. Optional `TRACKER_TOKEN` secret (project + repo/issues read — see token scope below) | `contents: read` |
 
@@ -373,7 +373,7 @@ Required-check guidance:
 
 Degraded mode (post-merge audit): when `statusCheckRollup` is unreadable because of a permission or
 API error, the audit prints a loud warning + job summary, retries a metadata-only PR fetch, enforces
-only the closing-keyword/partial-PR rules, and exits 0 — no false check-related OI. Real
+only the closing-keyword/task-link rules, and exits 0 — no false check-related OI. Real
 closing-keyword violations still open an OI; non-permission errors still fail.
 
 Fork-PR caveat: a PR merged from a fork can leave the audit without `issues: write`, so OI creation
@@ -714,7 +714,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 | Branch protection/rulesets availability | `gh api .../branches/main/protection` | enabled on public repo: `ci / ci-gate`, `docs-guard` required |
 
 
-**PR close guard:** `.github/workflows/pr-close-guard.yml` is the thin caller for `reusable-pr-close-guard.yml` (copy-mode example in [profiles/audit](../profiles/audit/README.md)). It validates closing keywords vs task issue kind; completion PRs use closing keywords, partial PRs use Refs/Part of and cannot close. Check context: `pr-close-guard / guard`. The caller grants only `contents: read`, `issues: read`, `pull-requests: read` — the guard script is read-only and fetches the live PR itself, so no write scope is needed.
+**PR close guard:** `.github/workflows/pr-close-guard.yml` is the thin caller for `reusable-pr-close-guard.yml` (copy-mode example in [profiles/audit](../profiles/audit/README.md)). It validates closing keywords vs task issue kind; every task PR must close a task, and the `partial` label is rejected on task branches. Split the task or use a non-task branch. Check context: `pr-close-guard / guard`. The caller grants only `contents: read`, `issues: read`, `pull-requests: read` — the guard script is read-only and fetches the live PR itself, so no write scope is needed.
 
 ## Post-merge bypass audit
 
@@ -722,7 +722,7 @@ More general failure handling: [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 
 - **Caller permissions (least privilege):** `contents: read`, `issues: write`, `pull-requests: read`, `checks: read`, `statuses: read`, `actions: read`. The caller must grant this block (called workflows can only downgrade it): `issues: write` opens the OI/label, while `checks: read` + `statuses: read` + **`actions: read`** are required for `statusCheckRollup` — its GraphQL query also resolves `checkSuite.workflowRun`, which needs Actions read (observed on CastDeck run 43276236147: success-but-degraded with only checks+statuses).
 - **Required check names:** resolve from `guard.requiredChecks[]` in `tracker.config.json`; the template's audited config sets `["ci / ci-gate", "docs-guard", "pr-close-guard / guard"]` (the retired `pr-close-guard` context is gone). If the key is absent the script falls back to the legacy default (`pr-close-guard`), which no longer matches the reusable context — set the list explicitly. Adopters must set their real check contexts (e.g. CastDeck: `ci / ci-gate`, `tracker-guard / guard`, `pr-close-guard / guard`).
-- **Degraded mode:** if `statusCheckRollup` is unreadable due to a permission/API error, the audit prints a loud warning + job summary (`actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, enforces the closing-keyword/partial rules only, and exits 0 — it does not fail red and does not open a false check-related OI. Real closing-keyword/partial violations still open an OI; non-permission errors still fail.
+- **Degraded mode:** if `statusCheckRollup` is unreadable due to a permission/API error, the audit prints a loud warning + job summary (`actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, enforces the closing-keyword/task-link rules only, and exits 0 — it does not fail red and does not open a false check-related OI. Real closing-keyword/task-link violations still open an OI; non-permission errors still fail.
 - **Output semantics:** the reusable job's `ok` output means the job completed (the audit ran and, for a detected bypass, the OI was opened) — `ok=true` does **not** mean "no bypass". The audit is advisory: a real bypass still completes the job by opening the `tracker-contract-exception` OI, and the release gate blocks while that OI is open.
 - **Fork-PR caveat:** a PR merged from a fork can leave the audit run without `issues: write`, so OI creation returns 403. This is a documented pre-existing limitation: a detected bypass is reported in the job log and the job fails loudly at OI creation rather than recording the OI — review and open the follow-up manually.
 - **v1.3.0 actions:read correction (historical; fixed in v1.3.2):** the v1.3.0 tag shipped `checks: read` + `statuses: read` guidance before the Actions-read requirement was found live; the correction landed post-tag in the tooling stream (`[Stream] v1.3.1-maintenance`) and is included in v1.3.2. Adopters pinned to v1.3.0 add `actions: read` to their copied caller; CastDeck's caller fix is tracked in its C3 PR.

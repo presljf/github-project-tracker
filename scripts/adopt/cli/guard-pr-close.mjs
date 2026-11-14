@@ -3,7 +3,6 @@
 import { GitHubCli } from '../lib/github.mjs';
 
 const CLOSING = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)\b/gi;
-const PARTIAL = /\b(?:refs?|part of)\s+#(\d+)\b/i;
 function issueKind(title = '') {
   if (/^\[Roadmap\]/i.test(title)) return 'roadmap';
   if (/^\[Stream\]/i.test(title)) return 'stream';
@@ -20,11 +19,10 @@ export function evaluateClosing({ body = '', branch = '', labels = [], lookup = 
   const labelsSet = new Set(labels.map((l) => String(l).toLowerCase()));
   const isTaskBranch = branch.startsWith('task/');
   const partial = labelsSet.has('partial');
-  if (isTaskBranch && !partial && closing.length === 0)
+  if (isTaskBranch && partial)
+    violations.push('task PR must not use the partial label; split the task or use a non-task branch');
+  if (isTaskBranch && closing.length === 0)
     violations.push('task PR must contain a closing keyword (Closes/Fixes/Resolves #N)');
-  if (partial && closing.length > 0) violations.push('partial PR must not use a closing keyword; use Refs/Part of');
-  if (isTaskBranch && partial && !PARTIAL.test(body))
-    violations.push('partial task PR must reference the parent with Refs/Part of');
   for (const n of closing) {
     const issue = lookup(n);
     if (!issue) violations.push(`closing references missing issue #${n}`);

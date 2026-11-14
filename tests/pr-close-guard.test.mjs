@@ -13,9 +13,9 @@ test('task completion requires a closing keyword', () => {
   assert.equal(evaluateClosing({ body: 'Refs #1', branch: 'task/x', lookup }).ok, false);
   assert.equal(evaluateClosing({ body: 'Closes #1', branch: 'task/x', lookup }).ok, true);
 });
-test('partial PR cannot close and must use Refs', () => {
+test('partial task PR is rejected even with Refs/Part of', () => {
   assert.equal(evaluateClosing({ body: 'Closes #1', branch: 'task/x', labels: ['partial'], lookup }).ok, false);
-  assert.equal(evaluateClosing({ body: 'Part of #1', branch: 'task/x', labels: ['partial'], lookup }).ok, true);
+  assert.equal(evaluateClosing({ body: 'Part of #1', branch: 'task/x', labels: ['partial'], lookup }).ok, false);
 });
 test('closing a sprint/release tracker fails', () => {
   assert.equal(evaluateClosing({ body: 'Closes #2', branch: 'task/x', lookup }).ok, false);

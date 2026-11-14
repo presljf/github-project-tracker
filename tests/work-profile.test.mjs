@@ -126,6 +126,7 @@ function toolingFake({
   issues = [streamIssue(), taskIssue()],
   items = [toolingItem(30), toolingItem(31)],
   deps = {},
+  pullRequests = {},
 } = {}) {
   const github = new FakeTaskGitHub({
     projects: [{ id: 'PVT_test', number: 1, title: 'Project Tracker' }],
@@ -133,6 +134,7 @@ function toolingFake({
     issues,
     items,
     issueDeps: deps,
+    pullRequests,
   });
   github.subIssues.set(30, [31]);
   return github;
@@ -328,6 +330,11 @@ test('product profile ignores tooling flags and keeps Release/Sprint DoR', async
 
 test('tooling done requires a PR plus evidence; plain evidence-only close is refused', async () => {
   const github = toolingFake();
+  github.pullRequests[7] = {
+    number: 7,
+    state: 'MERGED',
+    closingIssuesReferences: [{ number: 31 }],
+  };
   await startTask(toolingStartArgs({ github }));
   await assert.rejects(
     () => doneTask({ config: toolingConfig(), github, issueNumber: 31, evidence: 'tests pass' }),
@@ -348,6 +355,26 @@ test('tooling done requires a PR plus evidence; plain evidence-only close is ref
   assert.equal(github.issues[1].state, 'CLOSED');
   assert.match(result.comment, /### Check-out/);
   assert.match(result.comment, /Work profile:\*\* tooling/);
+});
+
+test('tooling done rejects a merged PR that does not close the task', async () => {
+  const github = toolingFake({
+    pullRequests: {
+      7: { number: 7, state: 'MERGED', closingIssuesReferences: [{ number: 30 }] },
+    },
+  });
+  await startTask(toolingStartArgs({ github }));
+  await assert.rejects(
+    () =>
+      doneTask({
+        config: toolingConfig(),
+        github,
+        issueNumber: 31,
+        evidence: 'tests pass',
+        pr: 'https://github.com/owner/repo/pull/7',
+      }),
+    /does not close #31/,
+  );
 });
 
 test('tooling done still refuses unchecked acceptance criteria', async () => {
@@ -535,6 +562,7 @@ test('closed rehearsal stream: open → task start/done → stream close → aud
     fields: toolingFields(['v1.3.2']),
     issues: [],
     items: [],
+    pullRequests: { 2: { number: 2, state: 'MERGED', closingIssuesReferences: [{ number: 2 }] } },
   });
   const config = toolingConfig();
   const opened = await openStream({ config, github, name: 'v1.3.2', delivery: 'Rehearsal delivery' });

@@ -341,6 +341,12 @@ function isPullRequestRef(value) {
   return /^https?:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+\/?$/.test(text) || /^#?\d+$/.test(text);
 }
 
+function pullRequestNumber(value) {
+  const text = String(value || '').trim();
+  const match = /\/pull\/(\d+)\/?$/.exec(text) || /^#?(\d+)$/.exec(text);
+  return match ? Number(match[1]) : null;
+}
+
 export async function doneTask({ config, github, issueNumber, evidence, pr, force = false, dryRun = false }) {
   const profile = getWorkProfileAdapter(config);
   if (!evidence) throw new UsageError('--evidence or --evidence-file is required for done');
@@ -350,12 +356,25 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
     if (!isPullRequestRef(pr)) throw new UsageError('--pr must be a pull request URL or number');
   }
   const ctx = await readContext({ config, github, issueNumber });
-  if (String(ctx.issue.state).toUpperCase() !== 'OPEN') throw new Error(`#${issueNumber} is not open`);
+  if (String(ctx.issue.state).toUpperCase() !== 'OPEN' && !doneRequiresPr(profile))
+    throw new Error(`#${issueNumber} is not open`);
   const unchecked = uncheckedAcceptance(ctx.issue.body);
   if (unchecked.length && !force)
     throw new Error(
       `DoD: ${unchecked.length} unchecked acceptance criterion(ia); check them or use --force after review`,
     );
+
+  if (doneRequiresPr(profile)) {
+    const number = pullRequestNumber(pr);
+    if (!number) throw new UsageError('--pr must be a pull request URL or number');
+    const pull = await github.getPullRequest(ctx.repoOwner, ctx.repoName, number);
+    if (!pull) throw new Error(`PR #${number} not found`);
+    if (String(pull.state).toUpperCase() !== 'MERGED')
+      throw new Error(`DoD: PR #${number} is not merged; merge it before task done`);
+    const closing = (pull.closingIssuesReferences || []).map((entry) => Number(entry.number ?? entry));
+    if (!closing.includes(issueNumber))
+      throw new Error(`DoD: PR #${number} does not close #${issueNumber}; add Closes #${issueNumber} to the PR body`);
+  }
   const body = [
     '### Check-out',
     '',
@@ -374,7 +393,8 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
   ].join('\n');
   if (!dryRun) {
     await setStatus(ctx, 'Done', false);
-    await github.closeIssue(ctx.repoOwner, ctx.repoName, issueNumber);
+    if (String(ctx.issue.state).toUpperCase() === 'OPEN')
+      await github.closeIssue(ctx.repoOwner, ctx.repoName, issueNumber);
     await github.addComment(ctx.repoOwner, ctx.repoName, issueNumber, body);
   }
   return { ok: true, dryRun, action: 'done', issue: issueNumber, profile: profile.name, comment: body };

@@ -597,7 +597,7 @@ export class GitHubCli {
         '--repo',
         `${owner}/${repo}`,
         '--json',
-        'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefName,body,labels',
+        'number,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefName,body,labels,closingIssuesReferences',
       ],
       { json: true },
     );
@@ -616,7 +616,7 @@ export class GitHubCli {
         '--repo',
         `${owner}/${repo}`,
         '--json',
-        'number,state,isDraft,mergeable,mergeStateStatus,headRefName,body,labels',
+        'number,state,isDraft,mergeable,mergeStateStatus,headRefName,body,labels,closingIssuesReferences',
       ],
       { json: true },
     );

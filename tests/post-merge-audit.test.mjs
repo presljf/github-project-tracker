@@ -126,9 +126,16 @@ test('task merge without closing keyword is a bypass', () => {
   assert.ok(evaluateBypass({ pull }).violations.some((violation) => violation.code === 'MISSING_CLOSING_KEYWORD'));
 });
 
-test('partial PR closing a task is a bypass', () => {
+test('partial task PR is a bypass even with a closing keyword', () => {
   const pull = { ...BASE_PULL, labels: ['partial'], body: 'Closes #42' };
-  assert.ok(evaluateBypass({ pull }).violations.some((violation) => violation.code === 'PARTIAL_CLOSED_TASK'));
+  assert.ok(evaluateBypass({ pull }).violations.some((violation) => violation.code === 'PARTIAL_TASK_PR'));
+});
+
+test('partial task PR without a closing keyword is a bypass', () => {
+  const pull = { ...BASE_PULL, labels: ['partial'], body: 'Part of #42' };
+  const codes = evaluateBypass({ pull }).violations.map((violation) => violation.code);
+  assert.ok(codes.includes('PARTIAL_TASK_PR'));
+  assert.ok(codes.includes('MISSING_CLOSING_KEYWORD'));
 });
 
 test('degraded evaluation skips checks but still enforces closure rules', () => {

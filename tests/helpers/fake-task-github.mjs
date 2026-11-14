@@ -6,6 +6,7 @@ export class FakeTaskGitHub extends FakeGitHub {
     super(options);
     this.commentsByIssue = options.issueComments || {};
     this.issueDeps = options.issueDeps || {};
+    this.pullRequests = options.pullRequests || {};
   }
 
   async getIssueView(owner, repo, number) {
@@ -46,6 +47,10 @@ export class FakeTaskGitHub extends FakeGitHub {
     const issue = this.issues.find((entry) => entry.number === number);
     if (issue) issue.state = 'CLOSED';
     return {};
+  }
+
+  async getPullRequest(owner, repo, number) {
+    return structuredClone(this.pullRequests[number] || null);
   }
 
   async addBlockedBy(owner, repo, number, url) {
