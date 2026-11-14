@@ -1994,6 +1994,20 @@
       "title": "MCP",
       "summary": "TrackerOS MCP facade tools, security, and protocol.",
       "docs": []
+    },
+    {
+      "id": "script:comment-review",
+      "path": "scripts/adopt/lib/comment-review.mjs",
+      "class": "adopter-lib",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "Comment review",
+      "summary": "Stable comment digest and review marker helpers for task start/check-out.",
+      "docs": [
+        "docs/REFERENCE.md"
+      ]
     }
   ]
 }

@@ -12,6 +12,7 @@ import { evaluateCleanTree, gitStatus } from '../lib/preflight.mjs';
 import { issueKind } from './audit.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, parseIssueRef, UsageError } from '../lib/cli.mjs';
+import { digestComments, digestMarker, latestDigest } from '../lib/comment-review.mjs';
 import { pullClosesIssue } from '../lib/pr-link.mjs';
 import { doneRequiresPr, getWorkProfileAdapter } from '../lib/work-profile.mjs';
 
@@ -209,6 +210,31 @@ function gitInfo({ repoRoot, branch, createBranch, dryRun, gitExec = null }) {
   }
 }
 
+function commentReviewEnabled(config) {
+  return config.guard?.commentReview !== false;
+}
+
+async function readCommentReview(ctx) {
+  const comments = await ctx.github.issueComments(ctx.repoOwner, ctx.repoName, ctx.issue.number);
+  return { comments, digest: digestComments(comments), marker: latestDigest(comments) };
+}
+
+function commentReviewLine(review) {
+  return `- **Comment review:** ${review.digest.count} comment(s); latest ID ${review.digest.latestId || 'none'}; digest ${review.digest.hash}`;
+}
+
+async function assertCommentReviewCurrent(ctx) {
+  if (!commentReviewEnabled(ctx.config)) return null;
+  const review = await readCommentReview(ctx);
+  if (review.marker && review.marker.hash !== review.digest.hash) {
+    throw new Error(
+      `comment review is stale: comments changed since the last check-in (${review.marker.count} -> ${review.digest.count}); ` +
+        'use `task.mjs comments --issue N` to review and checkpoint the re-review',
+    );
+  }
+  return review;
+}
+
 export async function startTask({
   config,
   github,
@@ -249,6 +275,7 @@ export async function startTask({
     dryRun,
     stream,
   });
+  const review = commentReviewEnabled(config) ? await readCommentReview(ctx) : null;
   const git = gitInfo({ repoRoot, branch, createBranch: Boolean(branch), dryRun, gitExec });
   assertTaskBranch({ branch: git.branch, issueNumber });
   const dorSummary = profile.isTooling
@@ -266,6 +293,7 @@ export async function startTask({
       ? [`- **Work profile:** ${profile.label}`, `- **Stream:** #${streamCtx.issue.number} — ${streamCtx.issue.title}`]
       : []),
     `- **DoR:** ${dorSummary}`,
+    ...(review ? [commentReviewLine(review), digestMarker(review.digest)] : []),
     ...(allowDirty ? [`- **Dirty-worktree exception:** ${dirtyReason}`] : []),
     '- **Evidence planned:** attach at check-out',
     `- **Risks/blockers:** ${[warning, hooksWarning].filter(Boolean).join('; ') || 'none'}`,
@@ -305,18 +333,21 @@ function messageFrom(args) {
 
 export async function checkpointTask({ config, github, issueNumber, message, dryRun = false }) {
   const ctx = await readContext({ config, github, issueNumber });
-  const body = `### Update\n\n${message.trim()}\n`;
+  const review = commentReviewEnabled(config) ? await readCommentReview(ctx) : null;
+  const body = `### Update\n\n${message.trim()}\n${review ? `\n${commentReviewLine(review)}\n${digestMarker(review.digest)}\n` : ''}`;
   if (!dryRun) await github.addComment(ctx.repoOwner, ctx.repoName, issueNumber, body);
   return { ok: true, dryRun, action: 'checkpoint', issue: issueNumber, comment: body };
 }
 
 export async function reviewTask({ config, github, issueNumber, pr, evidence, dryRun = false }) {
   const ctx = await readContext({ config, github, issueNumber });
+  const review = commentReviewEnabled(config) ? await readCommentReview(ctx) : null;
   const body = [
     '### Review',
     '',
     `- **PR:** ${pr || 'not provided'}`,
     `- **Evidence:** ${evidence || 'attached in issue/PR'}`,
+    ...(review ? [commentReviewLine(review), digestMarker(review.digest)] : []),
     '',
     'Status → In Review.',
   ].join('\n');
@@ -369,6 +400,7 @@ export async function doneTask({ config, github, issueNumber, evidence, pr, forc
   const ctx = await readContext({ config, github, issueNumber });
   if (String(ctx.issue.state).toUpperCase() !== 'OPEN' && !doneRequiresPr(profile))
     throw new Error(`#${issueNumber} is not open`);
+  await assertCommentReviewCurrent(ctx);
   const unchecked = uncheckedAcceptance(ctx.issue.body);
   if (unchecked.length && !force)
     throw new Error(
@@ -436,6 +468,23 @@ export async function statusTask({ config, github, issueNumber }) {
   };
 }
 
+export async function commentsTask({ config, github, issueNumber }) {
+  const ctx = await readContext({ config, github, issueNumber });
+  const comments = await github.issueComments(ctx.repoOwner, ctx.repoName, issueNumber);
+  const digest = digestComments(comments);
+  return {
+    ok: true,
+    action: 'comments',
+    issue: issueNumber,
+    count: digest.count,
+    latestId: digest.latestId,
+    latestUpdatedAt: digest.latestUpdatedAt,
+    hash: digest.hash,
+    marker: latestDigest(comments),
+    comments,
+  };
+}
+
 function usage() {
   return [
     'Usage: node scripts/adopt/cli/task.mjs <command> --issue N [--config tracker.config.json] [--dry-run] [--json]',
@@ -443,7 +492,7 @@ function usage() {
     'Commands:',
     '  start       --issue N [--owner LOGIN] [--executor TEXT] [--branch NAME]',
     '              [--stream ISSUE|URL]   (required in the tooling work profile)',
-    '  checkpoint  --issue N (--message TEXT | --message-file FILE)',
+    '  comments    --issue N [--json]\n  checkpoint  --issue N (--message TEXT | --message-file FILE)',
     '  review      --issue N [--pr URL] [--evidence TEXT]',
     '  block       --issue N --reason TEXT [--blocked-by URL]',
     '  done        --issue N (--evidence TEXT | --evidence-file FILE) [--pr URL] [--force]',
@@ -517,6 +566,7 @@ if (isMain) {
           allowDirty: Boolean(args['allow-dirty']),
           dirtyReason: args['dirty-reason'],
         });
+      else if (command === 'comments') result = await commentsTask({ config, github, issueNumber });
       else if (command === 'checkpoint')
         result = await checkpointTask({ config, github, issueNumber, message: messageFrom(args), dryRun });
       else if (command === 'review')

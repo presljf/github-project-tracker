@@ -12,6 +12,7 @@ import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, UsageError } from '../lib/cli.mjs';
 import { pullClosesIssue } from '../lib/pr-link.mjs';
+import { digestComments, latestDigest } from '../lib/comment-review.mjs';
 import {
   missingProposalSections,
   PROPOSAL_DEFERRED_STATUS,
@@ -301,6 +302,32 @@ export function auditTracker({ config, data, strict = false }) {
         title: null,
         message: `${owner} has ${list.length} In Progress tasks: ${list.map((issue) => `#${issue.number}`).join(', ')}`,
       });
+  }
+
+  // Advisory: In Progress tasks should carry a current comment-review digest. The digest is
+  // recorded by task.mjs start/checkpoint/review; a missing or stale marker means the executor may
+  // not have reviewed the full comment set.
+  for (const issue of issues) {
+    if (issue.state !== 'OPEN' || issueKind(issue.title) !== 'task') continue;
+    const item = items.get(issue.number);
+    if (!item || item.status !== 'In Progress') continue;
+    const digest = digestComments(comments.get(issue.number) || []);
+    const marker = latestDigest(comments.get(issue.number) || []);
+    if (!marker) {
+      warnings.push({
+        code: 'COMMENT_REVIEW_MISSING',
+        issue: issue.number,
+        title: issue.title,
+        message: 'In Progress task has no comment-review digest; run task.mjs start/checkpoint',
+      });
+    } else if (marker.hash !== digest.hash) {
+      warnings.push({
+        code: 'COMMENT_REVIEW_STALE',
+        issue: issue.number,
+        title: issue.title,
+        message: `In Progress task comment review is stale (${marker.count} -> ${digest.count})`,
+      });
+    }
   }
 
   // Advisory (non-blocking): closed project items left in a non-Done status. The Project Status

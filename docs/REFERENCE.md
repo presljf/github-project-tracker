@@ -1076,3 +1076,11 @@ It exposes proposal accept/defer/reject in addition to intake/read tools, and do
 `task.mjs start` rejects a `task/*` branch that does not begin with the task issue number:
 `task/<issue>-<slug>`. `release/*`, `hotfix/*`, and `chore/*` branches remain allowed. The commit
 hook separately blocks commits on `main`/`master`.
+
+### Comment review digest
+
+`task.mjs start` fetches every issue comment (REST pagination), hashes the non-marker bodies, and
+records the digest in the check-in comment. `checkpoint`/`review` advance the marker after an
+explicit re-review. `done` fails if comments changed after the latest marker. `task.mjs comments
+--issue N` prints the current comment set/digest without mutating. `guard.commentReview=false`
+disables the gate for repositories that do not use issue comments.

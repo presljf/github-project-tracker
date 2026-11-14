@@ -135,6 +135,18 @@ test('start dry-run validates without mutations', async () => {
   assert.equal(github.items[0].status, 'Todo');
 });
 
+test('start records a comment digest and done rejects stale comments', async () => {
+  const github = fake();
+  await startTask({ ...baseArgs(), github });
+  const checkIn = github.commentsByIssue[5].at(-1);
+  assert.match(checkIn, /tracker-comment-digest/);
+  github.commentsByIssue[5].push('a new comment after check-in');
+  await assert.rejects(
+    () => doneTask({ config: projectConfig(), github, issueNumber: 5, evidence: 'tests pass' }),
+    /comment review is stale/,
+  );
+});
+
 test('start rejects a task branch for another issue', async () => {
   const github = fake();
   await assert.rejects(

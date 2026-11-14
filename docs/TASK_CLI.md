@@ -20,6 +20,7 @@ Default: mutates. `--dry-run` validates and prints the planned result with no Gi
 | `block` | `--issue`, `--reason`, `--blocked-by URL` | Sets **Blocked**, optionally adds native blocked-by, posts blocker note |
 | `done` | `--issue`, `--evidence` or `--evidence-file`, `--pr URL`, `--force` | Verifies unchecked acceptance (unless `--force`), sets **Done**, closes issue, posts check-out |
 | `status` | `--issue` | Read-only status/fields/assignees; use `--json` for machine-readable fields |
+| `comments` | `--issue` | Read-only comment set, count, latest ID, and digest |
 
 ## Examples
 

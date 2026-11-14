@@ -559,10 +559,18 @@ export class GitHubCli {
   }
 
   issueComments(owner, repo, number) {
-    const result = this.run(['issue', 'view', String(number), '--repo', `${owner}/${repo}`, '--json', 'comments'], {
-      json: true,
-    });
-    return result?.comments || [];
+    // REST pagination: `gh issue view --json comments` is not guaranteed to return every page.
+    const text = this.run([
+      'api',
+      '--paginate',
+      `repos/${owner}/${repo}/issues/${number}/comments?per_page=100`,
+      '--jq',
+      '.[] | @json',
+    ]);
+    return String(text || '')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
   }
 
   issueDependencies(owner, repo, number) {
