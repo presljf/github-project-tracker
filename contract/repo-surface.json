@@ -1968,6 +1968,32 @@
       "title": "PROPOSALS",
       "summary": "Board-managed proposal intake, acceptance, and defer/reject lifecycle.",
       "docs": []
+    },
+    {
+      "id": "script:mcp-server",
+      "path": "scripts/adopt/mcp/server.mjs",
+      "class": "adopter-cli",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "TrackerOS MCP server",
+      "summary": "Narrow proposal/context/task-status/audit MCP facade over stdio.",
+      "docs": [
+        "docs/MCP.md"
+      ]
+    },
+    {
+      "id": "doc:mcp",
+      "path": "docs/MCP.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "MCP",
+      "summary": "TrackerOS MCP facade tools, security, and protocol.",
+      "docs": []
     }
   ]
 }

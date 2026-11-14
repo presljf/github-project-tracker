@@ -1065,3 +1065,8 @@ auditable and should not be added for current work.
 The `merge-pr.mjs` wrapper verifies required checks before merging. If GitHub's GraphQL secondary
 limit rejects `gh pr merge`, it falls back to the REST merge endpoint and deletes the branch through
 the same TrackerOS transport, so a rate-limited GraphQL path does not force an ad-hoc raw merge.
+
+### TrackerOS MCP facade
+
+`scripts/adopt/mcp/server.mjs` exposes narrow proposal/context/task-status/audit tools over stdio.
+It does not expose generic GitHub or project-item mutation tools. See [MCP.md](./MCP.md).
