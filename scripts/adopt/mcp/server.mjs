@@ -5,6 +5,10 @@
  * This server intentionally exposes TrackerOS operations, not a generic GitHub API. It runs with
  * the write transport injected by the caller (GH_TOKEN); the raw agent should have a read-only
  * token and no write SSH key when this server is the only mutation path.
+ *
+ * The write surface is locked: only validated proposal intake may mutate. Proposal transitions
+ * (accept/defer/reject) stay CLI-only until the P2.2 boundary + approval gate (v1.5.0-T10 #186,
+ * plan v2 §5). `assertWriteSurfaceLocked()` fails server startup if the default surface drifts.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -13,7 +17,7 @@ import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from '../cli/validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
-import { acceptProposal, createProposal, deferProposal, listProposals, rejectProposal } from '../cli/proposal.mjs';
+import { createProposal, listProposals } from '../cli/proposal.mjs';
 import { statusTask } from '../cli/task.mjs';
 import { auditTracker, collectAuditData } from '../cli/audit.mjs';
 
@@ -66,61 +70,72 @@ const TOOL_DEFS = [
     },
   },
   {
-    name: 'tracker_proposal_accept',
-    description: 'Accept a proposal into a Stream or Release/Sprint task.',
-    inputSchema: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['issue', 'title'],
-      properties: {
-        issue: { type: 'integer', minimum: 1 },
-        title: { type: 'string', minLength: 1 },
-        stream: { type: 'integer', minimum: 1 },
-        release: { type: 'integer', minimum: 1 },
-        sprint: { type: 'integer', minimum: 1 },
-        milestone: { type: 'string' },
-        area: { type: 'string' },
-        kind: { type: 'string' },
-        estimate: { type: 'string' },
-        source: { type: 'string' },
-        dryRun: { type: 'boolean' },
-      },
-    },
-  },
-  {
-    name: 'tracker_proposal_defer',
-    description: 'Defer a proposal with a reason and Deferred board status.',
-    inputSchema: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['issue', 'reason'],
-      properties: {
-        issue: { type: 'integer', minimum: 1 },
-        reason: { type: 'string', minLength: 1 },
-        dryRun: { type: 'boolean' },
-      },
-    },
-  },
-  {
-    name: 'tracker_proposal_reject',
-    description: 'Reject a proposal, close it as not planned, and set Done.',
-    inputSchema: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['issue', 'reason'],
-      properties: {
-        issue: { type: 'integer', minimum: 1 },
-        reason: { type: 'string', minLength: 1 },
-        dryRun: { type: 'boolean' },
-      },
-    },
-  },
-  {
     name: 'tracker_audit',
     description: 'Run the TrackerOS audit and return violations and warnings.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
   },
 ];
+
+/**
+ * Tool-surface contract. A tool may only be registered when it is classified here.
+ *
+ * The MCP facade is the future broker operation surface, so its default write surface is locked:
+ * proposal transitions (accept/defer/reject) move board state and may only return after the P2.2
+ * boundary + approval gate (plan v2 §5; #170/#180, leased approval, proposal-state guards). Until
+ * then they stay CLI-only, which is a human-run trusted path.
+ */
+export const READ_TOOLS = Object.freeze([
+  'tracker_proposal_list',
+  'tracker_issue_context',
+  'tracker_task_status',
+  'tracker_audit',
+]);
+
+/** The only write allowed on the default surface: validated `[Proposal]` intake. */
+export const ALLOWED_WRITE_TOOLS = Object.freeze(['tracker_proposal_create']);
+
+/** Transition writes that must stay off the MCP surface until the re-enable gate is met. */
+export const LOCKED_WRITE_TOOLS = Object.freeze([
+  'tracker_proposal_accept',
+  'tracker_proposal_defer',
+  'tracker_proposal_reject',
+]);
+
+/** Criteria that must be satisfied (and recorded in review) before a locked tool returns. */
+export const WRITE_LOCK_GATE = Object.freeze({
+  phase: 'P2.2',
+  requires: [
+    'scoped broker credential/transport boundary (#170, #180)',
+    'leased grant + approval for proposal transitions',
+    'immutable classification and proposal-state guards (P0.5a, P0.5e)',
+    'P0/P1 gates green with tests proving the bypass fails',
+  ],
+});
+
+/**
+ * Fail closed when the tool surface drifts: a locked transition write, an unclassified tool, or a
+ * duplicate registration must stop the server instead of silently widening the write surface.
+ */
+export function assertWriteSurfaceLocked(toolDefs = TOOL_DEFS) {
+  const names = toolDefs.map((tool) => tool?.name);
+  const duplicated = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))];
+  if (duplicated.length) throw new Error(`duplicate MCP tool definition(s): ${duplicated.join(', ')}`);
+  const leaked = names.filter((name) => LOCKED_WRITE_TOOLS.includes(name));
+  if (leaked.length) {
+    throw new Error(
+      `MCP write surface locked until ${WRITE_LOCK_GATE.phase}: remove ${leaked.join(', ')}. ` +
+        `Re-enable only after: ${WRITE_LOCK_GATE.requires.join('; ')}.`,
+    );
+  }
+  const unclassified = names.filter((name) => !READ_TOOLS.includes(name) && !ALLOWED_WRITE_TOOLS.includes(name));
+  if (unclassified.length) {
+    throw new Error(
+      `unclassified MCP tool(s): ${unclassified.join(', ')}. Classify each tool as read-only or an ` +
+        'allowed write before registering it on the default surface.',
+    );
+  }
+  return { read: [...READ_TOOLS], write: [...ALLOWED_WRITE_TOOLS], locked: [...LOCKED_WRITE_TOOLS] };
+}
 
 function repoParts(config) {
   const [repoOwner, repoName] = String(config.repository || '').split('/');
@@ -181,41 +196,6 @@ export function createTools({ config, github }) {
     async tracker_task_status(args = {}) {
       return statusTask({ config, github, issueNumber: args.issue });
     },
-    async tracker_proposal_accept(args = {}) {
-      return acceptProposal({
-        config,
-        github,
-        issueNumber: args.issue,
-        title: args.title,
-        streamNumber: args.stream,
-        releaseNumber: args.release,
-        sprintNumber: args.sprint,
-        milestone: args.milestone,
-        area: args.area,
-        kind: args.kind,
-        estimate: args.estimate,
-        source: args.source,
-        dryRun: Boolean(args.dryRun),
-      });
-    },
-    async tracker_proposal_defer(args = {}) {
-      return deferProposal({
-        config,
-        github,
-        issueNumber: args.issue,
-        reason: args.reason,
-        dryRun: Boolean(args.dryRun),
-      });
-    },
-    async tracker_proposal_reject(args = {}) {
-      return rejectProposal({
-        config,
-        github,
-        issueNumber: args.issue,
-        reason: args.reason,
-        dryRun: Boolean(args.dryRun),
-      });
-    },
     async tracker_audit() {
       const data = await collectAuditData(github, config);
       return auditTracker({ config, data });
@@ -271,6 +251,7 @@ export function startServer({
   output = process.stdout,
   error = process.stderr,
 } = {}) {
+  assertWriteSurfaceLocked();
   const tools = createTools({ config, github });
   const rl = readline.createInterface({ input, crlfDelay: Infinity });
   rl.on('line', async (line) => {
