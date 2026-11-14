@@ -10,14 +10,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
+import { issueKind } from './audit.mjs';
 import { createGitHub } from '../lib/github.mjs';
+import { getWorkProfileAdapter } from '../lib/work-profile.mjs';
 import { parseArgs, parseIssueRef, UsageError } from '../lib/cli.mjs';
 import {
   isProposalTitle,
   missingProposalSections,
+  PROPOSAL_DEFERRED_LABEL,
+  PROPOSAL_DEFERRED_STATUS,
   PROPOSAL_LABEL,
   PROPOSAL_STATUS,
   PROPOSAL_TYPE,
+  proposalSection,
   proposalTemplate,
   toProposalTitle,
 } from '../lib/proposal.mjs';
@@ -176,6 +181,225 @@ export async function listProposals({ config, github } = {}) {
   };
 }
 
+function labelsOf(issue) {
+  return (issue.labels || []).map((entry) => entry.name || entry);
+}
+
+function streamNameFromTitle(title) {
+  return /^\[Stream\]\s*(.+?)\s+—\s+/.exec(String(title || ''))?.[1] || null;
+}
+
+function releaseNameFromTitle(title) {
+  const text = String(title || '');
+  return (
+    /^\[Release\]\s*(.+?)(?:\s+—|$)/i.exec(text)?.[1] || /^\[(v?\d+\.\d+\.\d+)\]\s*Release\b/i.exec(text)?.[1] || null
+  );
+}
+
+function sprintNameFromTitle(title) {
+  const text = String(title || '');
+  return (
+    /^\[Sprint\]\s*(\d+\.\d+\.\d+\.\d+)(?:\s|—|$)/i.exec(text)?.[1] ||
+    /^\[(\d+\.\d+\.\d+\.\d+)\]\s*Sprint\b/i.exec(text)?.[1] ||
+    null
+  );
+}
+
+function taskBodyFromProposal(body, estimate) {
+  const get = (name) => proposalSection(body, name).trim() || '_Not specified._';
+  return `## Why / context
+
+${get('Problem / context')}
+
+## Current behavior
+
+The proposal is still intake; no implementation exists yet.
+
+## Goal
+
+${get('Proposal')}
+
+## Non-goals
+
+${get('Non-goals')}
+
+## Acceptance criteria
+
+${get('Acceptance when accepted')}
+
+## Test plan
+
+Add or update automated tests for the accepted scope; run the local suite, lint, format, docs check, and audit.
+
+## Verification evidence
+
+Attach test output and audit/dry-run evidence in the task check-out comment.
+
+## Dependencies / blockers
+
+${get('Dependencies / blockers')}
+
+## Risks / rollback
+
+Low to moderate; revert the implementation commit if the change must be rolled back.
+
+## Estimate
+
+${estimate || 'M'}
+`;
+}
+
+export async function acceptProposal({
+  config,
+  github,
+  issueNumber,
+  title,
+  streamNumber,
+  releaseNumber,
+  sprintNumber,
+  milestone,
+  area,
+  kind,
+  estimate,
+  source,
+  dryRun = false,
+} = {}) {
+  const ctx = await readContext({ config, github, issueNumber });
+  if (issueKind(ctx.issue.title) !== 'proposal') throw new UsageError(`#${issueNumber} is not a [Proposal] issue`);
+  if (!ctx.item) throw new UsageError(`#${issueNumber} is not on the project; import it first`);
+  if (!title || !/^\[[^\]]+-T\d+\]\s+/.test(title))
+    throw new UsageError('--title is required and must look like "[<delivery>-T01] Short task title"');
+
+  const profile = getWorkProfileAdapter(config);
+  let parentNumber;
+  let deliveryField;
+  let deliveryValue;
+  if (profile.isTooling) {
+    if (!streamNumber) throw new UsageError('--stream ISSUE is required in the tooling profile');
+    const streamCtx = await readContext({ config, github, issueNumber: streamNumber });
+    if (issueKind(streamCtx.issue.title) !== 'stream')
+      throw new UsageError(`#${streamNumber} is not a [Stream] container`);
+    deliveryValue = streamNameFromTitle(streamCtx.issue.title);
+    if (!deliveryValue) throw new UsageError(`cannot derive Stream option from #${streamNumber} title`);
+    deliveryField = profile.streamField;
+    parentNumber = streamNumber;
+  } else {
+    if (!releaseNumber || !sprintNumber)
+      throw new UsageError('--release ISSUE and --sprint ISSUE are required in the product profile');
+    const releaseCtx = await readContext({ config, github, issueNumber: releaseNumber });
+    const sprintCtx = await readContext({ config, github, issueNumber: sprintNumber });
+    if (issueKind(releaseCtx.issue.title) !== 'release')
+      throw new UsageError(`#${releaseNumber} is not a [Release] container`);
+    if (issueKind(sprintCtx.issue.title) !== 'sprint')
+      throw new UsageError(`#${sprintNumber} is not a [Sprint] container`);
+    if (!milestone) throw new UsageError('--milestone is required in the product profile');
+    deliveryValue = [releaseNameFromTitle(releaseCtx.issue.title), sprintNameFromTitle(sprintCtx.issue.title)];
+    if (!deliveryValue[0] || !deliveryValue[1])
+      throw new UsageError('cannot derive Release/Sprint options from target titles');
+    parentNumber = sprintNumber;
+  }
+
+  const fields = {
+    Status: 'Todo',
+    Area: area || ctx.item.area || 'cross',
+    Kind: kind || ctx.item.kind || 'infra',
+    Estimate: estimate || ctx.item.estimate || 'M',
+    Source: source || ctx.item.source || 'Internal',
+  };
+  if (profile.isTooling) fields[deliveryField] = deliveryValue;
+  else {
+    fields.Release = deliveryValue[0];
+    fields.Sprint = deliveryValue[1];
+  }
+  const resolved = new Map();
+  for (const [field, value] of Object.entries(fields)) resolved.set(field, optionOrThrow(ctx, field, value));
+  if (milestone) resolved.set('__milestone', { value: milestone });
+
+  const remove = [PROPOSAL_LABEL, PROPOSAL_DEFERRED_LABEL].filter((label) => labelsOf(ctx.issue).includes(label));
+  const taskType = config.issueTypes?.task || 'Task';
+  const body = taskBodyFromProposal(ctx.issue.body || '', fields.Estimate);
+  const plan = {
+    ok: true,
+    action: 'accept',
+    dryRun,
+    issue: issueNumber,
+    title,
+    body,
+    type: taskType,
+    removeLabels: remove,
+    fields,
+    parent: parentNumber,
+    milestone: milestone || null,
+  };
+  if (dryRun) return plan;
+
+  await github.updateIssueTitle(ctx.repoOwner, ctx.repoName, issueNumber, title);
+  await github.updateIssueBody(ctx.repoOwner, ctx.repoName, issueNumber, body);
+  await github.setIssueType(ctx.repoOwner, ctx.repoName, issueNumber, taskType);
+  if (remove.length) await github.removeLabels(ctx.repoOwner, ctx.repoName, issueNumber, remove);
+  if (milestone) await github.setIssueMilestone(ctx.repoOwner, ctx.repoName, issueNumber, milestone);
+  for (const field of Object.keys(fields)) {
+    const { field: fieldObj, option } = resolved.get(field);
+    await github.setProjectItemField(ctx.project.id, ctx.item.id, fieldObj.id, option.id);
+  }
+  await github.addSubIssue(ctx.repoOwner, ctx.repoName, parentNumber, issueNumber);
+  await github.addComment(
+    ctx.repoOwner,
+    ctx.repoName,
+    issueNumber,
+    [
+      '### Proposal accepted',
+      `- **Proposal:** #${issueNumber}`,
+      `- **Prior state:** ${PROPOSAL_STATUS}`,
+      `- **Task:** ${title}`,
+      `- **Delivery:** ${profile.isTooling ? `${deliveryField}=${deliveryValue}` : `Release=${deliveryValue[0]}, Sprint=${deliveryValue[1]}`}`,
+    ].join('\n'),
+  );
+  return plan;
+}
+
+async function ensureProposalForLifecycle(ctx, issueNumber) {
+  if (issueKind(ctx.issue.title) !== 'proposal') throw new UsageError(`#${issueNumber} is not a [Proposal] issue`);
+  if (!ctx.item) throw new UsageError(`#${issueNumber} is not on the project; import it first`);
+}
+
+export async function deferProposal({ config, github, issueNumber, reason, dryRun = false } = {}) {
+  const ctx = await readContext({ config, github, issueNumber });
+  await ensureProposalForLifecycle(ctx, issueNumber);
+  if (!reason) throw new UsageError('--reason is required');
+  const { field, option } = optionOrThrow(ctx, 'Status', PROPOSAL_DEFERRED_STATUS);
+  const labelPresent = labelsOf(ctx.issue).includes(PROPOSAL_DEFERRED_LABEL);
+  if (dryRun) {
+    return { ok: true, action: 'defer', dryRun, issue: issueNumber, reason, labelAdded: !labelPresent };
+  }
+  if (!labelPresent) await github.addLabels(ctx.repoOwner, ctx.repoName, issueNumber, [PROPOSAL_DEFERRED_LABEL]);
+  await github.setProjectItemField(ctx.project.id, ctx.item.id, field.id, option.id);
+  await github.addComment(
+    ctx.repoOwner,
+    ctx.repoName,
+    issueNumber,
+    ['### Proposal deferred', '', `- **Reason:** ${reason}`, `- **Status:** ${PROPOSAL_DEFERRED_STATUS}`].join('\n'),
+  );
+  return { ok: true, action: 'defer', dryRun, issue: issueNumber, reason, labelAdded: !labelPresent };
+}
+
+export async function rejectProposal({ config, github, issueNumber, reason, dryRun = false } = {}) {
+  const ctx = await readContext({ config, github, issueNumber });
+  await ensureProposalForLifecycle(ctx, issueNumber);
+  if (!reason) throw new UsageError('--reason is required');
+  const { field, option } = optionOrThrow(ctx, 'Status', 'Done');
+  if (dryRun) return { ok: true, action: 'reject', dryRun, issue: issueNumber, reason };
+  await github.addComment(
+    ctx.repoOwner,
+    ctx.repoName,
+    issueNumber,
+    ['### Proposal rejected', '', `- **Reason:** ${reason}`, `- **Status:** Done`].join('\n'),
+  );
+  await github.setProjectItemField(ctx.project.id, ctx.item.id, field.id, option.id);
+  await github.closeIssue(ctx.repoOwner, ctx.repoName, issueNumber, 'not_planned');
+  return { ok: true, action: 'reject', dryRun, issue: issueNumber, reason };
+}
+
 function usage() {
   return [
     'Usage: node scripts/adopt/cli/proposal.mjs <command> [options]',
@@ -185,15 +409,19 @@ function usage() {
     '  import --issue N [--body-file F] [--area A] [--kind K] [--estimate S|M|L]',
     '         [--source S] [--priority P] [--dry-run] [--json]',
     '  list [--json]',
+    '  accept --issue N --title "[<delivery>-T01] Short task title"',
+    '         (--stream ISSUE | --release ISSUE --sprint ISSUE) [--milestone NAME]',
+    '         [--area A] [--kind K] [--estimate S|M|L] [--source S] [--dry-run] [--json]',
+    '  defer --issue N --reason TEXT [--dry-run] [--json]',
+    '  reject --issue N --reason TEXT [--dry-run] [--json]',
     '',
-    'Import validates the proposal title/body, sets the Feature type, status:proposed label,',
-    'Proposed board status, and core fields. It never requires Release/Sprint/Stream, milestone,',
-    'task sections, or task hierarchy. Acceptance/conversion is a follow-up command.',
+    'Accept converts the proposal in place: task title/body/type, milestone/family fields,',
+    'parent sub-issue, and Status Todo. Defer records a reason and moves it to Deferred.',
+    'Reject records a reason, sets Status Done, and closes the issue as not planned.',
     '',
     'Default: mutations enabled. --dry-run performs read-only validation and prints the plan.',
   ].join('\n');
 }
-
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   (async () => {
@@ -210,7 +438,22 @@ if (isMain) {
       }
       const args = parseArgs(raw.slice(1), {
         flags: ['dry-run', 'json', 'help'],
-        options: ['config', 'issue', 'body-file', 'area', 'kind', 'estimate', 'source', 'priority'],
+        options: [
+          'config',
+          'issue',
+          'body-file',
+          'area',
+          'kind',
+          'estimate',
+          'source',
+          'priority',
+          'title',
+          'stream',
+          'release',
+          'sprint',
+          'milestone',
+          'reason',
+        ],
       });
       if (args.help) {
         console.log(usage());
@@ -238,6 +481,31 @@ if (isMain) {
         });
       } else if (command === 'list') {
         result = await listProposals({ config, github });
+      } else if (command === 'accept') {
+        result = await acceptProposal({
+          config,
+          github,
+          issueNumber: parseIssueRef(args.issue),
+          title: args.title,
+          streamNumber: args.stream ? parseIssueRef(args.stream, '--stream') : undefined,
+          releaseNumber: args.release ? parseIssueRef(args.release, '--release') : undefined,
+          sprintNumber: args.sprint ? parseIssueRef(args.sprint, '--sprint') : undefined,
+          milestone: args.milestone,
+          area: args.area,
+          kind: args.kind,
+          estimate: args.estimate,
+          source: args.source,
+          dryRun: Boolean(args['dry-run']),
+        });
+      } else if (command === 'defer' || command === 'reject') {
+        const options = {
+          config,
+          github,
+          issueNumber: parseIssueRef(args.issue),
+          reason: args.reason,
+          dryRun: Boolean(args['dry-run']),
+        };
+        result = command === 'defer' ? await deferProposal(options) : await rejectProposal(options);
       } else {
         throw new UsageError(`unknown command: ${command}`);
       }
@@ -246,6 +514,18 @@ if (isMain) {
         console.log(`Proposals (${result.count}):`);
         for (const proposal of result.proposals)
           console.log(`- #${proposal.number} ${proposal.title} [${proposal.status || 'off-board'}]`);
+      } else if (result.action === 'accept') {
+        console.log(
+          `${result.dryRun ? 'DRY-RUN' : 'accepted'} proposal #${result.issue} -> ${result.title}` +
+            ` (parent #${result.parent}${result.milestone ? `, milestone ${result.milestone}` : ''})`,
+        );
+        console.log(
+          `- fields: ${Object.entries(result.fields)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(', ')}`,
+        );
+      } else if (result.action === 'defer' || result.action === 'reject') {
+        console.log(`${result.dryRun ? 'DRY-RUN' : result.action} proposal #${result.issue}: ${result.reason}`);
       } else {
         console.log(
           `${result.dryRun ? 'DRY-RUN' : 'imported'} proposal #${result.issue}: ${result.title}` +

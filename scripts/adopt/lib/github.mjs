@@ -389,9 +389,11 @@ export class GitHubCli {
     }
   }
 
-  closeIssue(owner, repo, number) {
+  closeIssue(owner, repo, number, reason = 'completed') {
     this._beforeMutation();
-    return this.run(['issue', 'close', String(number), '--repo', `${owner}/${repo}`, '--reason', 'completed']);
+    const args = ['issue', 'close', String(number), '--repo', `${owner}/${repo}`];
+    if (reason) args.push('--reason', reason);
+    return this.run(args);
   }
 
   addBlockedBy(owner, repo, number, blockedByUrl) {
@@ -469,6 +471,19 @@ export class GitHubCli {
     const args = ['issue', 'edit', String(number), '--repo', `${owner}/${repo}`];
     for (const label of labels) args.push('--add-label', label);
     return this.run(args);
+  }
+
+  removeLabels(owner, repo, number, labels = []) {
+    if (!labels.length) return null;
+    this._beforeMutation();
+    const args = ['issue', 'edit', String(number), '--repo', `${owner}/${repo}`];
+    for (const label of labels) args.push('--remove-label', label);
+    return this.run(args);
+  }
+
+  setIssueMilestone(owner, repo, number, milestone) {
+    this._beforeMutation();
+    return this.run(['issue', 'edit', String(number), '--repo', `${owner}/${repo}`, '--milestone', milestone]);
   }
 
   setIssueType(owner, repo, number, type) {

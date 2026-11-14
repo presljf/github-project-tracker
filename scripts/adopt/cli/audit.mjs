@@ -11,7 +11,12 @@ import { fileURLToPath } from 'node:url';
 import { validateConfig } from './validate-config.mjs';
 import { createGitHub } from '../lib/github.mjs';
 import { parseArgs, UsageError } from '../lib/cli.mjs';
-import { missingProposalSections, PROPOSAL_LABEL, PROPOSAL_STATUS } from '../lib/proposal.mjs';
+import {
+  missingProposalSections,
+  PROPOSAL_DEFERRED_STATUS,
+  PROPOSAL_LABEL,
+  PROPOSAL_STATUS,
+} from '../lib/proposal.mjs';
 import {
   closedEvidenceRules,
   fieldMissingCode,
@@ -214,11 +219,11 @@ export function auditTracker({ config, data, strict = false }) {
       for (const field of requiredItemFields(profile, kind)) {
         if (!item[field.toLowerCase()]) add(fieldMissingCode(profile, field), issue, `project field ${field} is empty`);
       }
-      if (kind === 'proposal' && item.status !== PROPOSAL_STATUS)
+      if (kind === 'proposal' && ![PROPOSAL_STATUS, PROPOSAL_DEFERRED_STATUS].includes(item.status))
         add(
           'PROPOSAL_STATUS_MISSING',
           issue,
-          `proposal project status is ${JSON.stringify(item.status || '')}; expected ${PROPOSAL_STATUS}`,
+          `proposal project status is ${JSON.stringify(item.status || '')}; expected ${PROPOSAL_STATUS} or ${PROPOSAL_DEFERRED_STATUS}`,
         );
       if (issue.labels.includes('source:downstream') && !item.source)
         add('FIELD_SOURCE_MISSING', issue, 'downstream issue has no Source field');

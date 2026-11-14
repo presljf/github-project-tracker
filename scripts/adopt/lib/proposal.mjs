@@ -10,6 +10,8 @@
 export const PROPOSAL_PREFIX = '[Proposal] ';
 export const PROPOSAL_LABEL = 'status:proposed';
 export const PROPOSAL_STATUS = 'Proposed';
+export const PROPOSAL_DEFERRED_STATUS = 'Deferred';
+export const PROPOSAL_DEFERRED_LABEL = 'status:deferred';
 export const PROPOSAL_TYPE = 'Feature';
 
 export const PROPOSAL_SECTIONS = [
@@ -36,6 +38,18 @@ export function toProposalTitle(title = '') {
 }
 
 /** Headings present in the body, normalized for matching. */
+/** Extract one proposal section body. */
+export function proposalSection(body = '', name = '') {
+  const wanted = String(name || '')
+    .trim()
+    .toLowerCase();
+  const match = new RegExp(
+    `^##\\s*${wanted.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s*\\n([\\s\\S]*?)(?=^##\\s|\\Z)`,
+    'im',
+  ).exec(String(body || ''));
+  return match ? match[1].trim() : '';
+}
+
 export function proposalHeadings(body = '') {
   return [...String(body || '').matchAll(/^##\s+(.+)$/gm)].map((match) => match[1].trim().toLowerCase());
 }

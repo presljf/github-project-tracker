@@ -74,6 +74,11 @@ test('proposal missing label, section, or Proposed status fails', () => {
   assert.ok(wrongStatus.violations.some((entry) => entry.code === 'PROPOSAL_STATUS_MISSING'));
 });
 
+test('deferred proposal is still audit-clean', () => {
+  const result = auditTracker({ config: config(), data: data(proposalIssue(), proposalItem({ status: 'Deferred' })) });
+  assert.equal(result.ok, true, JSON.stringify(result.violations));
+});
+
 test('proposal does not require a milestone or stream ancestry', () => {
   const result = auditTracker({ config: config(), data: data() });
   assert.equal(result.ok, true, JSON.stringify(result.violations));

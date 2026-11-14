@@ -8,7 +8,7 @@ are not delivery tasks until accepted.
 - Title: `[Proposal] <short title>`
 - Native type: `Feature`
 - Label: `status:proposed`
-- Board status: `Proposed`
+- Board status: `Proposed` (or `Deferred`)
 - Board fields: `Area`, `Kind`, `Estimate`, `Source`; `Priority` when the project has it
 - No `Release`, `Sprint`, or `Stream` requirement
 - No milestone, task sections, or task hierarchy requirement
@@ -49,6 +49,19 @@ node scripts/adopt/cli/proposal.mjs import --issue 169 --body-file /tmp/proposal
 
 # List proposals
 node scripts/adopt/cli/proposal.mjs list
+
+# Accept into a tooling Stream (converts in place)
+node scripts/adopt/cli/proposal.mjs accept --issue 169 \
+  --title "[v1.5.0-T01] Implement proposals" --stream 200
+
+# Accept into a product Release/Sprint
+node scripts/adopt/cli/proposal.mjs accept --issue 169 \
+  --title "[0.6.1-T01] Implement proposals" \
+  --release 10 --sprint 11 --milestone v0.6.0
+
+# Defer or reject
+node scripts/adopt/cli/proposal.mjs defer --issue 169 --reason "Not this release"
+node scripts/adopt/cli/proposal.mjs reject --issue 169 --reason "Out of scope"
 ```
 
 The import is idempotent for the title prefix and label, adds the issue to the project if needed,
@@ -62,12 +75,24 @@ Add the status option before importing:
 ```bash
 node scripts/adopt/cli/project-field-option.mjs \
   --config tracker.config.json --field Status --option Proposed
+node scripts/adopt/cli/project-field-option.mjs \
+  --config tracker.config.json --field Status --option Deferred
 ```
 
-Add `Proposed` to `statuses` in `tracker.config.json` so config validation and bootstrap preserve it.
+Add `Proposed` and `Deferred` to `statuses` in `tracker.config.json` so config validation and
+bootstrap preserve them. Create the `status:proposed` and `status:deferred` labels once.
 
-## Acceptance
+## Lifecycle
 
-Acceptance/conversion to a delivery task is a follow-up command. It will add the task title
-prefix, full task body, milestone, and Release/Sprint/Stream fields, and move the item to `Todo`.
-Until then, proposals remain in `Proposed` and are not counted as delivery work.
+- `Proposed` — intake; no delivery fields.
+- `Deferred` — intake explicitly deferred; still no delivery fields.
+- **Accept** converts the same issue in place:
+  - task title and full task body;
+  - `Task` native type;
+  - Release/Sprint or Stream field and, for product, the milestone;
+  - sub-issue link under the target container;
+  - `Status = Todo`;
+  - removes the proposal labels and records `### Proposal accepted`.
+- **Reject** sets `Status = Done`, records the reason, and closes the issue as not planned.
+
+Acceptance never creates a duplicate issue, so comments, links, and history stay attached.

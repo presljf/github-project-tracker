@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { issueKind } from '../scripts/adopt/cli/audit.mjs';
-import { importProposal, listProposals } from '../scripts/adopt/cli/proposal.mjs';
+import {
+  acceptProposal,
+  deferProposal,
+  importProposal,
+  listProposals,
+  rejectProposal,
+} from '../scripts/adopt/cli/proposal.mjs';
 import {
   isProposalTitle,
   missingProposalSections,
@@ -37,11 +43,13 @@ function fields() {
         option('o_blocked', 'Blocked'),
         option('o_done', 'Done'),
         option('o_proposed', 'Proposed'),
+        option('o_deferred', 'Deferred'),
       ],
     },
+    { id: 'f_stream', name: 'Stream', options: [option('o_stream', 'v1.5.0')] },
     { id: 'f_area', name: 'Area', options: [option('o_cross', 'cross')] },
     { id: 'f_kind', name: 'Kind', options: [option('o_infra', 'infra')] },
-    { id: 'f_estimate', name: 'Estimate', options: [option('o_m', 'M')] },
+    { id: 'f_estimate', name: 'Estimate', options: [option('o_s', 'S'), option('o_m', 'M'), option('o_l', 'L')] },
     { id: 'f_source', name: 'Source', options: [option('o_internal', 'Internal')] },
   ];
 }
@@ -121,4 +129,101 @@ test('proposal list returns open proposal issues', async () => {
     result.proposals.map((entry) => entry.number),
     [100, 101],
   );
+});
+
+function lifecycleGithub() {
+  return new FakeGitHub({
+    projects: [{ id: 'P1', number: 1, title: 'Project Tracker', owner: 'owner' }],
+    fields: fields(),
+    issues: [
+      {
+        number: 100,
+        title: '[Proposal] Ship proposal model',
+        body: proposalTemplate(),
+        state: 'OPEN',
+        labels: [PROPOSAL_LABEL],
+        issueType: { name: 'Feature' },
+        url: 'https://github.com/owner/repo/issues/100',
+      },
+      {
+        number: 200,
+        title: '[Stream] v1.5.0 — Proposal model',
+        body: '# Stream v1.5.0\n',
+        state: 'OPEN',
+        labels: [],
+        issueType: { name: 'Feature' },
+        url: 'https://github.com/owner/repo/issues/200',
+      },
+    ],
+    items: [
+      {
+        id: 'ITEM_100',
+        content: { number: 100, title: '[Proposal] Ship proposal model' },
+        status: 'Proposed',
+        area: 'cross',
+        kind: 'infra',
+        estimate: 'L',
+        source: 'Internal',
+      },
+      {
+        id: 'ITEM_200',
+        content: { number: 200, title: '[Stream] v1.5.0 — Proposal model' },
+        status: 'Todo',
+        stream: 'v1.5.0',
+        area: 'cross',
+        kind: 'infra',
+        estimate: 'M',
+        source: 'Internal',
+      },
+    ],
+  });
+}
+
+test('proposal accept converts in place into a tooling task', async () => {
+  const gh = lifecycleGithub();
+  const result = await acceptProposal({
+    config: config(),
+    github: gh,
+    issueNumber: 100,
+    title: '[v1.5.0-T01] Ship proposal model',
+    streamNumber: 200,
+  });
+  assert.equal(result.action, 'accept');
+  const issue = gh.issues.find((entry) => entry.number === 100);
+  assert.equal(issue.title, '[v1.5.0-T01] Ship proposal model');
+  assert.equal(issue.type, 'Task');
+  assert.ok(!issue.labels.includes(PROPOSAL_LABEL));
+  for (const section of [
+    'Why / context',
+    'Current behavior',
+    'Goal',
+    'Non-goals',
+    'Acceptance criteria',
+    'Test plan',
+    'Verification evidence',
+    'Dependencies / blockers',
+    'Risks / rollback',
+  ])
+    assert.match(issue.body, new RegExp(`^## ${section}`, 'm'));
+  const item = gh.items.find((entry) => entry.id === 'ITEM_100');
+  assert.equal(item.status, 'Todo');
+  assert.equal(item.stream, 'v1.5.0');
+  assert.deepEqual(gh.subIssues.get(200), [100]);
+});
+
+test('proposal defer moves board status and records reason', async () => {
+  const gh = lifecycleGithub();
+  const result = await deferProposal({ config: config(), github: gh, issueNumber: 100, reason: 'Not this release' });
+  assert.equal(result.action, 'defer');
+  assert.equal(gh.items.find((entry) => entry.id === 'ITEM_100').status, 'Deferred');
+  assert.ok(gh.comments[100][0].includes('Not this release'));
+});
+
+test('proposal reject records reason and closes the issue', async () => {
+  const gh = lifecycleGithub();
+  const result = await rejectProposal({ config: config(), github: gh, issueNumber: 100, reason: 'Out of scope' });
+  assert.equal(result.action, 'reject');
+  assert.equal(gh.issues.find((entry) => entry.number === 100).state, 'CLOSED');
+  assert.equal(gh.items.find((entry) => entry.id === 'ITEM_100').status, 'Done');
+  assert.ok(gh.comments[100][0].includes('Out of scope'));
 });

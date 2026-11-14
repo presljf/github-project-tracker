@@ -156,6 +156,38 @@ export class FakeGitHub {
     return issue;
   }
 
+  async removeLabels(owner, repo, number, labels = []) {
+    this.mutations.push(['removeLabels', number, labels]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (!issue) return null;
+    issue.labels = (issue.labels || []).filter(
+      (entry) => !labels.includes(typeof entry === 'string' ? entry : entry.name),
+    );
+    return issue;
+  }
+
+  async setIssueMilestone(owner, repo, number, milestone) {
+    this.mutations.push(['setIssueMilestone', number, milestone]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (issue) issue.milestone = { title: milestone };
+    return issue;
+  }
+
+  async closeIssue(owner, repo, number, reason = 'not_planned') {
+    this.mutations.push(['closeIssue', number, reason]);
+    const issue = this.issues.find((entry) => entry.number === number);
+    if (issue) issue.state = 'CLOSED';
+    return issue;
+  }
+
+  async addComment(owner, repo, number, body) {
+    this.mutations.push(['addComment', number, body]);
+    this.comments = this.comments || {};
+    this.comments[number] = this.comments[number] || [];
+    this.comments[number].push(body);
+    return { number };
+  }
+
   async addLabels(owner, repo, number, labels = []) {
     this.mutations.push(['addLabels', number, labels]);
     const issue = this.issues.find((entry) => entry.number === number);
