@@ -746,7 +746,7 @@ used for the v1.3.0/v1.4.0 release evidence.
 `workflow_dispatch` with a `pr-number` input to revalidate a past merge — the audit script
 (`scripts/adopt/cli/post-merge-audit.mjs`, via the repo transport with no raw `gh` in workflows)
 re-fetches the PR and verifies it is `MERGED` before auditing, which is the recovery path after a
-stale-config false OI. It checks required checks and closing-keyword/partial-PR rules.
+stale-config false OI. It checks required checks and closing-keyword/task-link rules.
 
 Required check-run names resolve from `guard.requiredChecks[]` in `tracker.config.json` (absent =
 backwards-compatible default `ci / ci-gate`, `docs-guard`, `pr-close-guard`). Adopting the v1.4.0
@@ -770,7 +770,7 @@ job's `ok` output means the job completed (a detected bypass still completes by 
 `statusCheckRollup` is unreadable because of a permission/API error, the audit degrades loudly
 (warning + job summary +
 `actions: read` + `checks: read` + `statuses: read` guidance), retries a metadata-only PR fetch, evaluates the
-closing-keyword/partial-PR rules only, and exits 0 in advisory mode — no false check-related OI.
+closing-keyword/task-link rules only, and exits 0 in advisory mode — no false check-related OI.
 Real closing violations still open an OI; non-permission errors still fail. Local parity:
 `GH_TOKEN=... GITHUB_REPOSITORY=owner/repo PR_NUMBER=<merged-pr> npm run audit:post-merge --
 --config tracker.config.json` (the script reads the repo/PR from the environment; it opens an OI on
@@ -782,7 +782,7 @@ a real bypass).
 `pr-close-guard`, check context `pr-close-guard / guard`). It enforces:
 
 - a task PR completes via exactly a closing keyword (`Closes/Fixes/Resolves #N`) targeting a task issue;
-- a PR labeled `partial` must use `Refs #N` / `Part of #N` and must not close the task;
+- a task PR must not use the `partial` label; split the task or use a non-task branch instead;
 - closing a sprint/release tracker issue is rejected.
 
 The caller grants read-only permissions (`contents: read`, `issues: read`,

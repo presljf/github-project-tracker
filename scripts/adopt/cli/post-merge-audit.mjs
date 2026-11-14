@@ -6,7 +6,7 @@
  *   (`--config` / `TRACKER_CONFIG` supported); absent config keeps the backwards-compatible default.
  * - If `statusCheckRollup` is unreadable because the token lacks `checks: read`/`statuses: read`
  *   (private repos), the audit degrades loudly to a metadata-only fetch and enforces only the
- *   closing-keyword/partial-PR rules instead of failing red or opening a false check-related OI.
+ *   closing-keyword/task-link rules instead of failing red or opening a false check-related OI.
  * - Any other error still fails; real closure violations still open a `tracker-contract-exception` OI.
  */
 import fs from 'node:fs';
@@ -108,7 +108,7 @@ export function loadGuardConfig({ configPath = null, env = process.env, cwd = pr
 
 /**
  * Evaluate a merged PR for bypasses. `degraded` skips the required-check evaluation (used when the
- * rollup is unreadable) but still enforces closing-keyword/partial-PR rules.
+ * rollup is unreadable) but still enforces closing-keyword/task-link rules.
  */
 export function evaluateBypass({ pull, required = DEFAULT_REQUIRED_CHECKS, degraded = false }) {
   const violations = [];
@@ -124,13 +124,14 @@ export function evaluateBypass({ pull, required = DEFAULT_REQUIRED_CHECKS, degra
   const labels = (pull.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
   const partial = labels.includes('partial');
   const closing = parseClosingRefs(pull.body);
-  if (String(pull.headRefName || '').startsWith('task/') && !partial && closing.length === 0)
-    violations.push({ code: 'MISSING_CLOSING_KEYWORD', detail: 'task PR merged without Closes/Fixes/Resolves' });
-  if (partial && closing.length > 0)
+  const taskBranch = String(pull.headRefName || '').startsWith('task/');
+  if (taskBranch && partial)
     violations.push({
-      code: 'PARTIAL_CLOSED_TASK',
-      detail: `partial PR used closing keyword(s): ${closing.join(',')}`,
+      code: 'PARTIAL_TASK_PR',
+      detail: 'task PR merged with the partial label; split the task instead',
     });
+  if (taskBranch && closing.length === 0)
+    violations.push({ code: 'MISSING_CLOSING_KEYWORD', detail: 'task PR merged without Closes/Fixes/Resolves' });
   return { ok: violations.length === 0, checksEvaluated, violations };
 }
 
@@ -150,7 +151,7 @@ function degradedSummary(result) {
     `### Post-merge audit — PR #${result.prNumber}`,
     '',
     '- **Result:** PASS (degraded)',
-    `- **Degraded:** \`statusCheckRollup\` unreadable (${result.degradedReason}); required-check verification skipped, closing-keyword/partial rules still enforced.`,
+    `- **Degraded:** \`statusCheckRollup\` unreadable (${result.degradedReason}); required-check verification skipped, closing-keyword/task-link rules still enforced.`,
     `- **Required checks (not evaluated):** ${result.requiredChecks.join(', ')}`,
     '- **Fix:** grant `actions: read` + `checks: read` + `statuses: read` in the caller workflow permissions (statusCheckRollup resolves checkSuite.workflowRun, which needs Actions read).',
   ].join('\n');

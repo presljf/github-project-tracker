@@ -338,7 +338,7 @@ self mode by design.
 
 ## Closing-keyword guard
 
-Completion PRs use `Closes #<task>`; partial PRs use `Refs/Part of #<parent>` with the `partial` label and must not close. The tracker PR close guard rejects incorrect closing targets (including sprint/release trackers) and keeps the project linked-PR field consistent.
+Completion PRs use `Closes #<task>`. Task PRs must not use the `partial` label: split the task or use a non-task branch. The tracker PR close guard rejects incorrect closing targets (including sprint/release trackers) and keeps the project linked-PR field consistent.
 
 Install the reusable-mode caller (`profiles/audit/pr-close-guard.yml` → `.github/workflows/`,
 pinned to the adopted tag): its check context is **`pr-close-guard / guard`**, and the caller grants
