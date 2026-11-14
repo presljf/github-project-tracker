@@ -37,19 +37,30 @@ export function toProposalTitle(title = '') {
   return `${PROPOSAL_PREFIX}${text}`;
 }
 
-/** Headings present in the body, normalized for matching. */
 /** Extract one proposal section body. */
 export function proposalSection(body = '', name = '') {
   const wanted = String(name || '')
     .trim()
     .toLowerCase();
-  const match = new RegExp(
-    `^##\\s*${wanted.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s*\\n([\\s\\S]*?)(?=^##\\s|\\Z)`,
-    'im',
-  ).exec(String(body || ''));
-  return match ? match[1].trim() : '';
+  const lines = String(body || '').split('\n');
+  let collecting = false;
+  const out = [];
+  for (const line of lines) {
+    if (/^##\s+/.test(line)) {
+      if (collecting) break;
+      const heading = line
+        .replace(/^##\s+/, '')
+        .trim()
+        .toLowerCase();
+      collecting = heading === wanted || heading.startsWith(wanted);
+      continue;
+    }
+    if (collecting) out.push(line);
+  }
+  return out.join('\n').trim();
 }
 
+/** Headings present in the body, normalized for matching. */
 export function proposalHeadings(body = '') {
   return [...String(body || '').matchAll(/^##\s+(.+)$/gm)].map((match) => match[1].trim().toLowerCase());
 }
