@@ -1,0 +1,45 @@
+# Minimal tracker consumer caller. Copy to .github/workflows/tracker.yml and pin both refs
+# (`uses:` and `tracker-ref:`) to the exact release tag you adopted.
+#
+# This is the Tier 0 contract: the PR close guard (closure integrity) plus the advisory tracker
+# audit (drift). Optional profiles (CI, security, releases, desktop smoke, post-merge audit,
+# contract/metadata, E2E, counts) are separate callers under profiles/ — see docs/CONSUMING.md.
+name: Tracker
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+  schedule:
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracker-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-close-guard:
+    name: pr-close-guard
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml@v1.4.0
+    with:
+      tracker-ref: v1.4.0
+
+  audit:
+    name: audit
+    permissions:
+      contents: read
+    uses: presljf/github-project-tracker/.github/workflows/reusable-audit.yml@v1.4.0
+    with:
+      tracker-ref: v1.4.0
+      mode: advisory
+      json: true
+    secrets:
+      TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}

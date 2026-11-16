@@ -694,10 +694,12 @@ see [TROUBLESHOOTING](./TROUBLESHOOTING.md).
 - Audit family: `post-merge-audit / audit` is advisory (it opens an OI instead of a red check);
   `tracker-audit / audit` is advisory on PRs/schedule and may be promoted to release-gate strict
   mode only after the board is stable.
-- Required callers (v1.4.0): the adoption contract's `requiredWorkflows` names six reusables
-  (contract, post-merge audit, PR close guard, tracker audit, E2E, counts) that must be present and
-  pinned; `verify-contract` enforces presence + exact pin. Presence is not a required check — use
-  the contexts above for merge gating. See [ACTIONS CATALOG §7.14](./ACTIONS_CATALOG.md#714-required-adoption-contract-v140).
+- Required callers: the adoption contract's `requiredWorkflows` names the two core guards
+  (tracker audit, PR close guard) that must be present and pinned; `verify-contract` enforces
+  presence + exact pin. The remaining reusables (CI, security, release, desktop smoke,
+  contract/metadata, post-merge audit, E2E, counts) ship as `optionalWorkflows` — adopt them only
+  when the project needs the capability. Presence is not a required check — use the contexts above
+  for merge gating. See [ACTIONS CATALOG §7.14](./ACTIONS_CATALOG.md#714-required-adoption-contract-v140).
 - Do not require expensive/advisory jobs until proven; document job names; update protection when names change.
 
 ## 14. Token and secret matrix
@@ -730,7 +732,7 @@ line diffs, and preserves dotted keys such as sprint `1.2.0.1`. Regenerate cards
 ### Release gate
 
 `npm run gate:release -- --root <project> --repo owner/repo` verifies the adoption contract
-(including the six required callers) and refuses release when any open
+(including the required core callers) and refuses release when any open
 `tracker-contract-exception` OI exists. Downstream release workflows must run this gate before a
 dispatch/tag publish, or opt into the reusable offline half with `contract-gate: true` +
 `tracker-ref: <adopted tag>` on `reusable-release.yml` (no new permission/secret; build waits for
@@ -799,10 +801,12 @@ board's linked PRs consistent. Local parity:
 `npm run verify:contract -- --root <downstream> --contract contract/adoption-contract.json`
 checks the pinned template version, required config paths/profiles/docs, exact reusable workflow
 refs, and OI-linked overrides (`tracker.overrides.json`). Missing/expired overrides or stale refs fail.
-v1.4.0 adds six `requiredWorkflows` entries (contract, post-merge audit, PR close guard, tracker
-audit, E2E, counts); each must be present and pinned to `@v<trackerVersion>` (the contract version,
-which `release:bump` updates with `automation.templateVersion`). The checks are presence + pin only;
-caller job names/triggers stay adopter-owned.
+The contract ships two core `requiredWorkflows` (tracker audit, PR close guard) that must be
+present and pinned to `@v<trackerVersion>` (the contract version, which `release:bump` updates with
+`automation.templateVersion`), plus an `optionalWorkflows` catalog (CI, security, release, desktop
+smoke, contract/metadata, post-merge audit, E2E, counts) that is documented but not enforced. The
+checks are presence + pin only; caller job names/triggers stay adopter-owned. The v1.4.0 release tag
+required six callers — see [UPGRADING § Unreleased — tiered adoption contract](./UPGRADING.md#unreleased-tiered-adoption-contract-target-v150).
 
 When the repo under inspection **is the contract's own repository**
 (`config.repository === contract.repository`), the verifier prints an explicit

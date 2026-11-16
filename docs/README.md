@@ -11,6 +11,8 @@ Read in this order depending on your goal:
 | Learn the full operating procedure | [HOW TO USE](./HOW_TO_USE.md) |
 | Look up a command, field, status, token, or workflow | [REFERENCE](./REFERENCE.md) |
 | Fix a failure | [TROUBLESHOOTING](./TROUBLESHOOTING.md) |
+| Add the tracker to a project in 10 minutes | [CONSUMING](./CONSUMING.md) |
+| Understand the architecture and design boundary | [ARCHITECTURE](./ARCHITECTURE.md) |
 | Adopt the tracker in a project | [ADOPTION](./ADOPTION.md) |
 | Upgrade a pinned tracker version | [UPGRADING](./UPGRADING.md) |
 | Operate as an agent | [AGENT GUIDE](./AGENT_GUIDE.md) |

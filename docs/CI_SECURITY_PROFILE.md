@@ -209,13 +209,15 @@ The reusable workflow is npm-first for auto-install; the pnpm/yarn example above
   the project adopts the `docs.counts` contract (otherwise the caller is a documented no-op); the
   `e2e-fixture / e2e` context exists only in the template plumbing fixture and must not be
   required.
-- Adoption contract (`requiredWorkflows`): the six v1.4.0 callers (contract, post-merge audit, PR
-  close guard, tracker audit, E2E, counts) must be present and pinned to the exact adopted tag;
-  `verify-contract` enforces both (the exact `@v<version>` ref plus a matching `tracker-ref`; SHA and
-  no-`v` pins fail). Required caller **presence** is not the same as a required check:
-  only the contexts above are merge-required. The opt-in release gate (§3.8) can fail a release on
-  a missing/stale caller or contract violation; open `tracker-contract-exception` OIs are checked
-  by the release procedure (`gate:release --repo`).
+- Adoption contract (`requiredWorkflows` / `optionalWorkflows`): the two **core** callers (tracker
+  audit, PR close guard) must be present and pinned to the exact adopted tag; `verify-contract`
+  enforces both (the exact `@v<version>` ref plus a matching `tracker-ref`; SHA and no-`v` pins
+  fail). CI, security, release, desktop smoke, contract/metadata, post-merge audit, E2E, and counts
+  are an `optionalWorkflows` catalog — add those callers only when the project uses the capability.
+  Required caller **presence** is not the same as a required check: only the contexts above are
+  merge-required. The opt-in release gate (§3.8) can fail a release on a missing/stale caller or
+  contract violation; open `tracker-contract-exception` OIs are checked by the release procedure
+  (`gate:release --repo`).
 - Branch protection/rulesets and `tracker.config.json` `workflows.ci.requiredChecks` are the two records of required checks. The config currently stores short names (`lint`, `format`, `test`); platform protection stores full contexts (`ci / lint`, ...). Keep them in sync by convention; reconciling the short-name mapping is a T09/T12 follow-up (this profile does not edit the config).
 
 ### 3.2 Current platform state (verified 2026-11-11)

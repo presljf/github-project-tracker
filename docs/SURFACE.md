@@ -11,9 +11,9 @@
 
 | Metric | Count |
 |---|---|
-| Entries | 144 |
-| Paths | 182 |
-| Shipped | 143 |
+| Entries | 146 |
+| Paths | 184 |
+| Shipped | 145 |
 | Contract-only | 1 |
 
 ## Class map
@@ -25,7 +25,7 @@
 | `copy-mode` | Non-runnable copy examples/templates (GitHub executes only `.github/workflows/`) | profiles/** | 16 | 16 | 0 |
 | `adopter-cli` | CLI entrypoints copied into adopting repositories | scripts/adopt/cli/** · scripts/adopt/docs/** | 30 | 30 | 0 |
 | `adopter-lib` | Shared libraries copied into adopting repositories | scripts/adopt/lib/** | 16 | 16 | 0 |
-| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 64 | 64 | 0 |
+| `internal` | Template-internal tooling/docs (never copied) | scripts/internal/** · docs/** · contract/** · .github/** (non-reusable) · profiles/**/README.md | 66 | 66 | 0 |
 | `generated` | Generated files (do not edit by hand) | `docs/reference-cards/` · `docs/SURFACE.md` · `docs/TECH_DEBT.md` | 3 | 3 | 0 |
 
 ## Entries by class
@@ -148,7 +148,7 @@
 
 ### internal
 
-78 path(s) · 78 shipped · 0 contract-only.
+80 path(s) · 80 shipped · 0 contract-only.
 
 | Path | Status | Audience | Title | Catalog § | Docs |
 |---|---|---|---|---|---|
@@ -172,8 +172,10 @@
 | `docs/ACTIONS_CATALOG.md` | shipped | adopter | ACTIONS CATALOG | — | — |
 | `docs/ADOPTION.md` | shipped | adopter | ADOPTION — zero to first task | — | — |
 | `docs/AGENT_GUIDE.md` | shipped | adopter | AGENT GUIDE | — | — |
+| `docs/ARCHITECTURE.md` | shipped | template, adopter | ARCHITECTURE — GitHub-native core, custom checks only | — | — |
 | `docs/BROKER_STORE.md` | shipped | adopter | Broker control-plane store | — | — |
 | `docs/CI_SECURITY_PROFILE.md` | shipped | adopter | CI, required-check, and security profile | — | — |
+| `docs/CONSUMING.md` | shipped | adopter | CONSUMING — add the tracker to a project in 10 minutes | — | — |
 | `docs/DOCS_COVERAGE.json` | shipped | template | Docs coverage rules | — | `docs/DOCS_COVERAGE.md#mechanism` |
 | `docs/DOCS_COVERAGE.md` | shipped | adopter | Documentation coverage enforcement | — | — |
 | `docs/DOCS_STYLE_GUIDE.md` | shipped | template | DOCS STYLE GUIDE | — | — |

@@ -14,6 +14,16 @@
   ],
   "requiredWorkflows": [
     {
+      "id": "audit",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-audit.yml"
+    },
+    {
+      "id": "pr-close-guard",
+      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml"
+    }
+  ],
+  "optionalWorkflows": [
+    {
       "id": "ci",
       "reusable": "presljf/github-project-tracker/.github/workflows/reusable-ci.yml"
     },
@@ -36,14 +46,6 @@
     {
       "id": "post-merge-audit",
       "reusable": "presljf/github-project-tracker/.github/workflows/reusable-post-merge-audit.yml"
-    },
-    {
-      "id": "pr-close-guard",
-      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-pr-close-guard.yml"
-    },
-    {
-      "id": "audit",
-      "reusable": "presljf/github-project-tracker/.github/workflows/reusable-audit.yml"
     },
     {
       "id": "e2e",

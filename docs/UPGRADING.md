@@ -15,6 +15,38 @@ The tracker is versioned; downstream projects pin an exact version and upgrade d
 - No `main` tracking; no silent sync.
 - Patch/minor upgrades should be low-risk; major upgrades require a migration plan.
 
+## Unreleased — tiered adoption contract (target v1.5.0)
+
+The next release trims the adoption contract from a fixed caller set to **two core guards plus an
+optional catalog**. Consumers on v1.4.0 are unaffected (tags are immutable); projects re-pinning to
+the next tag must carry only the core callers, and can add the optional ones when they use the
+capability. This is recorded here ahead of the version bump so an upgrade plan can point at it.
+
+| Reusable | v1.4.0 contract | Next release contract |
+|---|---|---|
+| `reusable-audit.yml` (tracker audit) | `requiredWorkflows` | **`requiredWorkflows` (core)** |
+| `reusable-pr-close-guard.yml` | `requiredWorkflows` | **`requiredWorkflows` (core)** |
+| `reusable-contract.yml` (contract/metadata) | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-post-merge-audit.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-e2e.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-counts.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-ci.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-security.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-release.yml` | `requiredWorkflows` | `optionalWorkflows` |
+| `reusable-desktop-smoke.yml` | `requiredWorkflows` | `optionalWorkflows` |
+
+Migration for a project re-pinning to the next tag:
+
+1. Keep (or add) the two core callers pinned to the exact tag, each with a matching `tracker-ref`.
+2. Keep any optional callers you already use; there is no need to delete them. Delete a caller only
+   if the project never used the capability.
+3. Remove `tracker.overrides.json` entries that existed only because a demoted caller was not run;
+   overrides for the core callers still behave as before.
+4. Update `automation.templateVersion` with the pin, then run `verify-contract` and the project CI.
+
+Rollback: restore the v1.4.0 `requiredWorkflows` list and keep the extra callers in place. Because
+the next-release contract requires a subset, the old shape remains valid input for the verifier.
+
 ## v1.3.2 — advisory close-out warning and sprint hierarchy check
 
 Patch release: run an advisory audit after upgrading to see whether either new check flags your
@@ -73,6 +105,12 @@ No config change is required beyond bumping `automation.templateVersion` to the 
 adopters who migrate to the reusable contract caller also provision the `TRACKER_TOKEN` secret (below).
 
 ### Required adoption contract (six reusable callers)
+
+> **Superseded for the next release:** the tiered contract keeps `reusable-audit` and
+> `reusable-pr-close-guard` as `requiredWorkflows`, and moves the other callers to
+> `optionalWorkflows`. See [Unreleased — tiered adoption
+> contract](#unreleased-tiered-adoption-contract-target-v150). This section remains the v1.4.0
+> history.
 
 v1.4.0 marks the six new reusable callers as **required** for every repository that re-pins.
 `contract/adoption-contract.json` gains `requiredWorkflows[]` entries for them and

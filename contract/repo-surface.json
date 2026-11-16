@@ -171,6 +171,19 @@
       "docs": []
     },
     {
+      "id": "doc:architecture",
+      "path": "docs/ARCHITECTURE.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "template",
+        "adopter"
+      ],
+      "title": "ARCHITECTURE — GitHub-native core, custom checks only",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
+      "docs": []
+    },
+    {
       "id": "doc:ci_security_profile",
       "path": "docs/CI_SECURITY_PROFILE.md",
       "class": "internal",
@@ -180,6 +193,18 @@
       ],
       "title": "CI, required-check, and security profile",
       "summary": "Profile version: v1.0.0 (T15)",
+      "docs": []
+    },
+    {
+      "id": "doc:consuming",
+      "path": "docs/CONSUMING.md",
+      "class": "internal",
+      "status": "shipped",
+      "audience": [
+        "adopter"
+      ],
+      "title": "CONSUMING — add the tracker to a project in 10 minutes",
+      "summary": "Docs version: v1.4.0-docs.1 · Target template: v1.4.0",
       "docs": []
     },
     {

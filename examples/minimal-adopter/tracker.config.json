@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/tracker.config.schema.json",
+  "trackerVersion": 1,
+  "repository": "OWNER/PROJECT",
+  "project": {
+    "owner": "OWNER",
+    "title": "PROJECT roadmap",
+    "number": 1
+  },
+  "statuses": [
+    "Todo",
+    "In Progress",
+    "In Review",
+    "Blocked",
+    "Done"
+  ],
+  "fields": {
+    "Release": {
+      "options": [
+        "v0.1.0"
+      ]
+    },
+    "Sprint": {
+      "options": [
+        "0.1.0.1"
+      ]
+    },
+    "Area": {
+      "options": [
+        "app",
+        "ci",
+        "docs",
+        "cross"
+      ]
+    },
+    "Kind": {
+      "options": [
+        "feature",
+        "fix",
+        "ux",
+        "spike",
+        "test",
+        "infra"
+      ]
+    },
+    "Estimate": {
+      "options": [
+        "S",
+        "M",
+        "L"
+      ]
+    }
+  },
+  "issueTypes": {
+    "task": "Task",
+    "bug": "Bug",
+    "feature": "Feature",
+    "fallback": "Use project Kind if native issue types are unavailable."
+  },
+  "releases": [
+    {
+      "key": "v0.1.0",
+      "milestone": "v0.1.0 — first tracked release",
+      "sprints": [
+        {
+          "key": "0.1.0.1",
+          "title": "First sprint",
+          "estimate": "M"
+        }
+      ]
+    }
+  ],
+  "automation": {
+    "defaultAssignee": "OWNER",
+    "branchPrefix": "task/",
+    "tagPattern": "^v\\d+\\.\\d+\\.\\d+$",
+    "templateRepo": "presljf/github-project-tracker",
+    "templateVersion": "1.4.0",
+    "inReviewMode": "manual",
+    "autoAddIssues": true,
+    "closeToDone": true
+  },
+  "profiles": {
+    "node": {
+      "commands": {
+        "test": "npm test"
+      }
+    }
+  },
+  "workflows": {
+    "audit": {
+      "mode": "advisory",
+      "tokenSecret": "TRACKER_TOKEN"
+    }
+  }
+}
