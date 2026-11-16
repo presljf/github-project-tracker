@@ -393,20 +393,61 @@ test('a custom --config path is honoured by the verify-contract CLI', () => {
   }
 });
 
-test('the shipped adoption contract requires the six v1.4.0 reusables and every contract is shipped', () => {
+test('the shipped adoption contract requires the core callers and ships the optional catalog', () => {
   const shipped = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'contract/adoption-contract.json'), 'utf8'));
-  for (const [id, file] of V140_REQUIRED) {
-    const entry = (shipped.requiredWorkflows || []).find((workflow) => workflow.id === id);
-    assert.ok(entry, `adoption contract requires ${id}`);
-    assert.equal(entry.reusable, `presljf/github-project-tracker/.github/workflows/${file}`);
-    const workflowFile = path.join(process.cwd(), '.github/workflows', file);
-    assert.ok(fs.existsSync(workflowFile), `${file} is shipped`);
-    assert.match(fs.readFileSync(workflowFile, 'utf8'), /^on:\n {2}workflow_call:/m, `${file} is workflow_call`);
-  }
-  const ids = new Set((shipped.requiredWorkflows || []).map((workflow) => workflow.id));
-  for (const [id] of V140_REQUIRED) assert.ok(ids.has(id), `requiredWorkflows includes ${id}`);
+  const workflowFile = (entry) => path.join(process.cwd(), '.github/workflows', path.basename(entry.reusable));
+  const assertShipped = (entry) => {
+    assert.match(
+      entry.reusable,
+      /^presljf\/github-project-tracker\/\.github\/workflows\/reusable-[a-z0-9-]+\.yml$/,
+      `${entry.id} uses a shipped reusable`,
+    );
+    assert.ok(fs.existsSync(workflowFile(entry)), `${entry.id} workflow is shipped`);
+    assert.match(
+      fs.readFileSync(workflowFile(entry), 'utf8'),
+      /^on:\n {2}workflow_call:/m,
+      `${entry.id} is workflow_call`,
+    );
+  };
+
+  const required = shipped.requiredWorkflows || [];
+  assert.deepEqual(
+    required.map((workflow) => workflow.id).sort(),
+    ['audit', 'pr-close-guard'],
+    'only the core guard callers are required',
+  );
+  for (const entry of required) assertShipped(entry);
+
+  const optional = shipped.optionalWorkflows || [];
+  assert.deepEqual(
+    optional.map((workflow) => workflow.id).sort(),
+    ['ci', 'contract', 'counts', 'desktop-smoke', 'e2e', 'post-merge-audit', 'release', 'security'],
+    'the demoted reporting/release reusables ship as the optional catalog',
+  );
+  for (const entry of optional) assertShipped(entry);
+  assert.equal(
+    new Set([...required, ...optional].map((workflow) => workflow.id)).size,
+    required.length + optional.length,
+    'core and optional ids are unique',
+  );
+
   // The pin source is the contract version (bumped with automation.templateVersion), not a
   // duplicated per-entry field; deriving it here keeps the T07 release bump green.
   const config = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'tracker.config.json'), 'utf8'));
   assert.equal(shipped.trackerVersion, config.automation.templateVersion);
+});
+
+test('the minimal adopter example satisfies the shipped contract and schema', () => {
+  const root = path.join(process.cwd(), 'examples/minimal-adopter');
+  const shipped = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'contract/adoption-contract.json'), 'utf8'));
+  const config = JSON.parse(fs.readFileSync(path.join(root, 'tracker.config.json'), 'utf8'));
+  const result = verifyContract({ root, contract: shipped, config });
+  assert.equal(result.ok, true, result.violations.join('\n'));
+
+  const validated = spawnSync(
+    process.execPath,
+    [path.join(process.cwd(), 'scripts/adopt/cli/validate-config.mjs'), path.join(root, 'tracker.config.json')],
+    { encoding: 'utf8' },
+  );
+  assert.equal(validated.status, 0, validated.stderr || validated.stdout);
 });

@@ -5,6 +5,12 @@ This guide onboards a **new project** onto the tracker. The CastDeck pilot is on
 
 > **Automation note:** bootstrap/audit/task CLI are available now. This manual path explains the steps; the same config drives `bootstrap.mjs`, and the CLIs automate the lifecycle.
 
+> **Minimal path:** if the project only needs the core guards, start with
+> [CONSUMING](./CONSUMING.md) — four integration files plus the required tracker doc, one pinned
+> caller, one verification command. The rest of
+> this guide is the full lifecycle for projects that want the optional profiles too. The design
+> boundary is [ARCHITECTURE](./ARCHITECTURE.md).
+
 ## 0. Choose the adoption shape
 
 | Shape | Use when | Board |
@@ -139,7 +145,7 @@ named-skip/reviewed agreement + generated doc/marker freshness; no test executio
 baseline + `docs/TEST_COUNTS.md` + markers change in the same PR; new skips start as placeholders
 until a human fills `reason/coveredBy/agreedOn`.
 
-Reusable-mode docs caller (a v1.4.0 `requiredWorkflows` entry): copy
+Reusable-mode docs caller (an `optionalWorkflows` catalog entry; adopt it with the counts contract): copy
 [`profiles/counts/counts-docs.yml`](../profiles/counts/counts-docs.yml) into
 `.github/workflows/counts-docs.yml` and pin both refs to the adopted tag. Its check context is
 **`counts-docs / counts`**; the reusable `reusable-counts.yml` runs `guard-docs-counts.mjs` against
@@ -200,9 +206,10 @@ option. The tag records the version; stream close requires every child task done
 - Configure the tracker audit token as a secret (project-scoped).
 - Add CI/audit caller workflows (CI/security/audit runner callers are shipped; release caller
   `release.yml` plus reusable-mode examples under `profiles/release/reusable/`); keep audit
-  **advisory** first. Also add the reusable contract/metadata caller
-  (`profiles/contract/tracker-contract.yml`): `contract` is a required check, `metadata` is
-  project-defined (see [Adoption contract verify](#adoption-contract-verify)).
+  **advisory** first. Add the reusable contract/metadata caller
+  (`profiles/contract/tracker-contract.yml`) only when the project wants board metadata verified in
+  CI: `contract` can be made a required check, `metadata` is project-defined (see
+  [Adoption contract verify](#adoption-contract-verify)).
 - Install the audit-family callers you need from [`profiles/audit/`](../profiles/audit/README.md)
   (copy-mode, 1–3 callers: `pr-close-guard.yml`, `post-merge-audit.yml`, `tracker-audit.yml`), pin
   the adopted release tag (the contract verifier requires the `@v<version>` tag form and a matching `tracker-ref`), grant the documented caller permissions, and update required checks
@@ -214,13 +221,12 @@ option. The tag records the version; stream close requires every child task done
   pin both refs to the adopted tag, and keep `contents: read` with no secrets (E2E may upload a
   failure-only artifact; counts uploads none). `e2e / e2e` stays advisory by default; require
   `counts-docs / counts` only when the counts contract is adopted (otherwise it is a no-op). Both
-  are **required callers** in the v1.4.0 adoption contract — a project that does not run E2E still
-  keeps the caller file (dispatch-only or path/label-gated), but the check stays advisory.
-- **Required caller set (v1.4.0):** `contract/adoption-contract.json` marks
-  `reusable-contract`, `reusable-post-merge-audit`, `reusable-pr-close-guard`, `reusable-audit`,
-  `reusable-e2e`, and `reusable-counts` as `requiredWorkflows`; `verify-contract` fails when one is
-  missing or not pinned to the exact adopted tag. See
-  [UPGRADING § Required adoption contract](./UPGRADING.md#required-adoption-contract-six-reusable-callers).
+  callers are `optionalWorkflows` catalog entries — add the ones the project uses.
+- **Required caller set:** `contract/adoption-contract.json` requires the two **core** guards
+  (`reusable-audit`, `reusable-pr-close-guard`); `verify-contract` fails when one is missing or not
+  pinned to the exact adopted tag. The remaining reusables (contract/metadata, post-merge audit,
+  E2E, counts, CI, security, release, desktop smoke) are `optionalWorkflows` — documented but not
+  enforced. See [UPGRADING § Unreleased — tiered adoption contract](./UPGRADING.md#unreleased-tiered-adoption-contract-target-v150).
 - Configure branch protection/rulesets:
   - required: deterministic Linux CI checks, `tracker-contract / contract`, and
     `pr-close-guard / guard` (audit-family migration; the old inline `pr-close-guard` context is
@@ -271,9 +277,9 @@ stream after the release gate passes. Do not start feature work until the first 
 - [ ] Audit token scoped/stored; audit advisory; manual checklist run.
 - [ ] Branch protection/required checks documented; expensive jobs advisory.
 - [ ] Remote-only GUI suites declared in `verification.remoteOnly` and wired to the local guard/Playwright globalSetup (optional; absent = no-op).
-- [ ] All six v1.4.0 required callers present and pinned (contract, post-merge audit, PR close guard, tracker audit, E2E, counts); `npm run verify:contract` passes. Caller presence is required by the contract, while each check context stays project-defined.
-- [ ] Counts contract declared in `docs.counts`, suite workflow runs `suite-counts check`, docs workflow runs `guard:docs:counts` via the reusable `counts-docs / counts` caller (the caller is required; without `docs.counts` it is a documented no-op).
-- [ ] E2E caller adopted from `profiles/e2e/` with browsers/command configured (the caller is required; `e2e / e2e` stays advisory unless deliberately promoted, and a project without E2E may make the caller dispatch-only).
+- [ ] Core required callers present and pinned (tracker audit, PR close guard); `npm run verify:contract` passes. Optional catalog callers (contract/metadata, post-merge audit, E2E, counts, CI, security, release, desktop smoke) are added only when the project uses the capability.
+- [ ] If the counts contract is adopted: `docs.counts` declared, suite workflow runs `suite-counts check`, docs workflow runs `guard:docs:counts` via the `counts-docs / counts` caller (without `docs.counts` the caller is a documented no-op).
+- [ ] If E2E is adopted: caller added from `profiles/e2e/` with browsers/command configured; `e2e / e2e` stays advisory unless deliberately promoted, and a project without E2E may omit the caller.
 - [ ] First task completed through the full lifecycle.
 - [ ] Docs pinned/versioned; downstream feedback channel linked.
 - [ ] Program-level gate closed (if applicable); upgrade policy understood.
@@ -329,9 +335,9 @@ project token is available,
 `GH_TOKEN=$(gh auth token) npm run verify:metadata -- --repo OWNER/REPO --contract contract/adoption-contract.json`.
 Required workflows must be pinned to the exact tracker tag; a bespoke workflow or missing
 capability requires an OI-linked `tracker.overrides.json` entry with reason and expiry. v1.4.0
-requires the six callers listed under [Required caller set](#5-audit-ci-protection) — contract,
-post-merge audit, PR close guard, tracker audit, E2E, and counts — in addition to the pre-existing
-CI/security/release/desktop-smoke entries. The verifier checks presence and the exact
+requires the core callers listed under [Required caller set](#5-audit-ci-protection) — tracker audit
+and PR close guard — while the reporting/release reusables (contract/metadata, post-merge audit, E2E,
+counts, CI, security, release, desktop smoke) are optional catalog entries. The verifier checks presence and the exact
 `@v<automation.templateVersion>` pin; it does not enforce caller job names (check contexts remain
 project-owned). The template repository's own `verify-contract` run skips these downstream checks in
 self mode by design.
@@ -384,8 +390,9 @@ installation token with Projects + Metadata + Issues read; store it as a reposit
 artifacts are uploaded — the JSON result goes to the job log/summary.
 
 **Contract status / rollback:** the three audit reusables are shipped, documented in
-[ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md), and **required** by the v1.4.0 adoption
-contract (`requiredWorkflows`), so `verify:contract` fails a missing or non-pinned caller. Roll back
+[ACTIONS CATALOG §7.6/§7.11/§7.12](./ACTIONS_CATALOG.md); the tracker audit and PR close guard are
+**core required** by the adoption contract (`requiredWorkflows`), while the post-merge audit is an
+`optionalWorkflows` catalog entry. `verify:contract` fails a missing or non-pinned core caller. Roll back
 by restoring the v1.3.2 inline copies (`post-merge-audit.yml`, `pr-close-guard.yml`,
 `tracker-audit.yml`) and the old protection contexts — the v1.3.2 tag keeps the inline workflows.
 After the tag exists, a deliberate exception needs an OI-linked `tracker.overrides.json` entry with
@@ -397,7 +404,7 @@ OI — open the follow-up manually).
 ## Release gate
 
 Before releasing, run `npm run gate:release -- --root . --repo owner/repo`; it verifies the pinned
-contract (including the six required callers) and fails on any open `tracker-contract-exception` OI.
+contract (including the required core callers) and fails on any open `tracker-contract-exception` OI.
 Release workflows may opt into the reusable equivalent **before build** with
 `contract-gate: true` + `tracker-ref: <adopted tag>` on `reusable-release.yml`; the gate's offline
 half runs verify-tooling + verify-contract + release-gate-without-`--repo`, while the open-OI half

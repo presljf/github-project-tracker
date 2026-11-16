@@ -9,6 +9,25 @@
 
 All notable changes to Project Tracker OS are documented here. The format follows semantic versioning; see [docs/UPGRADING.md](docs/UPGRADING.md).
 
+## Unreleased (target v1.5.0) — GitHub-native core and a tiered adoption contract
+
+Compatible-for-consumers architecture pass; no release tag yet. The version bump
+(`npm run release:bump -- --from 1.4.0 --to 1.5.0`) is part of the release, not this change.
+
+- **Architecture boundary:** new [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) records the design
+  rule (GitHub is the substrate and policy plane; custom code only for judgment), the extension-point
+  map, the four core checks, consumer tiers, and the explicitly not-built list with reopen triggers.
+- **Tiered adoption contract:** `contract/adoption-contract.json` now requires only the two core
+  guards (`reusable-audit`, `reusable-pr-close-guard`) in `requiredWorkflows`; the other eight
+  reusables (`ci`, `security`, `release`, `desktop-smoke`, `contract`, `post-merge-audit`, `e2e`,
+  `counts`) move to a new `optionalWorkflows` catalog. The v1.4.0 tag keeps its ten-caller contract;
+  the migration table is in [docs/UPGRADING.md § Unreleased](docs/UPGRADING.md#unreleased-tiered-adoption-contract-target-v150).
+- **Consumer path:** new [docs/CONSUMING.md](docs/CONSUMING.md) (five files, ≤10 minutes, one version
+  line) plus [examples/minimal-adopter/](examples/minimal-adopter/README.md): schema-valid config,
+  one caller (guard + advisory audit), two issue forms, and the required `docs/TRACKER.md`.
+- **Docs:** ADOPTION / REFERENCE / CI SECURITY PROFILE / ACTIONS CATALOG §7.14 / UPGRADING describe
+  core-required vs optional-catalog callers; the v1.4.0 history is retained.
+
 ## v1.4.0 — Reusable verification workflows, repo-surface cleanup, required adoption contract
 
 Minor release (D1 second delivery). **Breaking for adopters that re-pin (D3):** six new reusable

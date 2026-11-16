@@ -801,19 +801,29 @@ Composite action rules:
 
 ### 7.14 Required adoption contract (v1.4.0)
 
-**Availability:** shipped (T06). `contract/adoption-contract.json` marks six reusable callers as
-`requiredWorkflows[]`; `verify-contract` enforces presence and the exact pin. This is the D3
-breaking-upgrade contract — a repository that re-pins to v1.4.0 must carry all six callers, even if
-some suites stay advisory, disabled by trigger, or no-op.
+**Availability:** shipped (T06). `contract/adoption-contract.json` marks the **core** guard
+callers in `requiredWorkflows[]` and ships every other reusable in `optionalWorkflows[]`;
+`verify-contract` enforces presence and the exact pin for the required entries only. This is the D3
+upgrade contract: a project must carry the core callers, while the optional catalog is adopted only
+when the capability is used. The v1.4.0 release tag required six callers; the tiered shape is the
+next release's contract (see [UPGRADING § Unreleased — tiered adoption
+contract](./UPGRADING.md#unreleased-tiered-adoption-contract-target-v150)).
 
 | `requiredWorkflows[].id` | Reusable | Bundled caller | New context | Required status |
 |---|---|---|---|---|
-| `contract` | `reusable-contract.yml` | `profiles/contract/tracker-contract.yml` | `tracker-contract / contract`; `tracker-contract / metadata` | contract required; metadata project-defined |
-| `post-merge-audit` | `reusable-post-merge-audit.yml` | `profiles/audit/post-merge-audit.yml` | `post-merge-audit / audit` | post-merge record, not a merge check |
-| `pr-close-guard` | `reusable-pr-close-guard.yml` | `profiles/audit/pr-close-guard.yml` | `pr-close-guard / guard` | required |
-| `audit` | `reusable-audit.yml` | `profiles/audit/tracker-audit.yml` | `tracker-audit / audit` | advisory; strict is a release-gate opt-in |
-| `e2e` | `reusable-e2e.yml` | `profiles/e2e/e2e.yml` | `e2e / e2e` | advisory unless promoted |
-| `counts` | `reusable-counts.yml` | `profiles/counts/counts-docs.yml` | `counts-docs / counts` | required only when `docs.counts` is adopted; otherwise no-op |
+| `audit` | `reusable-audit.yml` | `profiles/audit/tracker-audit.yml` | `tracker-audit / audit` | core required; advisory unless the project promotes it; strict is a release-gate opt-in |
+| `pr-close-guard` | `reusable-pr-close-guard.yml` | `profiles/audit/pr-close-guard.yml` | `pr-close-guard / guard` | core required; merge-blocking only if protected |
+
+| `optionalWorkflows[].id` | Reusable | Bundled caller | Adopt when |
+|---|---|---|---|
+| `ci` | `reusable-ci.yml` | copy caller under `profiles/` | the project has no CI of its own |
+| `security` | `reusable-security.yml` | copy caller under `profiles/` | dependency review on pull requests is wanted |
+| `release` | `reusable-release.yml` | `profiles/release/` | the project publishes artifacts/images/packages |
+| `desktop-smoke` | `reusable-desktop-smoke.yml` | `profiles/desktop/` | GUI smoke runs remotely |
+| `contract` | `reusable-contract.yml` | `profiles/contract/tracker-contract.yml` | board metadata is verified in CI |
+| `post-merge-audit` | `reusable-post-merge-audit.yml` | `profiles/audit/post-merge-audit.yml` | bypass detection for merged PRs is wanted |
+| `e2e` | `reusable-e2e.yml` | `profiles/e2e/e2e.yml` | Playwright E2E runs remotely |
+| `counts` | `reusable-counts.yml` | `profiles/counts/counts-docs.yml` | the verified counts contract is adopted |
 
 Enforcement and limits:
 
@@ -832,9 +842,10 @@ Enforcement and limits:
   `tracker-contract-exception` OI.
 - Self-repo mode: when `config.repository === contract.repository` (the template itself),
   `verify-contract` skips the downstream `requiredProfiles`/`requiredDocs`/`requiredWorkflows`
-  checks and still enforces `templateVersion`/required config. The template dogfoods all six with
-  local `./.github/workflows/reusable-*.yml` refs (`tracker-ref: ''` where the workflow has that
-  input; the E2E fixture has none); the shipped contract shape is covered by tests.
+  checks and still enforces `templateVersion`/required config. The template dogfoods the core
+  callers and the optional catalog it needs with local `./.github/workflows/reusable-*.yml` refs
+  (`tracker-ref: ''` where the workflow has that input; the E2E fixture has none); the shipped
+  contract shape is covered by tests.
 - Release integration: `reusable-release.yml` has an opt-in `contract-gate` input (default false)
   that runs the offline half of this contract before build. Open-OI enforcement stays in the
   release procedure (`npm run gate:release -- --repo owner/repo`) because requiring `issues: read`
@@ -1037,7 +1048,7 @@ Machine-checkable implementation status — every class, path, status, audience,
 - [ ] Required check names captured from a green run and documented; aggregate `ci-gate` present; no `paths` filter on required workflows.
 - [ ] Secret-less CI run passes; fork-PR behavior verified (no secrets, read-only token).
 - [ ] Dispatch dry-run for release leaves no release/assets behind; tag guard rejects a non-matching tag (test on a scratch repo).
-- [ ] `verify-contract` fixture matrix covers the six v1.4.0 `requiredWorkflows` entries (present/missing/mis-pinned) and the release dry-run with `contract-gate: true` passes while default `false` is unchanged.
+- [ ] `verify-contract` fixture matrix covers the required core `requiredWorkflows` entries (present/missing/mis-pinned) and the release dry-run with `contract-gate: true` passes while default `false` is unchanged.
 - [ ] Signing/checksum actions skip cleanly when secret inputs are empty and fail loudly on bad input.
 - [ ] Audit caller still skips cleanly with an unset `TRACKER_TOKEN`, and strict mode fails on violations.
 - [ ] E2E fixture run recorded (or the CastDeck C3 dependency recorded for the Playwright/browser path).
